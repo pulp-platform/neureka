@@ -1,0 +1,37 @@
+neureka:
+  vlog_opts: [
+    +nowarnSVCHK,
+    -suppress 2275,
+    -L hwpe_stream_lib,
+    -L hwpe_ctrl_lib,
+    -L hci_lib,
+  ]
+  incdirs: [
+    .,
+    ../hwpe-stream/rtl,
+    ../hwpe-ctrl/rtl,
+  ]
+  files: [
+    rtl/neureka_package.sv,
+    rtl/accumulator/neureka_normquant.sv,
+    rtl/accumulator/neureka_normquant_shifter.sv,
+    rtl/accumulator/neureka_normquant_bias.sv,
+    rtl/accumulator/neureka_accumulator_adder.sv,
+    rtl/accumulator/neureka_normquant_multiplier.sv,
+    rtl/accumulator/neureka_accumulator_buffer.sv,
+    rtl/accumulator/neureka_accumulator_normquant.sv,
+    rtl/input_buffer/neureka_input_buffer_scm.sv,
+    rtl/input_buffer/neureka_input_buffer_scm_test_wrap.sv,
+    rtl/input_buffer/neureka_input_buffer.sv,
+    rtl/input_buffer/neureka_double_input_buffer.sv,
+    rtl/array/neureka_scale.sv,
+    rtl/array/neureka_binconv_col.sv,
+    rtl/array/neureka_binconv_pe.sv,
+    rtl/array/neureka_binconv_array.sv,
+    rtl/ctrl/neureka_ctrl_fsm.sv,
+    rtl/ctrl/neureka_ctrl.sv,
+    rtl/neureka_engine.sv,
+    rtl/neureka_streamer.sv,
+    rtl/neureka_top.sv,
+    rtl/neureka_top_wrap.sv,
+  ]

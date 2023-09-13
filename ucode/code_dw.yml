@@ -1,0 +1,66 @@
+#
+# code_dw.yml
+#
+# Copyright (C) 2019-2021 ETH Zurich, University of Bologna and GreenWaves Technologies
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# Author: Francesco Conti <f.conti@unibo.it>
+
+# mnemonics to simplify microcode writing
+mnemonics:
+    base_addr_W:            0
+    base_addr_x:            1
+    base_addr_y:            2
+    base_addr_s:            3
+    weights_km_iter:        4
+    null5:                  5
+    weights_km_reset_iter:  6
+    null7:                  7
+    infeat_km_iter:         8
+    infeat_wom_iter:        9
+    infeat_hom_iter:        10
+    infeat_km_reset_iter:   11
+    infeat_wom_reset_iter:  12
+    infeat_hom_reset_iter:  13
+    outfeat_wom_iter:       14
+    outfeat_hom_iter:       15
+    outfeat_km_iter:        16
+    outfeat_wom_reset_iter: 17
+    outfeat_hom_reset_iter: 18
+    outfeat_km_reset_iter:  19
+    scale_km_iter:          20
+    zero:                   21
+
+# NE16 code
+code:
+  j_major:
+    - { op : add,  a: base_addr_x, b: infeat_wom_iter   }
+    - { op : add,  a: base_addr_y, b: outfeat_wom_iter  }
+  i_major:
+    - { op : add,  a: base_addr_x, b: infeat_wom_reset_iter  } # infeat_wom_reset_iter  = - subtile_nb_wo * infeat_wom_iter
+    - { op : add,  a: base_addr_y, b: outfeat_wom_reset_iter } # outfeat_wom_reset_iter = - subtile_nb_wo * outfeat_wom_iter
+    - { op : add,  a: base_addr_x, b: infeat_hom_iter   }
+    - { op : add,  a: base_addr_y, b: outfeat_hom_iter  }
+  k_out_major:
+    - { op : add,  a: base_addr_x, b: infeat_hom_reset_iter  } # infeat_hom_reset_iter  = - subtile_nb_ho * infeat_hom_iter
+    - { op : add,  a: base_addr_y, b: outfeat_hom_reset_iter } # outfeat_hom_reset_iter = - subtile_nb_ho * outfeat_hom_iter
+    - { op : add,  a: base_addr_x, b: infeat_wom_reset_iter  } # infeat_wom_reset_iter  = - subtile_nb_wo * infeat_wom_iter
+    - { op : add,  a: base_addr_y, b: outfeat_wom_reset_iter } # outfeat_wom_reset_iter = - subtile_nb_wo * outfeat_wom_iter
+    - { op : add,  a: base_addr_W, b: weights_km_iter  }
+    - { op : add,  a: base_addr_y, b: outfeat_km_iter  }
+    - { op : add,  a: base_addr_x, b: infeat_km_iter   }
+    - { op : add,  a: base_addr_s, b: scale_km_iter    }
+  fake_loop:
+    - { op : mv,   a: base_addr_x, b: base_addr_x }
+    - { op : mv,   a: base_addr_x, b: base_addr_x }

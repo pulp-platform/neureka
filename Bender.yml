@@ -1,0 +1,34 @@
+package:
+  name: neureka
+  authors:
+    - "Arpan Suravi Prasad <prasadar@iis.ee.ethz.ch>"
+    - "Francesco Conti <f.conti@unibo.it>"
+
+dependencies:
+  hwpe-stream:  { git: "https://github.com/pulp-platform/hwpe-stream.git", version: 1.6.4 }
+  hci:          { git: "https://github.com/pulp-platform/hci.git", rev: "5bd3ea43275935c39d754173e9056a8c2ab35f5c" }
+  hwpe-ctrl:    { git: "https://github.com/pulp-platform/hwpe-ctrl.git", rev: "bdf4921498cd46bb6074a85fb5124f8e7da764e9" }
+ 
+sources:
+  - rtl/neureka_package.sv
+  - rtl/accumulator/neureka_normquant.sv
+  - rtl/accumulator/neureka_normquant_shifter.sv
+  - rtl/accumulator/neureka_normquant_bias.sv
+  - rtl/accumulator/neureka_accumulator_adder.sv
+  - rtl/accumulator/neureka_normquant_multiplier.sv
+  - rtl/accumulator/neureka_accumulator_buffer.sv
+  - rtl/accumulator/neureka_accumulator_normquant.sv
+  - rtl/input_buffer/neureka_input_buffer_scm.sv
+  - rtl/input_buffer/neureka_input_buffer_scm_test_wrap.sv
+  - rtl/input_buffer/neureka_input_buffer.sv
+  - rtl/input_buffer/neureka_double_input_buffer.sv
+  - rtl/array/neureka_scale.sv
+  - rtl/array/neureka_binconv_col.sv
+  - rtl/array/neureka_binconv_pe.sv
+  - rtl/array/neureka_binconv_array.sv
+  - rtl/ctrl/neureka_ctrl_fsm.sv
+  - rtl/ctrl/neureka_ctrl.sv
+  - rtl/neureka_engine.sv
+  - rtl/neureka_streamer.sv
+  - rtl/neureka_top.sv
+  - rtl/neureka_top_wrap.sv
