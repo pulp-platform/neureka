@@ -5,9 +5,10 @@ package:
     - "Francesco Conti <f.conti@unibo.it>"
 
 dependencies:
-  hwpe-stream:  { git: "https://github.com/pulp-platform/hwpe-stream.git", version: 1.6.4 }
-  hci:          { git: "https://github.com/pulp-platform/hci.git", rev: "5bd3ea43275935c39d754173e9056a8c2ab35f5c" }
-  hwpe-ctrl:    { git: "https://github.com/pulp-platform/hwpe-ctrl.git", rev: "bdf4921498cd46bb6074a85fb5124f8e7da764e9" }
+  hwpe-stream:  { git: "https://github.com/pulp-platform/hwpe-stream.git", version: 1.6.5 }
+  hci:          { git: "https://github.com/pulp-platform/hci.git", rev: "v1.1" }
+  hwpe-ctrl:    { git: "https://github.com/pulp-platform/hwpe-ctrl.git", rev: "a596620" }
+  zeroriscy:    { git: "git@github.com:yvantor/ibex.git", rev: "bender", target: "test" } # for verification only
  
 sources:
   - rtl/neureka_package.sv
@@ -32,3 +33,7 @@ sources:
   - rtl/neureka_streamer.sv
   - rtl/neureka_top.sv
   - rtl/neureka_top_wrap.sv
+  - target: test
+    files:
+      - rtl/verif/tb_dummy_memory.sv
+      - rtl/verif/tb_neureka.sv
