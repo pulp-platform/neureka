@@ -22,7 +22,7 @@ DATA_BASE  = 0x10000
 STACK_BASE = 0x1e000
 
 INSTR_MEM_SIZE = 32*1024
-DATA_MEM_SIZE  = 256*1024
+DATA_MEM_SIZE  = 56*1024
 
 with open(sys.argv[1], "r") as f:
     s = f.read()

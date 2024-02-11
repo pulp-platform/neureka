@@ -146,7 +146,7 @@ sub hex2int {
 # 
 sub int2hex {
   my $i=shift;                                    # read in the integer
-  my $h;                                          # define hex value
+  my $h="";                                       # define hex value
   for my $n (0..7){                               # 8 digits
     my $e=16 ** (7-$n);                           # calculate exponent
     if ($e > $i){                                 # if 2^e is larger

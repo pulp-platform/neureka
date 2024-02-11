@@ -19,7 +19,7 @@
  *           Gianna Paulin <pauling@iis.ee.ethz.ch>
  *           Renzo Andri <andrire@iis.ee.ethz.ch>
  *           Arpan Suravi Prasad <prasadar@iis.ee.ethz.ch>
- * Main Test Program for the RBE
+ * Main Test Program for the N-EUREKA
  */
 
 #include <stdint.h>
