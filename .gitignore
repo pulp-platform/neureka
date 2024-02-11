@@ -2,3 +2,4 @@
 .bender/*
 Bender.lock
 sim/*
+build/*
