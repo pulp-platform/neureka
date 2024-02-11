@@ -36,8 +36,7 @@ RESERVOIR_SIZE = 1024
 
 # Useful Parameters
 gui      ?= 0
-P_STALL_GEN  ?= 0.0
-P_STALL_RECV ?= 0.0
+P_STALL  ?= 0.0
 
 # Setup build object dirs
 VSIM_INI=$(HW_BUILD_DIR)/modelsim.ini
@@ -49,24 +48,6 @@ $(HW_BUILD_DIR):
 
 SHELL := /bin/bash
 
-# Simulation parameters
-VSIM_DEPS=$(CRT)
-VSIM_PARAMS=-gPROB_STALL=$(P_STALL)   \
-	-gSTIM_INSTR=build/stim_instr.txt \
-	-gSTIM_DATA=build/stim_data.txt
-
-# Run the simulation
-run:
-ifeq ($(gui), 0)
-	cd sim;                                \
-	$(QUESTA) vsim -c vopt_tb -do "run -a" \
-	$(VSIM_PARAMS)	
-else
-	cd sim; $(QUESTA) vsim vopt_tb       \
-	-do "add log -r sim:/$(TESTBENCH)/*" \
-	$(VSIM_PARAMS)
-endif
-
 # Download bender
 sim:
 	mkdir -p sim
@@ -76,6 +57,7 @@ $(BENDER): sim
 	--tlsv1.2 https://pulp-platform.github.io/bender/init -sSf | sh -s -- 0.24.0
 	mv bender $(BENDER)
 
+.PHONY: update-ips
 update-ips: $(BENDER)
 	git submodule update --init
 	$(BENDER) update
@@ -146,8 +128,12 @@ MODEL_DIR=$(dir $(abspath model))/model
 
 $(BUILD_DIR):
 	mkdir -p $@
+	ln -sfn $(VSIM_INI) $(BUILD_DIR)/
+	ln -sfn $(VSIM_LIBS) $(BUILD_DIR)/
+	ln -sfn $(mkfile_path)/waves $(BUILD_DIR)
 
-stimuli: $(BUILD_DIR)
+STIMULI=$(BUILD_DIR)/app/gen
+$(STIMULI): $(BUILD_DIR)
 	cd $(BUILD_DIR) && \
 	mkdir -p app && \
 	ln -sfn $(MODEL_DIR)/app/src app/src && \
@@ -156,6 +142,8 @@ stimuli: $(BUILD_DIR)
 	                                --kernel_height=$(FS) --kernel_width=$(FS) --stride_height=1 --stride_width=1 \
 	                                --padding_top=$(PADDING_TOP) --padding_right=$(PADDING_RIGHT) --padding_bottom=$(PADDING_BOTTOM) --padding_left=$(PADDING_LEFT) && \
 	python $(MODEL_DIR)/deps/pulp-nnx/test/testgen.py test -t test -a neureka --headers -c conf.toml --skip-save
+
+stimuli: $(STIMULI)
 
 build-cleanup:
 	rm -rf build/*
@@ -242,3 +230,20 @@ sw-all: $(STIM_INSTR) $(STIM_DATA)
 sw-clean:
 	rm -rf $(OBJ) $(CRT) $(BIN) $(STIM_DATA) $(STIM_INSTR)
 
+# Simulation parameters
+VSIM_DEPS=$(CRT)
+VSIM_PARAMS=-gPROB_STALL=$(P_STALL)   \
+	-gSTIM_INSTR=stim_instr.txt \
+	-gSTIM_DATA=stim_data.txt
+
+# Run the simulation
+run:
+ifeq ($(gui), 0)
+	cd $(BUILD_DIR);                       \
+	$(QUESTA) vsim -c vopt_tb -do "run -a" \
+	$(VSIM_PARAMS)	
+else
+	cd $(BUILD_DIR); $(QUESTA) vsim vopt_tb \
+	-do "add log -r sim:/$(TESTBENCH)/*"    \
+	$(VSIM_PARAMS)
+endif
