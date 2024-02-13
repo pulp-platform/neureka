@@ -38,7 +38,7 @@ int main() {
   // output checking
   check_output();
 
-  *(int *) (0x80000000) = 0;  // FIXME -- no error reporting for now
-  *(int *) (0x80000004) = 1;
+  *(volatile int *) (0x80000000) = 0;  // FIXME -- no error reporting for now
+  *(volatile int *) (0x80000004) = 1;
   return 0;
 }
