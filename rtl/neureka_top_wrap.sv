@@ -79,12 +79,6 @@ module neureka_top_wrap #(
     .clk ( clk_i )
   );
 
-  hci_core_intf #(
-    .DW ( BW )
-  ) tcdm_weight (
-    .clk ( clk_i )
-  );
-
   hwpe_ctrl_intf_periph #(.ID_WIDTH(ID)) periph (.clk(clk_i));
 
   // bindings
@@ -103,15 +97,12 @@ module neureka_top_wrap #(
 
   generate
     for(genvar ii=0; ii<MP; ii++) begin: tcdm_weight_binding
-      assign tcdm_w_req  [ii] = tcdm_weight.req;
-      assign tcdm_w_add  [ii] = tcdm_weight.add + ii*4;
-      assign tcdm_w_wen  [ii] = tcdm_weight.wen;
-      assign tcdm_w_be   [ii] = tcdm_weight.be[(ii+1)*4-1:ii*4];
-      assign tcdm_w_data [ii] = tcdm_weight.data[(ii+1)*32-1:ii*32];
+      assign tcdm_w_req  [ii] = '0;
+      assign tcdm_w_add  [ii] = '0;
+      assign tcdm_w_wen  [ii] = '0;
+      assign tcdm_w_be   [ii] = '0;
+      assign tcdm_w_data [ii] = '0;
     end
-    assign tcdm_weight.gnt     = &(tcdm_w_gnt);
-    assign tcdm_weight.r_valid = &(tcdm_w_r_valid);
-    assign tcdm_weight.r_data  = { >> {tcdm_w_r_data} } ;
   endgenerate
 
   always_comb
@@ -143,7 +134,6 @@ module neureka_top_wrap #(
     .evt_o       ( evt_o        ),
     .busy_o      ( busy_o       ),
     .tcdm        ( tcdm.master  ),
-    .tcdm_weight ( tcdm_weight.master  ),
     .periph      ( periph.slave )
   );
 

@@ -34,8 +34,8 @@ package neureka_package;
   // default number of cores
   parameter int NR_CORES = 9;
 
-  parameter int NEUREKA_PE_H = 6; // Number of PEs across height
-  parameter int NEUREKA_PE_W = 6; // Number of PEs across width
+  parameter int NEUREKA_PE_H = 4; // Number of PEs across height
+  parameter int NEUREKA_PE_W = 4; // Number of PEs across width
   parameter int NEUREKA_PE_HW = NEUREKA_PE_H*NEUREKA_PE_W; // Total number of PEs
 
   parameter int NEUREKA_INFEAT_BUFFER_SIZE_H = NEUREKA_PE_H+2; // Input Feature buffer size across height. 

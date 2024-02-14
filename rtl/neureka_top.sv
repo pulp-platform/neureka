@@ -44,7 +44,6 @@ module neureka_top #(
   output logic                                  busy_o,
   // tcdm master ports
   hci_core_intf.master                          tcdm,
-  hci_core_intf.master                          tcdm_weight,
   // periph slave port
   hwpe_ctrl_intf_periph.slave                   periph
 );
@@ -131,7 +130,6 @@ module neureka_top #(
     .norm_o      ( norm           ),
     .streamin_o  ( streamin       ),
     .conv_i      ( conv           ),
-    .tcdm_weight ( tcdm_weight    ),
     .tcdm        ( tcdm           ),
     .ctrl_i      ( streamer_ctrl  ),
     .flags_o     ( streamer_flags )
