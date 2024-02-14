@@ -47,7 +47,6 @@ module neureka_streamer #(
   hwpe_stream_intf_stream.sink   conv_i,
   // TCDM ports
   hci_core_intf.master           tcdm,
-  hci_core_intf.master           tcdm_weight,
   // control channel
   input  ctrl_streamer_t         ctrl_i,
   output flags_streamer_t        flags_o
@@ -110,6 +109,12 @@ module neureka_streamer #(
 
   hci_core_intf #(
     .DW ( NEUREKA_MEM_BANDWIDTH_EXT )
+  ) tcdm_premux [1:0] (
+    .clk ( clk_i )
+  );
+
+  hci_core_intf #(
+    .DW ( NEUREKA_MEM_BANDWIDTH_EXT )
   ) tcdm_prefifo (
     .clk ( clk_i )
   );
@@ -117,6 +122,12 @@ module neureka_streamer #(
   hci_core_intf #(
     .DW ( NEUREKA_MEM_BANDWIDTH_EXT )
   ) tcdm_prefilter (
+    .clk ( clk_i )
+  );
+
+  hci_core_intf #(
+    .DW ( NEUREKA_MEM_BANDWIDTH_EXT )
+  ) tcdm_preout (
     .clk ( clk_i )
   );
 
@@ -243,7 +254,7 @@ module neureka_streamer #(
     .clear_i     ( clear_i              ),
     .enable_i    ( 1'b1                 ),
     .tcdm_slave  ( tcdm_prefilter       ),
-    .tcdm_master ( tcdm                 )
+    .tcdm_master ( tcdm_premux[1]       )
   );
 
   hci_core_r_valid_filter i_tcdm_weight_filter (
@@ -252,7 +263,29 @@ module neureka_streamer #(
     .clear_i     ( clear_i              ),
     .enable_i    ( ctrl_i.wmem_sel      ),
     .tcdm_slave  ( tcdm_weight_prefilter),
-    .tcdm_master ( tcdm_weight          )
+    .tcdm_master ( tcdm_premux[0]       )
+  );
+
+  hci_core_mux_ooo #(
+    .NB_CHAN ( 2                         ),
+    .DW      ( NEUREKA_MEM_BANDWIDTH_EXT )
+  ) i_mux_ooo (
+    .clk_i            ( clk_i          ),
+    .rst_ni           ( rst_ni         ),
+    .clear_i          ( clear_i        ),
+    .priority_force_i ( 1'b0           ),
+    .priority_i       ( '0             ),
+    .in               ( tcdm_premux    ),
+    .out              ( tcdm_preout    )
+  );
+
+  hci_core_r_user_filter i_tcdm_user_filter (
+    .clk_i       ( clk_i       ),
+    .rst_ni      ( rst_ni      ),
+    .clear_i     ( clear_i     ),
+    .enable_i    ( 1'b1        ),
+    .tcdm_slave  ( tcdm_preout ),
+    .tcdm_master ( tcdm        )
   );
 
   always_comb
