@@ -67,6 +67,14 @@ update-ips: $(BENDER)
 	-t rtl -t test               \
 	> sim/${compile_script}
 
+.PHONY: generate-scripts
+generate-scripts: $(BENDER)
+	$(BENDER) script vsim        \
+	--vlog-arg="$(compile_flag)" \
+	--vcom-arg="-pedanticerrors" \
+	-t rtl -t test               \
+	> sim/${compile_script}
+
 # Hardware rules
 .PHONY: hw-clean-all hw-opt hw-compile hw-lib hw-clean hw-all
 hw-clean-all:
