@@ -245,6 +245,7 @@ package neureka_package;
   typedef struct packed {
     state_aq_t  state;
     logic       addr_cnt_en_q;
+    logic [VLEN_CNT_SIZE-1:0] count;
   } flags_aq_t;
 
   // ========================================================================
