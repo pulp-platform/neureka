@@ -355,6 +355,7 @@ module neureka_accumulator_normquant #(
 
   assign flags_o.state    = fsm_state_q;
   assign flags_o.addr_cnt_en_q = addr_cnt_en_stage1_q;
+  assign flags_o.count    = full_accumulation_cnt_q;
   
   always_ff @(posedge clk_i or negedge rst_ni)
   begin : fsm_state_seq

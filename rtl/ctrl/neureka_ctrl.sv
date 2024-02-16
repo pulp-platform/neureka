@@ -681,7 +681,8 @@ module neureka_ctrl #(
 
   logic prefetch_pulse, prefetch_enable_d, prefetch_enable_q;
 
-  assign prefetch_enable_d = uloop_prefetch & (state == WEIGHTOFFS) | uloop_prefetch & (state == MATRIXVEC) ;
+  // delay prefetch start to hide a couple of overhead cycles
+  assign prefetch_enable_d = uloop_prefetch & (state == MATRIXVEC) & (flags_engine_i.flags_accumulator[0].count >= (ctrl_engine.ctrl_accumulator.full_accumulation_len >> 1));
   assign prefetch_pulse = (~prefetch_enable_q) & prefetch_enable_d;
 
   always_ff @(posedge clk_i or negedge rst_ni) begin : prefetch_enable_ff
