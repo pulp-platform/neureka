@@ -143,7 +143,8 @@ module neureka_streamer #(
   assign all_source_enable = (~ctrl_i.ld_st_mux_sel & (~wmem_enable)) | (ctrl_i.ld_which_mux_sel == LD_FEAT_WEIGHT_SEL);
 
   hci_core_source #(
-    .DATA_WIDTH ( NEUREKA_MEM_BANDWIDTH_EXT )
+    .DATA_WIDTH       ( NEUREKA_MEM_BANDWIDTH_EXT ),
+    .PASSTHROUGH_FIFO ( 1                         )
   ) i_all_source (
     .clk_i       ( clk_i                         ),
     .rst_ni      ( rst_ni                        ),
@@ -157,7 +158,8 @@ module neureka_streamer #(
   );
 
   hci_core_source #(
-    .DATA_WIDTH ( NEUREKA_MEM_BANDWIDTH_EXT )
+    .DATA_WIDTH       ( NEUREKA_MEM_BANDWIDTH_EXT ),
+    .PASSTHROUGH_FIFO ( 1                         )
   ) i_weight_source (
     .clk_i       ( clk_i                         ),
     .rst_ni      ( rst_ni                        ),
