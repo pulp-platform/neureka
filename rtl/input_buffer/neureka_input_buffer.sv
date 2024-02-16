@@ -61,7 +61,9 @@ module neureka_infeat_buffer #(
   // Finite-state machine + counters
   state_infeat_buffer_t fsm_state_q, fsm_state_d;
   logic                vlen_cnt_clr, vlen_cnt_gl_en, vlen_cnt_en;
+  logic [AW-1:0] vlen_cnt;
   logic [AW-1:0] vlen_cnt_d, vlen_cnt_q;
+  logic [AW-1:0] vlen_cnt_fast_d, vlen_cnt_fast_q;
 
   neureka_infeat_buffer_scm_test_wrap #(
     .ADDR_WIDTH ( AW ),
@@ -107,13 +109,13 @@ module neureka_infeat_buffer #(
   // implicit padding --> comes from incomplete subtiles in the spatial dimensions --> always padded with 0
   // explicit padding --> requested through the padding register --> padded with config.padding_value
   // priority: implicit padding --> explicit padding --> normal feature
-  assign scm_we     = feat_i[0].valid & (feat_i[0].ready | (ctrl_i.filter_mode == NEUREKA_FILTER_MODE_1X1 ? ~mask_1x1[vlen_cnt_q] : 1'b0));
+  assign scm_we     = feat_i[0].valid & (feat_i[0].ready);
   assign scm_we_all = '0;
-  assign scm_waddr  = vlen_cnt_q;
+  assign scm_waddr  = vlen_cnt;
   generate
     for(genvar ii=0; ii<BLOCK_SIZE/2; ii++) begin : scm_wdata_gen
-      assign scm_wdata[(2*ii+1)*8-1:(2*ii)  *8] = ctrl_i.enable_implicit_padding[vlen_cnt_q] ? '0 : ctrl_i.enable_explicit_padding[vlen_cnt_q] ? ctrl_i.explicit_padding_value_lo: ctrl_i.feat_broadcast ? feat_i[0].data : feat_i[2*ii].data;
-      assign scm_wdata[(2*ii+2)*8-1:(2*ii+1)*8] = ctrl_i.enable_implicit_padding[vlen_cnt_q] ? '0 : ctrl_i.enable_explicit_padding[vlen_cnt_q] ? ctrl_i.explicit_padding_value_hi : ctrl_i.feat_broadcast ? feat_i[0].data : feat_i[2*ii+1].data;
+      assign scm_wdata[(2*ii+1)*8-1:(2*ii)  *8] = ctrl_i.enable_implicit_padding[vlen_cnt] ? '0 : ctrl_i.enable_explicit_padding[vlen_cnt] ? ctrl_i.explicit_padding_value_lo: ctrl_i.feat_broadcast ? feat_i[0].data : feat_i[2*ii].data;
+      assign scm_wdata[(2*ii+2)*8-1:(2*ii+1)*8] = ctrl_i.enable_implicit_padding[vlen_cnt] ? '0 : ctrl_i.enable_explicit_padding[vlen_cnt] ? ctrl_i.explicit_padding_value_hi : ctrl_i.feat_broadcast ? feat_i[0].data : feat_i[2*ii+1].data;
     end
   endgenerate
   assign scm_re    = '0;
@@ -146,7 +148,9 @@ module neureka_infeat_buffer #(
   begin : fsm_seq
     if(~rst_ni)
       fsm_state_q <= IB_IDLE;
-    else
+    else if(clear_i)
+      fsm_state_q <= IB_IDLE;
+    else if(enable_i)
       fsm_state_q <= fsm_state_d;
   end
 
@@ -170,10 +174,10 @@ module neureka_infeat_buffer #(
 
       // in IB_LOAD state, raise the ready for the stream hs until the buffer virtual length vlen has been reached
       IB_LOAD: begin
-        feat_i[0].ready = ctrl_i.filter_mode == NEUREKA_FILTER_MODE_1X1 ? mask_1x1[vlen_cnt_q] : 1'b1;
+        feat_i[0].ready = 1'b1;
         vlen_cnt_gl_en = 1'b1;
         vlen_cnt_clr = 1'b0;
-        if(scm_we && ({1'b0, vlen_cnt_q} == ctrl_i.load_len-1)) begin
+        if(scm_we && ({1'b0, vlen_cnt} == ctrl_i.load_len-1)) begin
           fsm_state_d = IB_EXTRACT; // an intermediate IB_IDLE state before going to IB_EXTRACT is necessary
                                // in any case due to the way the latch-based register works
           vlen_cnt_clr = 1'b1;
@@ -198,33 +202,36 @@ module neureka_infeat_buffer #(
       end
 
     endcase
-    if(clear_i)
-      fsm_state_d = IB_IDLE;
-    else if (~enable_i)
-      fsm_state_d = fsm_state_q;
   end
 
   // virtual length counter (counts words of BP*32 size in IB_LOAD mode and, for now, also in IB_EXTRACT mode)
   assign vlen_cnt_en = scm_we;
 
-  always_comb begin 
-    vlen_cnt_d = vlen_cnt_q;
-    if (enable_i & vlen_cnt_gl_en) begin
-      if (vlen_cnt_clr == 1'b1)
-        vlen_cnt_d = '0;
-      else if(vlen_cnt_en)
-        vlen_cnt_d = vlen_cnt_q + 1 ;
-    end
-  end 
+  assign vlen_cnt_d = vlen_cnt_q + 1;
 
-  assign vlen_cnt_next = (vlen_cnt_clr == 1'b0) ? vlen_cnt_q + 1 : '0;
   always_ff @(posedge clk_i or negedge rst_ni)
   begin : vlen_counter
     if(~rst_ni)
       vlen_cnt_q <= '0;
-    else
+    else if(vlen_cnt_clr)
+      vlen_cnt_q <= '0;
+    else if(vlen_cnt_en)
       vlen_cnt_q <= vlen_cnt_d;
   end
+
+  assign vlen_cnt_fast_d = (vlen_cnt_fast_q % NEUREKA_INFEAT_BUFFER_SIZE_W) == NEUREKA_PE_W-1 ? vlen_cnt_fast_q+3 : vlen_cnt_fast_q+1;
+
+  always_ff @(posedge clk_i or negedge rst_ni)
+  begin : vlen_counter_fast
+    if(~rst_ni)
+      vlen_cnt_fast_q <= '0;
+    else if(vlen_cnt_clr)
+      vlen_cnt_fast_q <= '0;
+    else if(vlen_cnt_en)
+      vlen_cnt_fast_q <= vlen_cnt_fast_d;
+  end
+
+  assign vlen_cnt = ctrl_i.filter_mode == NEUREKA_FILTER_MODE_1X1 ? vlen_cnt_fast_q : vlen_cnt_q;
 
   assign flags_o.state = fsm_state_q;
 
