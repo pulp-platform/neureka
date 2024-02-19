@@ -44,6 +44,8 @@ typedef neureka_testbench_conf_t nnx_bsp_conf_t;
 #define nnx_task_set_bits neureka_task_set_bits
 #define nnx_task_set_norm_quant neureka_task_set_norm_quant
 #define nnx_task_set_weight_offset neureka_task_set_weight_offset
+#define nnx_task_set_weight_source neureka_task_set_weight_source
+#define nnx_task_set_activation_prefetch neureka_task_set_activation_prefetch
 #define nnx_task_set_dims neureka_task_set_dims
 #define nnx_task_set_ptrs neureka_task_set_ptrs
 
@@ -89,9 +91,11 @@ static void task_prepare(nnx_task_t *task) {
   nnx_task_set_weight_offset(task, weightOffsetModeLayerWise, WEIGHT_OFFSET);
 
 #ifdef NEUREKA_WEIGHT_SOURCE_WMEM
-  neureka_task_set_weight_source(task, neurekaWeightSourceWmem);
+  nnx_task_set_weight_source(task, neurekaWeightSourceWmem);
+  nnx_task_set_activation_prefetch(task, activationPrefetchOn);
 #else
   neureka_task_set_weight_source(task, neurekaWeightSourceTcdm);
+  nnx_task_set_activation_prefetch(task, activationPrefetchOff);
 #endif
 #if INPUT_SIGNED == 1
   neureka_task_set_input_signed(task);
@@ -141,6 +145,10 @@ static void task_execute(nnx_task_t *task) {
 
   nnx_dispatch_wait(dev);
 
+  // printf("CFG:\n");
+  // for (int i=0; i<sizeof(neureka_task_data_t)/4; i++) {
+  //   printf("%08x\n", ((uint32_t *) &task->data)[i]);
+  // }
 #if STRIDE_HEIGHT == 2 && STRIDE_WIDTH == 2
   nnx_dispatch_stride2x2(dev, task, INPUT_WIDTH, INPUT_CHANNEL, OUTPUT_HEIGHT,
                          OUTPUT_WIDTH, OUTPUT_CHANNEL, WEIGHT_HEIGHT,
