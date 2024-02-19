@@ -32,7 +32,10 @@ module neureka_top_wrap #(
   parameter int unsigned MP        = BW/32,          // number of memory ports (each a 32bit data)
   parameter int unsigned ID        = ID_WIDTH,
   parameter int unsigned N_CORES   = NR_CORES,
-  parameter int unsigned N_CONTEXT = NR_CONTEXT
+  parameter int unsigned N_CONTEXT = NR_CONTEXT,
+  parameter int unsigned PE_H      = NEUREKA_PE_H_DEFAULT,
+  parameter int unsigned PE_W      = NEUREKA_PE_W_DEFAULT,
+  parameter int unsigned REGFILE_N_EVT = 2
 ) (
   // global signals
   input  logic                                  clk_i,
@@ -120,13 +123,15 @@ module neureka_top_wrap #(
     end
 
   neureka_top #(
-    .TP_IN    (TP_IN    ),
-    .TP_OUT   (TP_OUT   ),
-    .CNT      (CNT      ),
-    .BW       (BW       ),
-    .ID       (ID       ),
-    .N_CORES  (N_CORES  ),
-    .N_CONTEXT(N_CONTEXT)
+    .TP_IN     ( TP_IN     ),
+    .TP_OUT    ( TP_OUT    ),
+    .CNT       ( CNT       ),
+    .BW        ( BW        ),
+    .ID        ( ID        ),
+    .N_CORES   ( N_CORES   ),
+    .N_CONTEXT ( N_CONTEXT ),
+    .PE_H      ( PE_H      ),
+    .PE_W      ( PE_W      )
   ) i_neureka_top (
     .clk_i       ( clk_i        ),
     .rst_ni      ( rst_ni       ),

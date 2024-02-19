@@ -24,11 +24,11 @@ import neureka_package::*;
 
 module neureka_engine #(
   parameter int unsigned COLUMN_SIZE    = NEUREKA_COLUMN_SIZE, // number of BinConv blocks per column (default 9)
-  parameter int unsigned NR_PE          = NEUREKA_NUM_PE,      // number of PEs
-  parameter int unsigned BLOCK_SIZE     = NEUREKA_BLOCK_SIZE,  // number of SoP's per BinConv block (default 4)
-  parameter int unsigned INPUT_BUF_SIZE = NEUREKA_INFEAT_BUFFER_SIZE_HW*NEUREKA_TP_IN,    
+  parameter int unsigned BLOCK_SIZE     = NEUREKA_BLOCK_SIZE,  // number of SoP's per BinConv block (default 4),
   parameter int unsigned TP_IN          = NEUREKA_TP_IN,       // number of input elements processed per cycle
-  parameter int unsigned TP_OUT         = NEUREKA_TP_OUT
+  parameter int unsigned TP_OUT         = NEUREKA_TP_OUT,
+  parameter int unsigned PE_H           = NEUREKA_PE_H_DEFAULT,
+  parameter int unsigned PE_W           = NEUREKA_PE_W_DEFAULT
 ) (
   // global signals
   input  logic                   clk_i,
@@ -50,9 +50,11 @@ module neureka_engine #(
   /* Local Params, Interfaces, and Signals */
   localparam COLUMN_PRES_SIZE  = NEUREKA_QA_IN+NEUREKA_QA_16BIT+8+$clog2(COLUMN_SIZE);
   localparam BLOCK_PRES_SIZE   = COLUMN_PRES_SIZE+$clog2(BLOCK_SIZE);
+  localparam int unsigned INPUT_BUF_SIZE = (PE_H+2)*(PE_W+2)*NEUREKA_TP_IN;
+  localparam int unsigned NR_PE = PE_H*PE_W;
 
   logic                      all_norm_ready;
-  logic [NEUREKA_NUM_PE-1:0] all_norm_ready_tree;
+  logic [NR_PE-1:0] all_norm_ready_tree;
 
   hwpe_stream_intf_stream #(
     .DATA_WIDTH ( NEUREKA_QA_IN )
@@ -321,7 +323,7 @@ module neureka_engine #(
 
   // duplicate norm stream
   generate
-    for(genvar ii=0; ii<NEUREKA_NUM_PE; ii++) begin
+    for(genvar ii=0; ii<NR_PE; ii++) begin
       assign all_norm_ready_tree[ii] = norm[ii].ready;
       assign norm[ii].data           = load_norm_fifo.data;
       assign norm[ii].valid          = load_norm_fifo.valid;
@@ -333,10 +335,18 @@ module neureka_engine #(
   endgenerate
 
   /* Input Buffer */
+  localparam int INFEAT_BUFFER_SIZE_H  = PE_H+2; // Input Feature buffer size across height. 
+  localparam int INFEAT_BUFFER_SIZE_W  = PE_W+2; // Input Feature buffer size across width
+  localparam int INFEAT_BUFFER_SIZE_HW = INFEAT_BUFFER_SIZE_H*INFEAT_BUFFER_SIZE_W; // Input Feature buffer size 
   neureka_double_infeat_buffer #(
-    .INPUT_BUF_SIZE ( INPUT_BUF_SIZE ),
-    .BLOCK_SIZE     ( BLOCK_SIZE     ),
-    .DW             ( NEUREKA_QA_IN     )
+    .INPUT_BUF_SIZE        ( INPUT_BUF_SIZE        ),
+    .BLOCK_SIZE            ( BLOCK_SIZE            ),
+    .DW                    ( NEUREKA_QA_IN         ),
+    .PE_H                  ( PE_H                  ),
+    .PE_W                  ( PE_W                  ),
+    .INFEAT_BUFFER_SIZE_H  ( INFEAT_BUFFER_SIZE_H  ),
+    .INFEAT_BUFFER_SIZE_W  ( INFEAT_BUFFER_SIZE_W  ),
+    .INFEAT_BUFFER_SIZE_HW ( INFEAT_BUFFER_SIZE_HW )
   ) i_double_infeat_buffer (
     .clk_i       ( clk_i                              ),
     .rst_ni      ( rst_ni                             ),
@@ -351,11 +361,14 @@ module neureka_engine #(
 
   /* BinConv Array */
   neureka_binconv_array #(
-    .COLUMN_SIZE    ( COLUMN_SIZE    ),
-    .NR_PE          ( NR_PE          ),
-    .NR_ACTIVATIONS ( INPUT_BUF_SIZE ),
-    .BLOCK_SIZE     ( BLOCK_SIZE     ),
-    .TP_IN          ( TP_IN          )
+    .COLUMN_SIZE         ( COLUMN_SIZE          ),
+    .NR_PE               ( NR_PE                ),
+    .NR_ACTIVATIONS      ( INPUT_BUF_SIZE       ),
+    .BLOCK_SIZE          ( BLOCK_SIZE           ),
+    .INPUT_BUFFER_SIZE_W ( INFEAT_BUFFER_SIZE_W ),
+    .TP_IN               ( TP_IN                ),
+    .PE_H                ( PE_H                 ),
+    .PE_W                ( PE_W                 )
   ) i_binconv_array (
     .clk_i             ( clk_i                          ),
     .rst_ni            ( rst_ni                         ),

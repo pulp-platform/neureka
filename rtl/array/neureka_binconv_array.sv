@@ -24,12 +24,11 @@ import neureka_package::*;
 
 module neureka_binconv_array #(
   parameter int unsigned COLUMN_SIZE          = NEUREKA_COLUMN_SIZE, // number of BinConv blocks per column (default 9)
-  parameter int unsigned NR_PE                = NEUREKA_NUM_PE,      // number of BinConv columns (default 9 -- same of size of BinConv columns!)
+  parameter int unsigned NR_PE                = NEUREKA_PE_HW_DEFAULT, // number of BinConv columns (default 9 -- same of size of BinConv columns!)
   parameter int unsigned BLOCK_SIZE           = NEUREKA_BLOCK_SIZE,  // number of SoP's per BinConv block (default 4)
-  parameter int unsigned SPATIAL_H            = NEUREKA_PE_H,
-  parameter int unsigned SPATIAL_W            = NEUREKA_PE_W,
-  parameter int unsigned INPUT_BUFFER_SIZE_H  = NEUREKA_INFEAT_BUFFER_SIZE_H,
-  parameter int unsigned INPUT_BUFFER_SIZE_W  = NEUREKA_INFEAT_BUFFER_SIZE_W,
+  parameter int unsigned PE_H                 = NEUREKA_PE_H_DEFAULT,
+  parameter int unsigned PE_W                 = NEUREKA_PE_W_DEFAULT,
+  parameter int unsigned INPUT_BUFFER_SIZE_W  = NEUREKA_INFEAT_BUFFER_SIZE_W_DEFAULT,
   parameter int unsigned NR_ACTIVATIONS       = 2048,              // 64 * BLOCK_SIZE
   parameter int unsigned TP_IN                = NEUREKA_TP_IN     // number of input elements processed per cycle
 ) (
@@ -278,14 +277,14 @@ module neureka_binconv_array #(
         localparam j=0;
 
         // filter size = 1
-        localparam j_fs1  = (ii % SPATIAL_W);
-        localparam i_fs1  = ((ii-(ii%SPATIAL_H)) / SPATIAL_W);
+        localparam j_fs1  = (ii % PE_W);
+        localparam i_fs1  = ((ii-(ii%PE_H)) / PE_W);
 
         // filter size = 3
         localparam fj_fs3 = rr % 3;
         localparam fi_fs3 = (rr-fj_fs3)/ 3;
-        localparam j_fs3  = ii % SPATIAL_H + fj_fs3;
-        localparam i_fs3  = (ii-(ii%SPATIAL_H)) / SPATIAL_H + fi_fs3;
+        localparam j_fs3  = ii % PE_H + fj_fs3;
+        localparam i_fs3  = (ii-(ii%PE_H)) / PE_H + fi_fs3;
 
         for(genvar bb=0; bb<BLOCK_SIZE; bb++) begin : act_blk_gen
 

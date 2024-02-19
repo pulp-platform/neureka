@@ -26,7 +26,9 @@ import hci_package::*;
 
 module neureka_ctrl #(
   parameter int unsigned N_CORES = NR_CORES,
-  parameter int unsigned ID      = ID_WIDTH
+  parameter int unsigned ID      = ID_WIDTH,
+  parameter int unsigned PE_H    = NEUREKA_PE_H_DEFAULT,
+  parameter int unsigned PE_W    = NEUREKA_PE_W_DEFAULT
 ) (
   // global signals
   input  logic                                  clk_i,
@@ -44,6 +46,11 @@ module neureka_ctrl #(
   // periph slave port
   hwpe_ctrl_intf_periph.slave                   periph
 );
+
+  localparam int unsigned NUM_PE = PE_H*PE_W;
+  localparam int unsigned INFEAT_BUFFER_SIZE_H  = PE_H+2;
+  localparam int unsigned INFEAT_BUFFER_SIZE_W  = PE_W+2;
+  localparam int unsigned INFEAT_BUFFER_SIZE_HW = INFEAT_BUFFER_SIZE_H*INFEAT_BUFFER_SIZE_W;
 
   logic start;
   config_neureka_t config_;
@@ -86,7 +93,9 @@ module neureka_ctrl #(
   assign busy_o = slave_flags.is_working;
 
   /* Main FSM driving the NEUREKA */
-  neureka_ctrl_fsm i_ctrl_fsm (
+  neureka_ctrl_fsm #(
+    .NUM_PE ( NUM_PE )
+  ) i_ctrl_fsm (
     .clk_i            ( clk_i            ),
     .rst_ni           ( rst_ni           ),
     .test_mode_i      ( test_mode_i      ),
@@ -196,25 +205,25 @@ module neureka_ctrl #(
     These assignments are used to calculate online runtime parameters.
     Some simplification can / should be performed here.
    */
-  assign h_size_in  = (index.i_major < config_.subtile_nb_ho-1) || (config_.subtile_rem_hi==0) ? (config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? NEUREKA_PE_H : NEUREKA_INFEAT_BUFFER_SIZE_H) : config_.subtile_rem_hi;
-  assign w_size_in  = (index.j_major < config_.subtile_nb_wo-1) || (config_.subtile_rem_wi==0) ? (config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? NEUREKA_PE_W : NEUREKA_INFEAT_BUFFER_SIZE_W) : config_.subtile_rem_wi;
-  assign h_size_out = (index.i_major < config_.subtile_nb_ho-1) || (config_.subtile_rem_ho==0) ? NEUREKA_PE_H : config_.subtile_rem_ho;
-  assign w_size_out = (index.j_major < config_.subtile_nb_wo-1) || (config_.subtile_rem_wo==0) ? NEUREKA_PE_W : config_.subtile_rem_wo;
+  assign h_size_in  = (index.i_major < config_.subtile_nb_ho-1) || (config_.subtile_rem_hi==0) ? (config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? PE_H : INFEAT_BUFFER_SIZE_H) : config_.subtile_rem_hi;
+  assign w_size_in  = (index.j_major < config_.subtile_nb_wo-1) || (config_.subtile_rem_wi==0) ? (config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? PE_W : INFEAT_BUFFER_SIZE_W) : config_.subtile_rem_wi;
+  assign h_size_out = (index.i_major < config_.subtile_nb_ho-1) || (config_.subtile_rem_ho==0) ? PE_H : config_.subtile_rem_ho;
+  assign w_size_out = (index.j_major < config_.subtile_nb_wo-1) || (config_.subtile_rem_wo==0) ? PE_W : config_.subtile_rem_wo;
 
-  assign next_h_size_in  = (next_index.i_major < config_.subtile_nb_ho-1) || (config_.subtile_rem_hi==0) ? (config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? NEUREKA_PE_H : NEUREKA_INFEAT_BUFFER_SIZE_H) : config_.subtile_rem_hi;
-  assign next_w_size_in  = (next_index.j_major < config_.subtile_nb_wo-1) || (config_.subtile_rem_wi==0) ? (config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? NEUREKA_PE_W : NEUREKA_INFEAT_BUFFER_SIZE_W) : config_.subtile_rem_wi;
-  assign next_h_size_out = (next_index.i_major < config_.subtile_nb_ho-1) || (config_.subtile_rem_ho==0) ? NEUREKA_PE_H : config_.subtile_rem_ho;
-  assign next_w_size_out = (next_index.j_major < config_.subtile_nb_wo-1) || (config_.subtile_rem_wo==0) ? NEUREKA_PE_W : config_.subtile_rem_wo;  
+  assign next_h_size_in  = (next_index.i_major < config_.subtile_nb_ho-1) || (config_.subtile_rem_hi==0) ? (config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? PE_H : INFEAT_BUFFER_SIZE_H) : config_.subtile_rem_hi;
+  assign next_w_size_in  = (next_index.j_major < config_.subtile_nb_wo-1) || (config_.subtile_rem_wi==0) ? (config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? PE_W : INFEAT_BUFFER_SIZE_W) : config_.subtile_rem_wi;
+  assign next_h_size_out = (next_index.i_major < config_.subtile_nb_ho-1) || (config_.subtile_rem_ho==0) ? PE_H : config_.subtile_rem_ho;
+  assign next_w_size_out = (next_index.j_major < config_.subtile_nb_wo-1) || (config_.subtile_rem_wo==0) ? PE_W : config_.subtile_rem_wo;  
 
   assign k_in_lim   = (index.k_in_major < config_.subtile_nb_ki-1) || (config_.subtile_rem_ki==0) ? NEUREKA_TP_IN :  
                       config_.subtile_rem_ki;
   assign k_out_lim  = config_.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? (index.k_out_major == config_.subtile_nb_ko-1) && (config_.subtile_rem_ko != NEUREKA_TP_IN)  && (config_.subtile_rem_ko != 0) ? config_.subtile_rem_ko : NEUREKA_TP_IN :
                       (index.k_out_major == config_.subtile_nb_ko-1) && (config_.subtile_rem_ko != NEUREKA_TP_OUT) && (config_.subtile_rem_ko != 0) ? config_.subtile_rem_ko : NEUREKA_TP_OUT;
 
-  assign h_size_in_X_w_size_in   = (((index.i_major <  config_.subtile_nb_ho-1) || (config_.subtile_rem_hi==0)) && ((index.j_major <  config_.subtile_nb_wo-1) || (config_.subtile_rem_wi==0))) ? (config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? NEUREKA_PE_HW : NEUREKA_INFEAT_BUFFER_SIZE_HW) :
+  assign h_size_in_X_w_size_in   = (((index.i_major <  config_.subtile_nb_ho-1) || (config_.subtile_rem_hi==0)) && ((index.j_major <  config_.subtile_nb_wo-1) || (config_.subtile_rem_wi==0))) ? (config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? NUM_PE : INFEAT_BUFFER_SIZE_HW) :
                                    config_.subtile_rem_hi*config_.subtile_rem_wi; // FIXME BEWARE MULTIPLIER!!! --> can it be made static? probably not
 
-  assign h_size_out_X_w_size_out = (((index.i_major <  config_.subtile_nb_ho-1) || (config_.subtile_rem_ho==0)) && ((index.j_major <  config_.subtile_nb_wo-1) || (config_.subtile_rem_wo==0)))  ? NEUREKA_PE_H*NEUREKA_PE_W :
+  assign h_size_out_X_w_size_out = (((index.i_major <  config_.subtile_nb_ho-1) || (config_.subtile_rem_ho==0)) && ((index.j_major <  config_.subtile_nb_wo-1) || (config_.subtile_rem_wo==0)))  ? PE_H*PE_W :
                                    config_.subtile_rem_ho*config_.subtile_rem_wo; // FIXME BEWARE MULTIPLIER!!! --> make static
 
   assign qw_lim       = config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? 1 : config_.weight_bits;
@@ -497,11 +506,11 @@ module neureka_ctrl #(
   */
 
   assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.base_addr     = config_.infeat_ptr + (config_.prefetch ? ( state == LOAD ? base_addr.infeat : next_base_addr.infeat) : base_addr.infeat ); 
-  assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.tot_len       = config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? NEUREKA_PE_HW : NEUREKA_INFEAT_BUFFER_SIZE_HW;
+  assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.tot_len       = config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? NUM_PE : INFEAT_BUFFER_SIZE_HW;
   assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.d0_stride     = config_.infeat_d0_stride;
-  assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.d0_len        = config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? NEUREKA_PE_W : NEUREKA_INFEAT_BUFFER_SIZE_W;
+  assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.d0_len        = config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? PE_W : INFEAT_BUFFER_SIZE_W;
   assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.d1_stride     = config_.infeat_d1_stride;
-  assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.d1_len        = config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? NEUREKA_PE_H : NEUREKA_INFEAT_BUFFER_SIZE_H;
+  assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.d1_len        = config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? PE_H : INFEAT_BUFFER_SIZE_H;
   assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.d2_stride     = config_.infeat_d2_stride; // currently unused
   assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.dim_enable_1h =  '1;
 
@@ -556,14 +565,14 @@ module neureka_ctrl #(
   logic [31:0] h_size_out_X_w_size_out_with_strb; // currently using a nil'd strobe to remove outputs --> constant h_size_out / w_size_out
   logic [1:0]  streamin_quant_mode;
 
-  assign h_size_out_X_w_size_out_with_strb = (config_.quant_mode == NEUREKA_MODE_8B) || (k_out_lim <= 8)  ? NEUREKA_NUM_PE  :
-                                                                                     (k_out_lim <= 16) ? 2*NEUREKA_NUM_PE :
-                                                                                     (k_out_lim <= 24) ? 3*NEUREKA_NUM_PE : 
-                                                                                     4*NEUREKA_NUM_PE;
-  assign h_size_X_w_size_with_strb_streamin= (config_.streamin_mode == NEUREKA_STREAMIN_MODE_8B) || (k_out_lim <= 8)  ? NEUREKA_NUM_PE :
-                                                                                     (k_out_lim <= 16) ? 2*NEUREKA_NUM_PE :
-                                                                                     (k_out_lim <= 24) ? 3*NEUREKA_NUM_PE : 
-                                                                                     4*NEUREKA_NUM_PE;
+  assign h_size_out_X_w_size_out_with_strb = (config_.quant_mode == NEUREKA_MODE_8B) || (k_out_lim <= 8)  ? NUM_PE  :
+                                                                                     (k_out_lim <= 16) ? 2*NUM_PE :
+                                                                                     (k_out_lim <= 24) ? 3*NUM_PE : 
+                                                                                     4*NUM_PE;
+  assign h_size_X_w_size_with_strb_streamin= (config_.streamin_mode == NEUREKA_STREAMIN_MODE_8B) || (k_out_lim <= 8)  ? NUM_PE :
+                                                                                     (k_out_lim <= 16) ? 2*NUM_PE :
+                                                                                     (k_out_lim <= 24) ? 3*NUM_PE : 
+                                                                                     4*NUM_PE;
 
 
   assign streamin_quant_mode = (config_.quant_mode == NEUREKA_MODE_8B) && (config_.streamin_mode == NEUREKA_STREAMIN_MODE_8B) ? NEUREKA_STREAMIN_8B_QUANT_8B :
@@ -586,22 +595,17 @@ module neureka_ctrl #(
   assign ctrl_streamer.streamin_source_ctrl.addressgen_ctrl.tot_len       = h_size_X_w_size_with_strb_streamin;
   assign ctrl_streamer.streamin_source_ctrl.addressgen_ctrl.d0_stride     = config_.outfeat_d0_stride;
   assign ctrl_streamer.streamin_source_ctrl.addressgen_ctrl.d0_len        = (config_.streamin_mode == NEUREKA_STREAMIN_MODE_32B) ? (k_out_lim/8 > 0 ? k_out_lim/8 + (k_out_lim%8==0 ? 0 : 1) : 1) : 1;
-  assign ctrl_streamer.streamin_source_ctrl.addressgen_ctrl.d1_len        = NEUREKA_PE_W;
+  assign ctrl_streamer.streamin_source_ctrl.addressgen_ctrl.d1_len        = PE_W;
   assign ctrl_streamer.streamin_source_ctrl.addressgen_ctrl.dim_enable_1h = '1;
-
-
-
-
 
   assign ctrl_streamer.outfeat_sink_ctrl.addressgen_ctrl.base_addr     = config_.outfeat_ptr + base_addr.outfeat;
   assign ctrl_streamer.outfeat_sink_ctrl.addressgen_ctrl.tot_len       = h_size_out_X_w_size_out_with_strb;
   assign ctrl_streamer.outfeat_sink_ctrl.addressgen_ctrl.d0_stride     = config_.outfeat_d0_stride;
   assign ctrl_streamer.outfeat_sink_ctrl.addressgen_ctrl.d0_len        = (config_.quant_mode == NEUREKA_MODE_32B) ? (k_out_lim/8 > 0 ? k_out_lim/8 + (k_out_lim%8==0 ? 0 : 1) : 1) : 1;
   assign ctrl_streamer.outfeat_sink_ctrl.addressgen_ctrl.d1_stride     = config_.outfeat_d1_stride;
-  assign ctrl_streamer.outfeat_sink_ctrl.addressgen_ctrl.d1_len        = NEUREKA_PE_W;
+  assign ctrl_streamer.outfeat_sink_ctrl.addressgen_ctrl.d1_len        = PE_W;
   assign ctrl_streamer.outfeat_sink_ctrl.addressgen_ctrl.d2_stride     = config_.outfeat_d2_stride;
   assign ctrl_streamer.outfeat_sink_ctrl.addressgen_ctrl.dim_enable_1h = '1;
-
 
   /*
     scale/bias source base address is given by the pointer in regfile + the subtiling offset (base_addr) calculated by uloop.
@@ -736,15 +740,15 @@ module neureka_ctrl #(
     Implicit padding indicates the output padding that is "required" by spatial subtiling residuals.
     Explicit padding is that imposed externally by means of padding configuration registers.
   */
-  logic [NEUREKA_INFEAT_BUFFER_SIZE_HW-1:0] implicit_padding_map;
-  logic [NEUREKA_INFEAT_BUFFER_SIZE_HW-1:0] implicit_padding_map_temp;
-  logic [NEUREKA_INFEAT_BUFFER_SIZE_HW-1:0] explicit_padding_map;
-  logic [NEUREKA_INFEAT_BUFFER_SIZE_HW-1:0] t_explicit_padding_map_temp;
-  logic [NEUREKA_INFEAT_BUFFER_SIZE_HW-1:0] b_explicit_padding_map_temp;
+  logic [INFEAT_BUFFER_SIZE_HW-1:0] implicit_padding_map;
+  logic [INFEAT_BUFFER_SIZE_HW-1:0] implicit_padding_map_temp;
+  logic [INFEAT_BUFFER_SIZE_HW-1:0] explicit_padding_map;
+  logic [INFEAT_BUFFER_SIZE_HW-1:0] t_explicit_padding_map_temp;
+  logic [INFEAT_BUFFER_SIZE_HW-1:0] b_explicit_padding_map_temp;
   logic [9-1:0] filter_mask_map;
 
-  logic [NEUREKA_INFEAT_BUFFER_SIZE_H-1:0] h_size_in_map;
-  logic [NEUREKA_INFEAT_BUFFER_SIZE_W-1:0] w_size_in_map;
+  logic [INFEAT_BUFFER_SIZE_H-1:0] h_size_in_map;
+  logic [INFEAT_BUFFER_SIZE_W-1:0] w_size_in_map;
 
   /*
     implicit_padding_map encodes which of the 8x8 elements in the array are valid (1) and which ones are unused (0).
@@ -754,18 +758,18 @@ module neureka_ctrl #(
   always_comb 
   begin : padding_from_incomplete_infeat
     implicit_padding_map = '1;
-    implicit_padding_map[NEUREKA_INFEAT_BUFFER_SIZE_HW-1:0] &= {NEUREKA_INFEAT_BUFFER_SIZE_H{w_size_in_map}};
-    implicit_padding_map[NEUREKA_INFEAT_BUFFER_SIZE_HW-1:0] &= implicit_padding_map_temp[NEUREKA_INFEAT_BUFFER_SIZE_HW-1:0];
+    implicit_padding_map[INFEAT_BUFFER_SIZE_HW-1:0] &= {INFEAT_BUFFER_SIZE_H{w_size_in_map}};
+    implicit_padding_map[INFEAT_BUFFER_SIZE_HW-1:0] &= implicit_padding_map_temp[INFEAT_BUFFER_SIZE_HW-1:0];
   end : padding_from_incomplete_infeat
 
-  for(genvar i=0; i<NEUREKA_INFEAT_BUFFER_SIZE_W; i++)begin
-    assign implicit_padding_map_temp[(i+1)*NEUREKA_INFEAT_BUFFER_SIZE_W-1:i*NEUREKA_INFEAT_BUFFER_SIZE_W] = {NEUREKA_INFEAT_BUFFER_SIZE_W{h_size_in_map[i]}}; 
+  for(genvar i=0; i<INFEAT_BUFFER_SIZE_W; i++)begin
+    assign implicit_padding_map_temp[(i+1)*INFEAT_BUFFER_SIZE_W-1:i*INFEAT_BUFFER_SIZE_W] = {INFEAT_BUFFER_SIZE_W{h_size_in_map[i]}}; 
   end
 
-  logic [NEUREKA_INFEAT_BUFFER_SIZE_W-1:0] t_explicit_padding_map;
-  logic [NEUREKA_INFEAT_BUFFER_SIZE_W-1:0] r_explicit_padding_map_r, r_explicit_padding_map;
-  logic [NEUREKA_INFEAT_BUFFER_SIZE_W-1:0] b_explicit_padding_map_r, b_explicit_padding_map;
-  logic [NEUREKA_INFEAT_BUFFER_SIZE_W-1:0] l_explicit_padding_map;
+  logic [INFEAT_BUFFER_SIZE_W-1:0] t_explicit_padding_map;
+  logic [INFEAT_BUFFER_SIZE_W-1:0] r_explicit_padding_map_r, r_explicit_padding_map;
+  logic [INFEAT_BUFFER_SIZE_W-1:0] b_explicit_padding_map_r, b_explicit_padding_map;
+  logic [INFEAT_BUFFER_SIZE_W-1:0] l_explicit_padding_map;
 
   assign t_explicit_padding_map   = (1 << config_.padding_top) - 1;
   assign r_explicit_padding_map_r = (1 << config_.padding_right) - 1;
@@ -778,9 +782,9 @@ module neureka_ctrl #(
     explicit_padding_map encodes which of the 8x8 elements in the array are padded (0) and which ones are not (1).
   */
 
-  for(genvar i=0; i<NEUREKA_INFEAT_BUFFER_SIZE_W; i++)begin
-    assign t_explicit_padding_map_temp[(i+1)*NEUREKA_INFEAT_BUFFER_SIZE_W-1:i*NEUREKA_INFEAT_BUFFER_SIZE_W] = {NEUREKA_INFEAT_BUFFER_SIZE_W{t_explicit_padding_map[i]}};
-    assign b_explicit_padding_map_temp[(i+1)*NEUREKA_INFEAT_BUFFER_SIZE_W-1:i*NEUREKA_INFEAT_BUFFER_SIZE_W] = {NEUREKA_INFEAT_BUFFER_SIZE_W{b_explicit_padding_map[i]}}; 
+  for(genvar i=0; i<INFEAT_BUFFER_SIZE_W; i++)begin
+    assign t_explicit_padding_map_temp[(i+1)*INFEAT_BUFFER_SIZE_W-1:i*INFEAT_BUFFER_SIZE_W] = {INFEAT_BUFFER_SIZE_W{t_explicit_padding_map[i]}};
+    assign b_explicit_padding_map_temp[(i+1)*INFEAT_BUFFER_SIZE_W-1:i*INFEAT_BUFFER_SIZE_W] = {INFEAT_BUFFER_SIZE_W{b_explicit_padding_map[i]}}; 
   end
 
   always_comb
@@ -789,22 +793,22 @@ module neureka_ctrl #(
     // padding from registers
     if(config_.prefetch & (state != LOAD)) begin
       if(next_index.j_major == 0)
-        explicit_padding_map[NEUREKA_INFEAT_BUFFER_SIZE_HW-1:0] |= {NEUREKA_INFEAT_BUFFER_SIZE_H{l_explicit_padding_map}};
+        explicit_padding_map[INFEAT_BUFFER_SIZE_HW-1:0] |= {INFEAT_BUFFER_SIZE_H{l_explicit_padding_map}};
       if(next_index.j_major == config_.subtile_nb_wo-1)
-        explicit_padding_map[NEUREKA_INFEAT_BUFFER_SIZE_HW-1:0] |= {NEUREKA_INFEAT_BUFFER_SIZE_H{r_explicit_padding_map}};
+        explicit_padding_map[INFEAT_BUFFER_SIZE_HW-1:0] |= {INFEAT_BUFFER_SIZE_H{r_explicit_padding_map}};
       if(next_index.i_major == 0)
-        explicit_padding_map[NEUREKA_INFEAT_BUFFER_SIZE_HW-1:0] |= t_explicit_padding_map_temp;
+        explicit_padding_map[INFEAT_BUFFER_SIZE_HW-1:0] |= t_explicit_padding_map_temp;
       if(next_index.i_major == config_.subtile_nb_ho-1)
-        explicit_padding_map[NEUREKA_INFEAT_BUFFER_SIZE_HW-1:0] |= b_explicit_padding_map_temp; 
+        explicit_padding_map[INFEAT_BUFFER_SIZE_HW-1:0] |= b_explicit_padding_map_temp; 
     end else begin 
       if(index.j_major == 0)
-        explicit_padding_map[NEUREKA_INFEAT_BUFFER_SIZE_HW-1:0] |= {NEUREKA_INFEAT_BUFFER_SIZE_H{l_explicit_padding_map}};
+        explicit_padding_map[INFEAT_BUFFER_SIZE_HW-1:0] |= {INFEAT_BUFFER_SIZE_H{l_explicit_padding_map}};
       if(index.j_major == config_.subtile_nb_wo-1)
-        explicit_padding_map[NEUREKA_INFEAT_BUFFER_SIZE_HW-1:0] |= {NEUREKA_INFEAT_BUFFER_SIZE_H{r_explicit_padding_map}};
+        explicit_padding_map[INFEAT_BUFFER_SIZE_HW-1:0] |= {INFEAT_BUFFER_SIZE_H{r_explicit_padding_map}};
       if(index.i_major == 0)
-        explicit_padding_map[NEUREKA_INFEAT_BUFFER_SIZE_HW-1:0] |= t_explicit_padding_map_temp;
+        explicit_padding_map[INFEAT_BUFFER_SIZE_HW-1:0] |= t_explicit_padding_map_temp;
       if(index.i_major == config_.subtile_nb_ho-1)
-        explicit_padding_map[NEUREKA_INFEAT_BUFFER_SIZE_HW-1:0] |= b_explicit_padding_map_temp;
+        explicit_padding_map[INFEAT_BUFFER_SIZE_HW-1:0] |= b_explicit_padding_map_temp;
     end 
   end : explicit_padding_infeat
 
@@ -856,7 +860,7 @@ module neureka_ctrl #(
   assign ctrl_engine.ctrl_double_infeat_buffer.ctrl_odd_infeat_buffer.goto_idle    = (~infeat_buffer_read_sel_d) & ( config_.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? (state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN && state!=UPDATEIDX) & state_change :
                                                                                                          (state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN) & state_change );
   // the input buffer load length is essentially aligned to the tot_length of the infeat source, with some overhead for what concerns 1x1 mode (FIXME: should be possible to optimize this).
-  assign ctrl_engine.ctrl_double_infeat_buffer.ctrl_odd_infeat_buffer.load_len     =  config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? NEUREKA_INFEAT_BUFFER_SIZE_W*(NEUREKA_PE_H-1)+NEUREKA_PE_W : NEUREKA_INFEAT_BUFFER_SIZE_HW;
+  assign ctrl_engine.ctrl_double_infeat_buffer.ctrl_odd_infeat_buffer.load_len     =  config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? INFEAT_BUFFER_SIZE_W*(PE_H-1)+PE_W : INFEAT_BUFFER_SIZE_HW;
 
   // propagate implicit padding, and explicit padding
   assign ctrl_engine.ctrl_double_infeat_buffer.ctrl_odd_infeat_buffer.enable_implicit_padding   = ~implicit_padding_map;
@@ -873,17 +877,17 @@ module neureka_ctrl #(
   end
 
   // the NEUREKA array has 36 PEs -- one per each spatial pixel in the output space that it can support (3x3)
-  logic [NEUREKA_PE_H-1:0] enable_pe_vert, enable_pe_horiz;
-  logic [NEUREKA_PE_H*NEUREKA_PE_W-1:0] enable_pe_strided, pe_col_strided;
-  logic [NEUREKA_PE_H*NEUREKA_PE_W-1:0] enable_pe, enable_pe_temp;
+  logic [PE_H-1:0] enable_pe_vert, enable_pe_horiz;
+  logic [PE_H*PE_W-1:0] enable_pe_strided, pe_col_strided;
+  logic [PE_H*PE_W-1:0] enable_pe, enable_pe_temp;
 
   // enable pe_cols depending on the subtile size considering residuals in the horizontal & vertical directions
   assign enable_pe_vert  = (1 << h_size_out) - 1;
   assign enable_pe_horiz = (1 << w_size_out) - 1;
 
-  for(genvar h=0; h<NEUREKA_PE_H; h++) begin : strided_output_height
-    for(genvar w=0; w<NEUREKA_PE_W; w++) begin : strided_output_width
-      localparam index = h*NEUREKA_PE_W + w; 
+  for(genvar h=0; h<PE_H; h++) begin : strided_output_height
+    for(genvar w=0; w<PE_W; w++) begin : strided_output_width
+      localparam index = h*PE_W + w; 
       if((h%2==0)&(w%2==0)) begin
         assign pe_col_strided[index] = 1'b1;
       end else begin
@@ -904,10 +908,10 @@ module neureka_ctrl #(
 
   // overall column enable takes into account both horizontal and vertical enables, as well as strided mode
 
-  for(genvar ii=0; ii<NEUREKA_PE_H; ii++) begin
-    assign enable_pe_temp[(ii+1)*NEUREKA_PE_W-1:ii*NEUREKA_PE_W] = {NEUREKA_PE_W{enable_pe_vert[ii]}};  
+  for(genvar ii=0; ii<PE_H; ii++) begin
+    assign enable_pe_temp[(ii+1)*PE_W-1:ii*PE_W] = {PE_W{enable_pe_vert[ii]}};  
   end 
-  assign enable_pe = {NEUREKA_PE_H{enable_pe_horiz}} & enable_pe_temp & enable_pe_strided;
+  assign enable_pe = {PE_H{enable_pe_horiz}} & enable_pe_temp & enable_pe_strided;
   
 
   // propagate config to NEUREKA binconv array
@@ -978,28 +982,28 @@ module neureka_ctrl #(
   assign ctrl_engine.ctrl_accumulator.depthwise      = config_.filter_mode == NEUREKA_FILTER_MODE_3X3_DW;
   assign ctrl_engine.ctrl_accumulator.ctrl_normquant.start             = (state==WEIGHTOFFS || state==NORMQUANT) & state_change;
   assign ctrl_engine.ctrl_accumulator.ctrl_normquant.relu              = (state==WEIGHTOFFS)                                  ? 1'b0 :
-                                                                           (state==NORMQUANT && config_.norm_option_bias==1'b1) ? 1'b0 :
-                                                                                                                                  config_.relu;
+                                                                         (state==NORMQUANT && config_.norm_option_bias==1'b1) ? 1'b0 :
+                                                                                                                                config_.relu;
   assign ctrl_engine.ctrl_accumulator.ctrl_normquant.right_shift       = (state==WEIGHTOFFS)                                  ? 0 :
-                                                                           (state==NORMQUANT && config_.norm_option_bias==1'b1) ? '0 :
-                                                                                                                                  config_.shift_reqnt;
+                                                                         (state==NORMQUANT && config_.norm_option_bias==1'b1) ? '0 :
+                                                                                                                                config_.shift_reqnt;
   assign ctrl_engine.ctrl_accumulator.ctrl_normquant.norm_mode         = (state==WEIGHTOFFS)                                  ? NEUREKA_MODE_8B :
-                                                                           (state==NORMQUANT && config_.norm_option_bias==1'b1) ? ctrl_engine.ctrl_accumulator.norm_mode :
-                                                                                                                                  ctrl_engine.ctrl_accumulator.norm_mode;
+                                                                         (state==NORMQUANT && config_.norm_option_bias==1'b1) ? ctrl_engine.ctrl_accumulator.norm_mode :
+                                                                                                                                ctrl_engine.ctrl_accumulator.norm_mode;
   assign ctrl_engine.ctrl_accumulator.ctrl_normquant.quant_mode        = (state==WEIGHTOFFS)                                  ? NEUREKA_MODE_32B :
-                                                                           (state==NORMQUANT && config_.norm_option_bias==1'b1) ? NEUREKA_MODE_32B :
-                                                                                                                                  ctrl_engine.ctrl_accumulator.quant_mode;
+                                                                         (state==NORMQUANT && config_.norm_option_bias==1'b1) ? NEUREKA_MODE_32B :
+                                                                                                                                ctrl_engine.ctrl_accumulator.quant_mode;
   assign ctrl_engine.ctrl_accumulator.ctrl_normquant.norm_signed       = (state==WEIGHTOFFS)                                  ? 1'b1 :
-                                                                           (state==NORMQUANT && config_.norm_option_bias==1'b1) ? 1'b0 :
-                                                                                                                                  1'b0;
+                                                                         (state==NORMQUANT && config_.norm_option_bias==1'b1) ? 1'b0 :
+                                                                                                                                1'b0;
   assign ctrl_engine.ctrl_accumulator.ctrl_normquant.use_rounding      = (state==WEIGHTOFFS)                                  ? 1'b0 :
-                                                                           (state==NORMQUANT && config_.norm_option_bias==1'b1) ? 1'b0 :
-                                                                                                                                  config_.use_rounding;
+                                                                         (state==NORMQUANT && config_.norm_option_bias==1'b1) ? 1'b0 :
+                                                                                                                                config_.use_rounding;
   assign ctrl_engine.ctrl_accumulator.ctrl_normquant.use_shifting      = (state==WEIGHTOFFS)                                  ? 1'b0 :
-                                                                           (state==NORMQUANT && config_.norm_option_bias==1'b1) ? 1'b0 :
-                                                                                                                                  1'b1;
+                                                                         (state==NORMQUANT && config_.norm_option_bias==1'b1) ? 1'b0 :
+                                                                                                                                1'b1;
   assign ctrl_engine.ctrl_accumulator.full_accumulation_len = config_.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? (state==WEIGHTOFFS ? k_out_lim : ( (state==MATRIXVEC) ? qw_lim : qw_k_out_lim)) : //similar to single op accumulator as all the accum are updated the same time.
-                                                                                                                 state==WEIGHTOFFS ? 1         : qw_k_out_lim;
+                                                                                                                   state==WEIGHTOFFS ? 1         : qw_k_out_lim;
   assign ctrl_engine.ctrl_accumulator.streamout_len       = k_out_lim;
   assign ctrl_engine.ctrl_accumulator.scale_len           = config_.norm_mode == NEUREKA_MODE_8B  ? k_out_lim/4+(k_out_lim%4==0 ? 0 : 1) :
                                                               config_.norm_mode == NEUREKA_MODE_16B ? k_out_lim/2+(k_out_lim%2==0 ? 0 : 1) : 
