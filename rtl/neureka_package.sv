@@ -34,13 +34,14 @@ package neureka_package;
   // default number of cores
   parameter int NR_CORES = 9;
 
-  parameter int NEUREKA_PE_H = 4; // Number of PEs across height
-  parameter int NEUREKA_PE_W = 4; // Number of PEs across width
-  parameter int NEUREKA_PE_HW = NEUREKA_PE_H*NEUREKA_PE_W; // Total number of PEs
+  parameter int NEUREKA_PE_H_DEFAULT = -1; // 4; // Number of PEs across height
+  parameter int NEUREKA_PE_W_DEFAULT = -1; // 4; // Number of PEs across width
+  parameter int NEUREKA_PE_HW_DEFAULT = -1; // NEUREKA_PE_H_DEFAULT*NEUREKA_PE_W_DEFAULT; // Total number of PEs
 
-  parameter int NEUREKA_INFEAT_BUFFER_SIZE_H = NEUREKA_PE_H+2; // Input Feature buffer size across height. 
-  parameter int NEUREKA_INFEAT_BUFFER_SIZE_W = NEUREKA_PE_W+2; // Input Feature buffer size across width
-  parameter int NEUREKA_INFEAT_BUFFER_SIZE_HW = NEUREKA_INFEAT_BUFFER_SIZE_H*NEUREKA_INFEAT_BUFFER_SIZE_W; // Input Feature buffer size 
+  parameter int NEUREKA_INFEAT_BUFFER_SIZE_H_DEFAULT = -1; // NEUREKA_PE_H_DEFAULT+2; // Input Feature buffer size across height. 
+  parameter int NEUREKA_INFEAT_BUFFER_SIZE_W_DEFAULT = -1; // NEUREKA_PE_W_DEFAULT+2; // Input Feature buffer size across width
+  parameter int NEUREKA_INFEAT_BUFFER_SIZE_HW_DEFAULT = -1; // NEUREKA_INFEAT_BUFFER_SIZE_H_DEFAULT*NEUREKA_INFEAT_BUFFER_SIZE_W_DEFAULT; // Input Feature buffer size 
+  parameter int NEUREKA_INFEAT_BUFFER_SIZE_HW_MAX = 36; // Max. input buffer size currently considered
 
   // number of contexts
   parameter int NR_CONTEXT = 1;
@@ -86,7 +87,8 @@ package neureka_package;
   parameter int NEUREKA_COLUMN_SIZE = 9;
 
   // number of PEs 
-  parameter int NEUREKA_NUM_PE = NEUREKA_PE_H*NEUREKA_PE_W;
+  // parameter int NEUREKA_NUM_PE = NEUREKA_PE_H*NEUREKA_PE_W;
+  parameter int NEUREKA_NUM_PE_MAX = 36;
 
   // number of shift cycles
   parameter int NEUREKA_SHIFT_CYCLES = 2;
@@ -108,8 +110,8 @@ package neureka_package;
     logic                     goto_extract;
     logic                     goto_idle;
     logic [VLEN_CNT_SIZE-1:0] load_len;
-    logic [NEUREKA_INFEAT_BUFFER_SIZE_HW-1:0] enable_implicit_padding;
-    logic [NEUREKA_INFEAT_BUFFER_SIZE_HW-1:0] enable_explicit_padding;
+    logic [NEUREKA_INFEAT_BUFFER_SIZE_HW_MAX-1:0] enable_implicit_padding;
+    logic [NEUREKA_INFEAT_BUFFER_SIZE_HW_MAX-1:0] enable_explicit_padding;
     logic [NEUREKA_QA_IN-1:0]    explicit_padding_value_hi;
     logic [NEUREKA_QA_IN-1:0]    explicit_padding_value_lo;
     logic [1:0]               filter_mode;
@@ -301,14 +303,14 @@ package neureka_package;
   typedef struct packed {
     ctrl_binconv_pe_t               ctrl_pe;
     logic [$clog2(NEUREKA_TP_IN):0] depthwise_len;
-    logic [NEUREKA_NUM_PE-1:0]      enable_pe;
+    logic [NEUREKA_NUM_PE_MAX-1:0]  enable_pe;
     logic [1:0]                     filter_mode;
     logic                           mode_linear;
     logic                           weight_offset;
   } ctrl_binconv_array_t;
 
   typedef struct packed {
-    flags_binconv_column_t [NEUREKA_NUM_PE-1:0] flags_column;
+    flags_binconv_column_t [NEUREKA_NUM_PE_MAX-1:0] flags_column;
   } flags_binconv_array_t;
 
   // ========================================================================
@@ -321,14 +323,14 @@ package neureka_package;
     ctrl_aq_t                           ctrl_accumulator;
     hwpe_stream_package::ctrl_serdes_t  ctrl_serialize_streamin;
     hwpe_stream_package::ctrl_serdes_t  ctrl_serialize_streamout;
-    logic [NEUREKA_NUM_PE-1:0]          enable_accumulator;
+    logic [NEUREKA_NUM_PE_MAX-1:0]      enable_accumulator;
     logic                               clear_des;
     logic                               mode_linear;
   } ctrl_engine_t;
 
   typedef struct packed {
     flags_double_infeat_buffer_t          flags_double_infeat_buffer;
-    flags_aq_t       [NEUREKA_NUM_PE-1:0] flags_accumulator;
+    flags_aq_t   [NEUREKA_NUM_PE_MAX-1:0] flags_accumulator;
     flags_binconv_array_t                 flags_binconv_array;
   } flags_engine_t;
 

@@ -227,7 +227,9 @@ module tb_neureka;
     .CNT          ( TP_IN            ),
     // .BW           (9*32),
     // .MP           ( MP               ),
-    .ID           ( ID               )
+    .ID           ( ID               ),
+    .PE_H         ( 4 ),
+    .PE_W         ( 4 )
   ) i_dut (
     .clk_i          ( clk_i          ),
     .rst_ni         ( rst_ni         ),

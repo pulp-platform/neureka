@@ -24,7 +24,11 @@ import neureka_package::*;
 import hwpe_ctrl_package::*;
 import hci_package::*;
 
-module neureka_ctrl_fsm (
+module neureka_ctrl_fsm
+#(
+  parameter int unsigned NUM_PE = NEUREKA_NUM_PE_MAX
+)
+(
   // global signals
   input  logic             clk_i,
   input  logic             rst_ni,
@@ -144,7 +148,7 @@ module neureka_ctrl_fsm (
         end
 
       STREAMIN: begin
-        if(flags_engine_i.flags_accumulator[NEUREKA_NUM_PE-1].state == AQ_STREAMIN_DONE) begin
+        if(flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_STREAMIN_DONE) begin
           state_d = WEIGHTOFFS;
           state_change_d = 1'b1;
         end
@@ -164,32 +168,32 @@ module neureka_ctrl_fsm (
       end
 
       NORMQUANT_SHIFT: begin
-        if(flags_engine_i.flags_accumulator[NEUREKA_NUM_PE-1].state == AQ_NORMQUANT) begin
+        if(flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_NORMQUANT) begin
           state_d = NORMQUANT;
           state_change_d = 1'b1;
         end
       end
 
       NORMQUANT: begin
-        if(flags_engine_i.flags_accumulator[NEUREKA_NUM_PE-1].state == AQ_NORMQUANT_BIAS) begin
+        if(flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_NORMQUANT_BIAS) begin
           state_d = NORMQUANT_BIAS;
           state_change_d = 1'b1;
         end
-        else if(~config_i.norm_option_bias & flags_engine_i.flags_accumulator[NEUREKA_NUM_PE-1].state == AQ_NORMQUANT_DONE) begin
+        else if(~config_i.norm_option_bias & flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_NORMQUANT_DONE) begin
           state_d = STREAMOUT;
           state_change_d = 1'b1;
         end
       end
 
       NORMQUANT_BIAS: begin
-        if(flags_engine_i.flags_accumulator[NEUREKA_NUM_PE-1].state == AQ_NORMQUANT_DONE) begin
+        if(flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_NORMQUANT_DONE) begin
           state_d = STREAMOUT;
           state_change_d = 1'b1;
         end
       end
 
       STREAMOUT: begin
-        if(flags_engine_i.flags_accumulator[NEUREKA_NUM_PE-1].state == AQ_STREAMOUT_DONE) begin
+        if(flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_STREAMOUT_DONE) begin
           if(flags_uloop.done) begin
             state_d = DONE;
             state_change_d = 1'b1;

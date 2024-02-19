@@ -23,9 +23,14 @@
 import neureka_package::*;
 
 module neureka_infeat_buffer #(
-  parameter int unsigned INPUT_BUF_SIZE = 2048,
-  parameter int unsigned BLOCK_SIZE     = NEUREKA_BLOCK_SIZE,
-  parameter int unsigned DW             = NEUREKA_QA_IN
+  parameter int unsigned INPUT_BUF_SIZE        = 2048,
+  parameter int unsigned BLOCK_SIZE            = NEUREKA_BLOCK_SIZE,
+  parameter int unsigned DW                    = NEUREKA_QA_IN,
+  parameter int unsigned PE_H                  = NEUREKA_PE_H_DEFAULT,
+  parameter int unsigned PE_W                  = NEUREKA_PE_W_DEFAULT,
+  parameter int          INFEAT_BUFFER_SIZE_H  = NEUREKA_INFEAT_BUFFER_SIZE_H_DEFAULT,
+  parameter int          INFEAT_BUFFER_SIZE_W  = NEUREKA_INFEAT_BUFFER_SIZE_W_DEFAULT,
+  parameter int          INFEAT_BUFFER_SIZE_HW = NEUREKA_INFEAT_BUFFER_SIZE_HW_DEFAULT
 ) (
   // global signals
   input  logic                   clk_i,
@@ -91,18 +96,18 @@ module neureka_infeat_buffer #(
   );
 
   // this mask is used to load only 36 pixels instead of 64 in 1x1 mode (see neureka_ctrl for other masks)
-  logic [NEUREKA_INFEAT_BUFFER_SIZE_HW-1   :0] mask_1x1, mask_1x1_temp;
-  logic [NEUREKA_INFEAT_BUFFER_SIZE_W-1 :0]  mask_1x1_s;
-  assign mask_1x1_s = (1 << NEUREKA_PE_W) - 1;
+  logic [INFEAT_BUFFER_SIZE_HW-1   :0] mask_1x1, mask_1x1_temp;
+  logic [INFEAT_BUFFER_SIZE_W-1 :0]  mask_1x1_s;
+  assign mask_1x1_s = (1 << PE_W) - 1;
   always_comb
   begin
     mask_1x1 = '1;
-    mask_1x1 &= {NEUREKA_INFEAT_BUFFER_SIZE_W{mask_1x1_s}};
+    mask_1x1 &= {INFEAT_BUFFER_SIZE_W{mask_1x1_s}};
     mask_1x1 &= mask_1x1_temp;
   end
 
-  for(genvar ii=0; ii<NEUREKA_INFEAT_BUFFER_SIZE_W; ii++) begin
-    assign mask_1x1_temp[(ii+1)*NEUREKA_INFEAT_BUFFER_SIZE_W-1:ii*NEUREKA_INFEAT_BUFFER_SIZE_W] = {NEUREKA_INFEAT_BUFFER_SIZE_W{mask_1x1_s[ii]}};
+  for(genvar ii=0; ii<INFEAT_BUFFER_SIZE_W; ii++) begin
+    assign mask_1x1_temp[(ii+1)*INFEAT_BUFFER_SIZE_W-1:ii*INFEAT_BUFFER_SIZE_W] = {INFEAT_BUFFER_SIZE_W{mask_1x1_s[ii]}};
   end
 
 
@@ -219,7 +224,7 @@ module neureka_infeat_buffer #(
       vlen_cnt_q <= vlen_cnt_d;
   end
 
-  assign vlen_cnt_fast_d = (vlen_cnt_fast_q % NEUREKA_INFEAT_BUFFER_SIZE_W) == NEUREKA_PE_W-1 ? vlen_cnt_fast_q+3 : vlen_cnt_fast_q+1;
+  assign vlen_cnt_fast_d = (vlen_cnt_fast_q % INFEAT_BUFFER_SIZE_W) == PE_W-1 ? vlen_cnt_fast_q+3 : vlen_cnt_fast_q+1;
 
   always_ff @(posedge clk_i or negedge rst_ni)
   begin : vlen_counter_fast

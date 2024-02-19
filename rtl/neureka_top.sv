@@ -31,9 +31,13 @@ module neureka_top #(
   parameter int unsigned ID        = ID_WIDTH,
   parameter int unsigned BW        = NEUREKA_MEM_BANDWIDTH_EXT, // NEUREKA_MEM_BANDWIDTH
   parameter int unsigned DW        = NEUREKA_STREAM_BANDWIDTH,
+  parameter int unsigned REGFILE_N_EVT = 2,
 
   parameter int unsigned N_CORES   = NR_CORES,
-  parameter int unsigned N_CONTEXT = NR_CONTEXT
+  parameter int unsigned N_CONTEXT = NR_CONTEXT,
+
+  parameter int unsigned PE_H      = NEUREKA_PE_H_DEFAULT,
+  parameter int unsigned PE_W      = NEUREKA_PE_W_DEFAULT
 ) (
   // global signals
   input  logic                                  clk_i,
@@ -102,7 +106,10 @@ module neureka_top #(
 `endif
   ) conv   (.clk(clk_i));
 
-  neureka_engine i_engine (
+  neureka_engine #(
+    .PE_H ( PE_H ),
+    .PE_W ( PE_W )
+  ) i_engine (
     .clk_i         ( clk_i        ),
     .rst_ni        ( rst_ni       ),
     .test_mode_i   ( test_mode_i  ),
@@ -137,7 +144,9 @@ module neureka_top #(
 
   neureka_ctrl #(
     .ID      ( ID      ),
-    .N_CORES ( N_CORES )
+    .N_CORES ( N_CORES ),
+    .PE_H    ( PE_H    ),
+    .PE_W    ( PE_W    )
   ) i_ctrl (
     .clk_i            ( clk_i          ),
     .rst_ni           ( rst_ni         ),

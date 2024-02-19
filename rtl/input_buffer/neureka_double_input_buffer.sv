@@ -25,7 +25,12 @@ import neureka_package::*;
 module neureka_double_infeat_buffer #(
   parameter int unsigned INPUT_BUF_SIZE = 2048,
   parameter int unsigned BLOCK_SIZE     = NEUREKA_BLOCK_SIZE,
-  parameter int unsigned DW             = NEUREKA_QA_IN
+  parameter int unsigned DW             = NEUREKA_QA_IN,
+  parameter int unsigned PE_H                  = NEUREKA_PE_H_DEFAULT,
+  parameter int unsigned PE_W                  = NEUREKA_PE_W_DEFAULT,
+  parameter int          INFEAT_BUFFER_SIZE_H  = NEUREKA_INFEAT_BUFFER_SIZE_H_DEFAULT,
+  parameter int          INFEAT_BUFFER_SIZE_W  = NEUREKA_INFEAT_BUFFER_SIZE_W_DEFAULT,
+  parameter int          INFEAT_BUFFER_SIZE_HW = NEUREKA_INFEAT_BUFFER_SIZE_HW_DEFAULT
 ) (
   // global signals
   input  logic                   clk_i,
@@ -158,9 +163,14 @@ module neureka_double_infeat_buffer #(
   endgenerate
 
   neureka_infeat_buffer #(
-    .INPUT_BUF_SIZE ( INPUT_BUF_SIZE ),
-    .BLOCK_SIZE     ( BLOCK_SIZE     ),
-    .DW             ( NEUREKA_QA_IN     )
+    .INPUT_BUF_SIZE        ( INPUT_BUF_SIZE        ),
+    .BLOCK_SIZE            ( BLOCK_SIZE            ),
+    .DW                    ( NEUREKA_QA_IN         ),
+    .PE_H                  ( PE_H                  ),
+    .PE_W                  ( PE_W                  ),
+    .INFEAT_BUFFER_SIZE_H  ( INFEAT_BUFFER_SIZE_H  ),
+    .INFEAT_BUFFER_SIZE_W  ( INFEAT_BUFFER_SIZE_W  ),
+    .INFEAT_BUFFER_SIZE_HW ( INFEAT_BUFFER_SIZE_HW )
   ) i_odd_infeat_buffer (
     .clk_i       ( clk_i                            ),
     .rst_ni      ( rst_ni                           ),
@@ -174,9 +184,14 @@ module neureka_double_infeat_buffer #(
   );
 
   neureka_infeat_buffer #(
-    .INPUT_BUF_SIZE ( INPUT_BUF_SIZE ),
-    .BLOCK_SIZE     ( BLOCK_SIZE     ),
-    .DW             ( NEUREKA_QA_IN     )
+    .INPUT_BUF_SIZE        ( INPUT_BUF_SIZE        ),
+    .BLOCK_SIZE            ( BLOCK_SIZE            ),
+    .DW                    ( NEUREKA_QA_IN         ),
+    .PE_H                  ( PE_H                  ),
+    .PE_W                  ( PE_W                  ),
+    .INFEAT_BUFFER_SIZE_H  ( INFEAT_BUFFER_SIZE_H  ),
+    .INFEAT_BUFFER_SIZE_W  ( INFEAT_BUFFER_SIZE_W  ),
+    .INFEAT_BUFFER_SIZE_HW ( INFEAT_BUFFER_SIZE_HW )
   ) i_even_infeat_buffer (
     .clk_i       ( clk_i                            ),
     .rst_ni      ( rst_ni                           ),
