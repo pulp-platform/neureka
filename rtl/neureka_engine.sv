@@ -14,10 +14,11 @@
  */
 
 /*
- * Authors (RBE):  Gianna Paulin <pauling@iis.ee.ethz.ch>
- *                 Francesco Conti <f.conti@unibo.it>
- * Authors (NEUREKA): Francesco Conti <francesco.conti@greenwaves-technologies.com>
+ * Authors (RBE):     Gianna Paulin <pauling@iis.ee.ethz.ch>
+ *                    Francesco Conti <f.conti@unibo.it>
+ * Authors (NE16):    Francesco Conti <francesco.conti@greenwaves-technologies.com>
  * Authors (NEUREKA): Arpan Suravi Prasad <prasadar@iis.ee.ethz.ch>
+ *                    Francesco Conti <f.conti@unibo.it>
  */
 
 import neureka_package::*;
@@ -399,18 +400,18 @@ module neureka_engine #(
         .AP  ( TP_OUT ),
         .ACC ( 32     )
       ) i_accumulator (
-        .clk_i       ( clk_i                          ),
-        .rst_ni      ( rst_ni                         ),
-        .test_mode_i ( test_mode_i                    ),
-        .enable_i    ( enable_i                       ),
-        .clear_i     ( clear_i                        ),
-        .conv_i      ( pres [ii]                      ),
-        .conv_dw_i   ( pres_depthwise[(ii+1)*BLOCK_SIZE-1:ii*BLOCK_SIZE]),
-        .norm_i      ( norm [ii]                      ),
-        .streamin_i  ( load_streamin_cols [ii]        ),
-        .conv_o      ( store_out_cols [ii]            ),
-        .ctrl_i      ( ctrl_accumulator               ),
-        .flags_o     ( flags_o.flags_accumulator [ii] )
+        .clk_i       ( clk_i                                              ),
+        .rst_ni      ( rst_ni                                             ),
+        .test_mode_i ( test_mode_i                                        ),
+        .enable_i    ( enable_i                                           ),
+        .clear_i     ( clear_i                                            ),
+        .conv_i      ( pres                       [ii]                    ),
+        .conv_dw_i   ( pres_depthwise [(ii+1)*BLOCK_SIZE-1:ii*BLOCK_SIZE] ),
+        .norm_i      ( norm                       [ii]                    ),
+        .streamin_i  ( load_streamin_cols         [ii]                    ),
+        .conv_o      ( store_out_cols             [ii]                    ),
+        .ctrl_i      ( ctrl_accumulator                                   ),
+        .flags_o     ( flags_o.flags_accumulator  [ii]                    )
       );
 
     end // accumulator_gen
