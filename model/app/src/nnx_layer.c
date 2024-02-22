@@ -31,10 +31,12 @@
 
 typedef neureka_norm_mode_e nnx_norm_mode_e;
 typedef neureka_quant_t nnx_quant_t;
+typedef neureka_quant_function_e nnx_quant_function_e;
 typedef neureka_norm_t nnx_norm_t;
 typedef neureka_task_t nnx_task_t;
 typedef neureka_dev_t nnx_dev_t;
 typedef neureka_testbench_conf_t nnx_bsp_conf_t;
+typedef neureka_task_flag_e nnx_task_flag_e;
 
 #define nnxTaskFlagTrue neurekaTaskFlagTrue
 #define nnxTaskFlagFalse neurekaTaskFlagFalse
@@ -47,7 +49,8 @@ typedef neureka_testbench_conf_t nnx_bsp_conf_t;
 #define nnx_task_set_weight_source neureka_task_set_weight_source
 #define nnx_task_set_activation_prefetch neureka_task_set_activation_prefetch
 #define nnx_task_set_dims neureka_task_set_dims
-#define nnx_task_set_ptrs neureka_task_set_ptrs
+#define nnx_task_set_ptrs_conv neureka_task_set_ptrs_conv
+#define nnx_task_set_ptrs_norm_quant neureka_task_set_ptrs_norm_quant
 
 #define nnx_bsp_get_dev neureka_testbench_get_dev
 
@@ -67,7 +70,7 @@ typedef neureka_testbench_conf_t nnx_bsp_conf_t;
 
 static void task_prepare(nnx_task_t *task) {
   nnx_task_init(task);
-  nnx_task_set_op_to_conv(task, WEIGHT_HEIGHT, GROUPS > 1, STRIDE_HEIGHT);
+  nnx_task_set_op_to_conv(task, WEIGHT_HEIGHT, GROUPS > 1);
   nnx_task_set_bits(task, INPUT_BITS, OUTPUT_BITS, WEIGHT_BITS);
 
 #if HAS_NORM_QUANT == 1
@@ -112,29 +115,42 @@ static void task_prepare(nnx_task_t *task) {
   nnx_task_set_dims_stride2x2(
       task, INPUT_HEIGHT, INPUT_WIDTH, INPUT_CHANNEL, h_in_stride, w_in_stride,
       OUTPUT_HEIGHT, OUTPUT_WIDTH, OUTPUT_CHANNEL, h_out_stride, w_out_stride,
-      WEIGHT_HEIGHT, WEIGHT_WIDTH, PADDING_TOP, PADDING_BOTTOM, PADDING_RIGHT,
-      PADDING_LEFT);
+      WEIGHT_HEIGHT, WEIGHT_WIDTH, PADDING_TOP, PADDING_BOTTOM, PADDING_LEFT,
+      PADDING_RIGHT);
 #else
   nnx_task_set_dims(task, INPUT_WIDTH, INPUT_CHANNEL, h_in_stride, w_in_stride,
                     OUTPUT_HEIGHT, OUTPUT_WIDTH, OUTPUT_CHANNEL, h_out_stride,
-                    w_out_stride, PADDING_TOP, PADDING_BOTTOM, PADDING_RIGHT,
-                    PADDING_LEFT);
+                    w_out_stride, PADDING_TOP, PADDING_BOTTOM, PADDING_LEFT,
+                    PADDING_RIGHT);
 #endif
 
-  nnx_task_set_ptrs(task, (uint32_t)input, INPUT_WIDTH, w_in_stride,
-                    PADDING_TOP, PADDING_LEFT, (uint32_t)output,
-                    (uint32_t)weight,
+  nnx_task_set_ptrs_conv(task, (uint32_t)input, INPUT_WIDTH, w_in_stride,
+                         PADDING_TOP, PADDING_LEFT, (uint32_t)output,
+                         (uint32_t)weight);
 #if HAS_NORM_QUANT == 1
-                    (uint32_t)scale, NULL,
-#if HAS_BIAS == 1
-                    (uint32_t)bias
-#else
-                    NULL
+#if SCALE_BITS == 8
+  const nnx_norm_mode_e normMode = normMode8Bit;
+#elif SCALE_BITS == 32
+  const nnx_norm_mode_e normMode = normMode32Bit;
 #endif
-#else
-                    NULL, NULL, NULL
-#endif
-  );
+
+  const nnx_task_flag_e flag_bias =
+      HAS_BIAS ? nnxTaskFlagTrue : nnxTaskFlagFalse;
+  const uint32_t bias_ptr = (uint32_t)(HAS_BIAS ? bias : NULL);
+
+  nnx_quant_function_e quant_function =
+      HAS_RELU ? quantFunctionRelu : quantFunctionIdentity;
+
+  nnx_task_set_norm_quant(task,
+                          (nnx_quant_t){.shift_amount = OUTSHIFT,
+                                        .function = quant_function,
+                                        .flag_rounding = nnxTaskFlagFalse},
+                          (nnx_norm_t){.mode = normMode,
+                                       .flag_bias = flag_bias,
+                                       .flag_shift = nnxTaskFlagFalse});
+
+  nnx_task_set_ptrs_norm_quant(task, (uint32_t)scale, NULL, bias_ptr);
+#endif // HAS_NORM_QUANT
 }
 
 static void task_execute(nnx_task_t *task) {
