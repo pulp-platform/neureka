@@ -278,17 +278,18 @@ module neureka_streamer #(
     .priority_force_i ( 1'b0           ),
     .priority_i       ( '0             ),
     .in               ( tcdm_premux    ),
-    .out              ( tcdm_preout    )
+    .out              ( tcdm    )
+    // .out              ( tcdm_preout    )
   );
 
-  hci_core_r_user_filter i_tcdm_user_filter (
-    .clk_i       ( clk_i       ),
-    .rst_ni      ( rst_ni      ),
-    .clear_i     ( clear_i     ),
-    .enable_i    ( 1'b1        ),
-    .tcdm_slave  ( tcdm_preout ),
-    .tcdm_master ( tcdm        )
-  );
+  // hci_core_r_user_filter i_tcdm_user_filter (
+  //   .clk_i       ( clk_i       ),
+  //   .rst_ni      ( rst_ni      ),
+  //   .clear_i     ( clear_i     ),
+  //   .enable_i    ( 1'b1        ),
+  //   .tcdm_slave  ( tcdm_preout ),
+  //   .tcdm_master ( tcdm        )
+  // );
 
   always_comb
   begin : ld_which_ctrl_mux

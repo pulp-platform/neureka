@@ -29,7 +29,6 @@ module neureka_top #(
   parameter int unsigned TP_OUT    = NEUREKA_TP_OUT,  // number of output elements processed per cycle
   parameter int unsigned CNT       = VLEN_CNT_SIZE,   // counter size
   parameter int unsigned ID        = ID_WIDTH,
-  parameter int unsigned BW        = NEUREKA_MEM_BANDWIDTH_EXT, // NEUREKA_MEM_BANDWIDTH
   parameter int unsigned DW        = NEUREKA_STREAM_BANDWIDTH,
   parameter int unsigned REGFILE_N_EVT = 2,
 
@@ -125,7 +124,8 @@ module neureka_top #(
   );
 
   neureka_streamer #(
-    .BW ( NEUREKA_MEM_BANDWIDTH_EXT )
+    .TCDM_FIFO_DEPTH ( 32                        ),
+    .BW              ( NEUREKA_MEM_BANDWIDTH_EXT )
   ) i_streamer (
     .clk_i       ( clk_i          ),
     .rst_ni      ( rst_ni         ),

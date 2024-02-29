@@ -82,20 +82,64 @@ module neureka_top_wrap #(
     .clk ( clk_i )
   );
 
+  hci_core_intf #(
+    .DW ( 32 )
+  ) tcdm_int [MP-1:0] (
+    .clk ( clk_i )
+  );
+
+  hci_core_intf #(
+    .DW ( 32 )
+  ) tcdm_int2 [MP-1:0] (
+    .clk ( clk_i )
+  );
+
   hwpe_ctrl_intf_periph #(.ID_WIDTH(ID)) periph (.clk(clk_i));
 
   // bindings
   generate
+    // for(genvar ii=0; ii<MP; ii++) begin: tcdm_binding
+    //   assign tcdm_req  [ii] = tcdm.req;
+    //   assign tcdm_add  [ii] = tcdm.add + ii*4;
+    //   assign tcdm_wen  [ii] = tcdm.wen;
+    //   assign tcdm_be   [ii] = tcdm.be[(ii+1)*4-1:ii*4];
+    //   assign tcdm_data [ii] = tcdm.data[(ii+1)*32-1:ii*32];
+    // end
+    // assign tcdm.gnt     = &(tcdm_gnt);
+    // assign tcdm.r_valid = &(tcdm_r_valid);
+    // assign tcdm.r_data  = { >> {tcdm_r_data} } ;
     for(genvar ii=0; ii<MP; ii++) begin: tcdm_binding
-      assign tcdm_req  [ii] = tcdm.req;
-      assign tcdm_add  [ii] = tcdm.add + ii*4;
-      assign tcdm_wen  [ii] = tcdm.wen;
-      assign tcdm_be   [ii] = tcdm.be[(ii+1)*4-1:ii*4];
-      assign tcdm_data [ii] = tcdm.data[(ii+1)*32-1:ii*32];
+      assign tcdm_req  [ii] = tcdm_int[ii].req;
+      assign tcdm_add  [ii] = tcdm_int[ii].add;
+      assign tcdm_wen  [ii] = tcdm_int[ii].wen;
+      assign tcdm_be   [ii] = tcdm_int[ii].be;
+      assign tcdm_data [ii] = tcdm_int[ii].data;
+      assign tcdm_int[ii].gnt     = tcdm_gnt     [ii];
+      assign tcdm_int[ii].r_valid = tcdm_r_valid [ii];
+      assign tcdm_int[ii].r_data  = tcdm_r_data  [ii];
+
+      hci_core_r_user_filter i_tcdm_user_filter (
+        .clk_i       ( clk_i          ),
+        .rst_ni      ( rst_ni         ),
+        .clear_i     ( clear_i        ),
+        .enable_i    ( 1'b1           ),
+        .tcdm_slave  ( tcdm_int2 [ii] ),
+        .tcdm_master ( tcdm_int  [ii] )
+      );
     end
-    assign tcdm.gnt     = &(tcdm_gnt);
-    assign tcdm.r_valid = &(tcdm_r_valid);
-    assign tcdm.r_data  = { >> {tcdm_r_data} } ;
+
+    hci_core_split #(
+      .DW          ( BW ), // DW_IN
+      .NB_OUT_CHAN ( MP ),
+      .FIFO_DEPTH  ( 0  )
+    ) i_split (
+      .clk_i       ( clk_i     ),
+      .rst_ni      ( rst_ni    ),
+      .clear_i     ( clear_i   ),
+      .tcdm_slave  ( tcdm      ),
+      .tcdm_master ( tcdm_int2 )
+    );
+
   endgenerate
 
   generate
@@ -126,7 +170,6 @@ module neureka_top_wrap #(
     .TP_IN     ( TP_IN     ),
     .TP_OUT    ( TP_OUT    ),
     .CNT       ( CNT       ),
-    .BW        ( BW        ),
     .ID        ( ID        ),
     .N_CORES   ( N_CORES   ),
     .N_CONTEXT ( N_CONTEXT ),
