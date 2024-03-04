@@ -138,7 +138,7 @@ module neureka_top_wrap #(
     .test_mode_i ( test_mode_i  ),
     .evt_o       ( evt_o        ),
     .busy_o      ( busy_o       ),
-    .tcdm        ( tcdm.master  ),
+    .tcdm        ( tcdm.initiator ),
     .periph      ( periph.slave )
   );
 

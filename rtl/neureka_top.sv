@@ -47,7 +47,7 @@ module neureka_top #(
   output logic [N_CORES-1:0][REGFILE_N_EVT-1:0] evt_o,
   output logic                                  busy_o,
   // tcdm master ports
-  hci_core_intf.master                          tcdm,
+  hci_core_intf.initiator                       tcdm,
   // periph slave port
   hwpe_ctrl_intf_periph.slave                   periph
 );
