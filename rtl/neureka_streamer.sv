@@ -46,7 +46,7 @@ module neureka_streamer #(
   // output features + handshake
   hwpe_stream_intf_stream.sink   conv_i,
   // TCDM ports
-  hci_core_intf.master           tcdm,
+  hci_core_intf.initiator        tcdm,
   // control channel
   input  ctrl_streamer_t         ctrl_i,
   output flags_streamer_t        flags_o
@@ -143,7 +143,6 @@ module neureka_streamer #(
   assign all_source_enable = (~ctrl_i.ld_st_mux_sel & (~wmem_enable)) | (ctrl_i.ld_which_mux_sel == LD_FEAT_WEIGHT_SEL);
 
   hci_core_source #(
-    .DATA_WIDTH       ( NEUREKA_MEM_BANDWIDTH_EXT ),
     .PASSTHROUGH_FIFO ( 1                         )
   ) i_all_source (
     .clk_i       ( clk_i                         ),
@@ -158,7 +157,6 @@ module neureka_streamer #(
   );
 
   hci_core_source #(
-    .DATA_WIDTH       ( NEUREKA_MEM_BANDWIDTH_EXT ),
     .PASSTHROUGH_FIFO ( 1                         )
   ) i_weight_source (
     .clk_i       ( clk_i                         ),
@@ -172,9 +170,7 @@ module neureka_streamer #(
     .flags_o     ( wmem_source_flags             )
   );
 
-  hci_core_sink #(
-    .DATA_WIDTH ( NEUREKA_MEM_BANDWIDTH_EXT )
-  ) i_sink (
+  hci_core_sink i_sink (
     .clk_i       ( clk_i                       ),
     .rst_ni      ( rst_ni                      ),
     .test_mode_i ( test_mode_i                 ),
@@ -189,49 +185,41 @@ module neureka_streamer #(
   generate
     if(TCDM_FIFO_DEPTH > 0) begin : use_fifo_gen
       hci_core_mux_static #(
-        .NB_CHAN (2),
-        .DW ( NEUREKA_MEM_BANDWIDTH_EXT )
+        .NB_CHAN (2)
       ) i_ld_st_mux_static (
         .clk_i   ( clk_i                ),
         .rst_ni  ( rst_ni               ),
         .clear_i ( clear_i              ),
-        .sel_i   ( ctrl_i.ld_st_mux_sel),
-        .in      ( virt_tcdm[1:0]        ),
+        .sel_i   ( ctrl_i.ld_st_mux_sel ),
+        .in      ( virt_tcdm[1:0]       ),
         .out     ( tcdm_prefifo         )
       );
 
       hci_core_fifo #(
-        .FIFO_DEPTH ( TCDM_FIFO_DEPTH        ),
-        .DW         ( NEUREKA_MEM_BANDWIDTH_EXT ),
-        .AW         ( 32                     ),
-        .OW         (  1                     )
+        .FIFO_DEPTH ( TCDM_FIFO_DEPTH )
       ) i_tcdm_fifo (
-        .clk_i       ( clk_i                       ),
-        .rst_ni      ( rst_ni                      ),
-        .clear_i     ( clear_i | ctrl_i.clear_fifo ),
-        .flags_o     ( tcdm_fifo_flags             ),
-        .tcdm_slave  ( tcdm_prefifo                ),
-        .tcdm_master ( tcdm_prefilter              )
+        .clk_i          ( clk_i                       ),
+        .rst_ni         ( rst_ni                      ),
+        .clear_i        ( clear_i | ctrl_i.clear_fifo ),
+        .flags_o        ( tcdm_fifo_flags             ),
+        .tcdm_target    ( tcdm_prefifo                ),
+        .tcdm_initiator ( tcdm_prefilter              )
       );
 
       hci_core_fifo #(
-        .FIFO_DEPTH ( TCDM_FIFO_DEPTH        ),
-        .DW         ( NEUREKA_MEM_BANDWIDTH_EXT ),
-        .AW         ( 32                     ),
-        .OW         (  1                     )
+        .FIFO_DEPTH ( TCDM_FIFO_DEPTH )
       ) i_weight_tcdm_fifo (
-        .clk_i       ( clk_i                       ),
-        .rst_ni      ( rst_ni                      ),
-        .clear_i     ( clear_i | ctrl_i.clear_fifo ),
-        .flags_o     ( tcdm_weight_fifo_flags      ),
-        .tcdm_slave  ( virt_tcdm[2]                ),
-        .tcdm_master ( tcdm_weight_prefilter       )
+        .clk_i          ( clk_i                       ),
+        .rst_ni         ( rst_ni                      ),
+        .clear_i        ( clear_i | ctrl_i.clear_fifo ),
+        .flags_o        ( tcdm_weight_fifo_flags      ),
+        .tcdm_target    ( virt_tcdm[2]                ),
+        .tcdm_initiator ( tcdm_weight_prefilter       )
       );
     end
     else begin : dont_use_fifo_gen
       hci_core_mux_static #(
-        .NB_CHAN (2),
-        .DW ( NEUREKA_MEM_BANDWIDTH_EXT )
+        .NB_CHAN (2)
       ) i_ld_st_mux_static (
         .clk_i   ( clk_i                ),
         .rst_ni  ( rst_ni               ),
@@ -242,8 +230,8 @@ module neureka_streamer #(
       );
 
       hci_core_assign i_weight_tcdm (
-        .tcdm_slave   ( virt_tcdm[2]         ),
-        .tcdm_master  ( tcdm_weight_prefilter)
+        .tcdm_target    ( virt_tcdm[2]          ),
+        .tcdm_initiator ( tcdm_weight_prefilter )
       );
       assign tcdm_fifo_flags.empty = 1'b1;
       assign tcdm_weight_fifo_flags.empty = 1'b1;
@@ -251,26 +239,25 @@ module neureka_streamer #(
   endgenerate
 
   hci_core_r_valid_filter i_tcdm_filter (
-    .clk_i       ( clk_i                ),
-    .rst_ni      ( rst_ni               ),
-    .clear_i     ( clear_i              ),
-    .enable_i    ( 1'b1                 ),
-    .tcdm_slave  ( tcdm_prefilter       ),
-    .tcdm_master ( tcdm_premux[1]       )
+    .clk_i          ( clk_i                ),
+    .rst_ni         ( rst_ni               ),
+    .clear_i        ( clear_i              ),
+    .enable_i       ( 1'b1                 ),
+    .tcdm_target    ( tcdm_prefilter       ),
+    .tcdm_initiator ( tcdm_premux[1]       )
   );
 
   hci_core_r_valid_filter i_tcdm_weight_filter (
-    .clk_i       ( clk_i                ),
-    .rst_ni      ( rst_ni               ),
-    .clear_i     ( clear_i              ),
-    .enable_i    ( ctrl_i.wmem_sel      ),
-    .tcdm_slave  ( tcdm_weight_prefilter),
-    .tcdm_master ( tcdm_premux[0]       )
+    .clk_i          ( clk_i                ),
+    .rst_ni         ( rst_ni               ),
+    .clear_i        ( clear_i              ),
+    .enable_i       ( ctrl_i.wmem_sel      ),
+    .tcdm_target    ( tcdm_weight_prefilter),
+    .tcdm_initiator ( tcdm_premux[0]       )
   );
 
   hci_core_mux_ooo #(
-    .NB_CHAN ( 2                         ),
-    .DW      ( NEUREKA_MEM_BANDWIDTH_EXT )
+    .NB_CHAN ( 2 )
   ) i_mux_ooo (
     .clk_i            ( clk_i          ),
     .rst_ni           ( rst_ni         ),
@@ -281,13 +268,13 @@ module neureka_streamer #(
     .out              ( tcdm_preout    )
   );
 
-  hci_core_r_user_filter i_tcdm_user_filter (
-    .clk_i       ( clk_i       ),
-    .rst_ni      ( rst_ni      ),
-    .clear_i     ( clear_i     ),
-    .enable_i    ( 1'b1        ),
-    .tcdm_slave  ( tcdm_preout ),
-    .tcdm_master ( tcdm        )
+  hci_core_r_id_filter i_tcdm_id_filter (
+    .clk_i          ( clk_i       ),
+    .rst_ni         ( rst_ni      ),
+    .clear_i        ( clear_i     ),
+    .enable_i       ( 1'b1        ),
+    .tcdm_target    ( tcdm_preout ),
+    .tcdm_initiator ( tcdm        )
   );
 
   always_comb

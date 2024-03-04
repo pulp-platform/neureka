@@ -497,7 +497,7 @@ module tb_neureka;
         $sformat( str, ",\n  { \"instance\": \"tcdm_store\", \"type\": \"be\", \"value\": \"0x%09x\", \"job\": \"%1d\", \"time\": \"%t\" }", tb_neureka.i_dut.i_neureka_top.tcdm.be, tb_neureka.i_dut.i_neureka_top.i_ctrl.i_slave.i_regfile.running_job_id, $time); $fwrite(f_log, str);
       end
     end
-    if(tb_neureka.i_dut.i_neureka_top.tcdm.r_valid & tb_neureka.i_dut.i_neureka_top.tcdm.lrdy) begin
+    if(tb_neureka.i_dut.i_neureka_top.tcdm.r_valid & tb_neureka.i_dut.i_neureka_top.tcdm.r_ready) begin
       $sformat( str, ",\n  { \"instance\": \"tcdm_load\", \"type\": \"addr\", \"value\": \"0x%08x\", \"job\": \"%1d\", \"time\": \"%t\" }", read_addr_queue.pop_back(), tb_neureka.i_dut.i_neureka_top.i_ctrl.i_slave.i_regfile.running_job_id, $time); $fwrite(f_log, str);
       $sformat( str, ",\n  { \"instance\": \"tcdm_load\", \"type\": \"r_data\", \"value\": \"0x%072x\", \"job\": \"%1d\", \"time\": \"%t\" }", tb_neureka.i_dut.i_neureka_top.tcdm.r_data, tb_neureka.i_dut.i_neureka_top.i_ctrl.i_slave.i_regfile.running_job_id, $time); $fwrite(f_log, str);
     end
