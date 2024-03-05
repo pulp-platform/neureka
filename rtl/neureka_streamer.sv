@@ -52,6 +52,11 @@ module neureka_streamer #(
   output flags_streamer_t        flags_o
 );
 
+  localparam int unsigned UW = tcdm.UW;
+  localparam int unsigned IW = tcdm.IW;
+  localparam int unsigned EW = tcdm.EW;
+  localparam int unsigned EHW = tcdm.EHW;
+
   hci_streamer_ctrl_t  all_source_ctrl, wmem_source_ctrl;
   hci_streamer_flags_t all_source_flags, wmem_source_flags;
   flags_fifo_t tcdm_fifo_flags;
@@ -102,37 +107,61 @@ module neureka_streamer #(
   );
 
   hci_core_intf #(
-    .DW ( NEUREKA_MEM_BANDWIDTH_EXT )
+    .DW  ( NEUREKA_MEM_BANDWIDTH_EXT ),
+    .UW  ( UW                        ),
+    .IW  ( IW                        ),
+    .EW  ( EW                        ),
+    .EHW ( EHW                       )
   ) virt_tcdm [2:0] (
     .clk ( clk_i )
   );
 
   hci_core_intf #(
-    .DW ( NEUREKA_MEM_BANDWIDTH_EXT )
+    .DW  ( NEUREKA_MEM_BANDWIDTH_EXT ),
+    .UW  ( UW                        ),
+    .IW  ( IW                        ),
+    .EW  ( EW                        ),
+    .EHW ( EHW                       )
   ) tcdm_premux [1:0] (
     .clk ( clk_i )
   );
 
   hci_core_intf #(
-    .DW ( NEUREKA_MEM_BANDWIDTH_EXT )
+    .DW  ( NEUREKA_MEM_BANDWIDTH_EXT ),
+    .UW  ( UW                        ),
+    .IW  ( IW                        ),
+    .EW  ( EW                        ),
+    .EHW ( EHW                       )
   ) tcdm_prefifo (
     .clk ( clk_i )
   );
 
   hci_core_intf #(
-    .DW ( NEUREKA_MEM_BANDWIDTH_EXT )
+    .DW  ( NEUREKA_MEM_BANDWIDTH_EXT ),
+    .UW  ( UW                        ),
+    .IW  ( IW                        ),
+    .EW  ( EW                        ),
+    .EHW ( EHW                       )
   ) tcdm_prefilter (
     .clk ( clk_i )
   );
 
   hci_core_intf #(
-    .DW ( NEUREKA_MEM_BANDWIDTH_EXT )
+    .DW  ( NEUREKA_MEM_BANDWIDTH_EXT ),
+    .UW  ( UW                        ),
+    .IW  ( 1                         ),
+    .EW  ( EW                        ),
+    .EHW ( EHW                       )
   ) tcdm_preout (
     .clk ( clk_i )
   );
 
   hci_core_intf #(
-    .DW ( NEUREKA_MEM_BANDWIDTH_EXT )
+    .DW  ( NEUREKA_MEM_BANDWIDTH_EXT ),
+    .UW  ( UW                        ),
+    .IW  ( IW                        ),
+    .EW  ( EW                        ),
+    .EHW ( EHW                       )
   ) tcdm_weight_prefilter (
     .clk ( clk_i )
   );
