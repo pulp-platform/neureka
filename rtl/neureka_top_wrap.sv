@@ -77,7 +77,11 @@ module neureka_top_wrap #(
 );
 
   hci_core_intf #(
-    .DW ( BW )
+    .DW ( BW ),
+    .UW ( 0  ),
+    .IW ( 0  ),
+    .EW ( 0  ),
+    .EHW ( 0 )
   ) tcdm (
     .clk ( clk_i )
   );
