@@ -82,6 +82,11 @@ module neureka_top_wrap #(
     .IW ( 0  ),
     .EW ( 0  ),
     .EHW ( 0 )
+`ifndef SYNTHESIS
+    ,
+    .WAIVE_RSP3_ASSERT ( 1'b1 ), // waive RSP-3 on memory-side of HCI FIFO
+    .WAIVE_RSP5_ASSERT ( 1'b1 )  // waive RSP-5 on memory-side of HCI FIFO
+`endif
   ) tcdm (
     .clk ( clk_i )
   );

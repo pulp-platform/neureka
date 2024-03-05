@@ -122,6 +122,11 @@ module neureka_streamer #(
     .IW  ( IW                        ),
     .EW  ( EW                        ),
     .EHW ( EHW                       )
+`ifndef SYNTHESIS
+    ,
+    .WAIVE_RSP3_ASSERT ( 1'b1 ), // waive RSP-3 on memory-side of HCI FIFO
+    .WAIVE_RSP5_ASSERT ( 1'b1 )  // waive RSP-5 on memory-side of HCI FIFO
+`endif
   ) tcdm_premux [1:0] (
     .clk ( clk_i )
   );
@@ -142,6 +147,11 @@ module neureka_streamer #(
     .IW  ( IW                        ),
     .EW  ( EW                        ),
     .EHW ( EHW                       )
+`ifndef SYNTHESIS
+    ,
+    .WAIVE_RSP3_ASSERT ( 1'b1 ), // waive RSP-3 on memory-side of HCI FIFO
+    .WAIVE_RSP5_ASSERT ( 1'b1 )  // waive RSP-5 on memory-side of HCI FIFO
+`endif
   ) tcdm_prefilter (
     .clk ( clk_i )
   );
@@ -152,6 +162,11 @@ module neureka_streamer #(
     .IW  ( 1                         ),
     .EW  ( EW                        ),
     .EHW ( EHW                       )
+`ifndef SYNTHESIS
+    ,
+    .WAIVE_RSP3_ASSERT ( 1'b1 ), // waive RSP-3 on memory-side of HCI FIFO
+    .WAIVE_RSP5_ASSERT ( 1'b1 )  // waive RSP-5 on memory-side of HCI FIFO
+`endif
   ) tcdm_preout (
     .clk ( clk_i )
   );
@@ -162,6 +177,11 @@ module neureka_streamer #(
     .IW  ( IW                        ),
     .EW  ( EW                        ),
     .EHW ( EHW                       )
+`ifndef SYNTHESIS
+    ,
+    .WAIVE_RSP3_ASSERT ( 1'b1 ), // waive RSP-3 on memory-side of HCI FIFO
+    .WAIVE_RSP5_ASSERT ( 1'b1 )  // waive RSP-5 on memory-side of HCI FIFO
+`endif
   ) tcdm_weight_prefilter (
     .clk ( clk_i )
   );
