@@ -112,7 +112,7 @@ module neureka_streamer #(
     .IW  ( IW                        ),
     .EW  ( EW                        ),
     .EHW ( EHW                       )
-  ) virt_tcdm [2:0] (
+  ) virt_tcdm [0:2] (
     .clk ( clk_i )
   );
 
@@ -127,7 +127,7 @@ module neureka_streamer #(
     .WAIVE_RSP3_ASSERT ( 1'b1 ), // waive RSP-3 on memory-side of HCI FIFO
     .WAIVE_RSP5_ASSERT ( 1'b1 )  // waive RSP-5 on memory-side of HCI FIFO
 `endif
-  ) tcdm_premux [1:0] (
+  ) tcdm_premux [0:1] (
     .clk ( clk_i )
   );
 
@@ -240,7 +240,7 @@ module neureka_streamer #(
         .rst_ni  ( rst_ni               ),
         .clear_i ( clear_i              ),
         .sel_i   ( ctrl_i.ld_st_mux_sel ),
-        .in      ( virt_tcdm[1:0]       ),
+        .in      ( virt_tcdm[0:1]       ),
         .out     ( tcdm_prefifo         )
       );
 
@@ -274,7 +274,7 @@ module neureka_streamer #(
         .rst_ni  ( rst_ni               ),
         .clear_i ( clear_i              ),
         .sel_i   ( ctrl_i.ld_st_mux_sel ),
-        .in      ( virt_tcdm[1:0]       ),
+        .in      ( virt_tcdm[0:1]       ),
         .out     ( tcdm_prefilter       )
       );
 
