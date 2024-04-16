@@ -73,24 +73,6 @@ static void task_prepare(nnx_task_t *task) {
   nnx_task_set_op_to_conv(task, WEIGHT_HEIGHT, GROUPS > 1);
   nnx_task_set_bits(task, INPUT_BITS, OUTPUT_BITS, WEIGHT_BITS);
 
-#if HAS_NORM_QUANT == 1
-#if SCALE_BITS == 8
-  const nnx_norm_mode_e normMode = normMode8Bit;
-#elif SCALE_BITS == 32
-  const nnx_norm_mode_e normMode = normMode32Bit;
-#endif
-
-  nnx_task_set_norm_quant(
-      task,
-      (nnx_quant_t){.shift_amount = OUTSHIFT,
-                    .function =
-                        HAS_RELU ? quantFunctionRelu : quantFunctionIdentity,
-                    .flag_rounding = nnxTaskFlagFalse},
-      (nnx_norm_t){.mode = normMode,
-                   .flag_bias = HAS_BIAS ? nnxTaskFlagTrue : nnxTaskFlagFalse,
-                   .flag_shift = nnxTaskFlagFalse});
-#endif // HAS_NORM_QUANT
-
   nnx_task_set_weight_offset(task, weightOffsetModeLayerWise, WEIGHT_OFFSET);
 
 #ifdef NEUREKA_WEIGHT_SOURCE_WMEM

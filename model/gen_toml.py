@@ -26,6 +26,8 @@ parser.add_argument('--bias_type', type=str, required=False, default="int32")
 parser.add_argument('--no_norm_quant', action='store_true')
 parser.add_argument('--no_bias', action='store_true')
 parser.add_argument('--no_relu', action='store_true')
+parser.add_argument('--synthetic_weights', action='store_true')
+parser.add_argument('--synthetic_inputs', action='store_true')
 
 # Parse the arguments
 args = parser.parse_args()
@@ -59,6 +61,8 @@ config_data = {
     'has_norm_quant': not args.no_norm_quant,
     'has_bias': not args.no_bias,
     'has_relu': not args.no_relu,
+    'synthetic_weights': args.synthetic_weights,
+    'synthetic_inputs': args.synthetic_inputs
 }
 
 # Write configuration to a TOML file
