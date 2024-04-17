@@ -1,5 +1,5 @@
 numpy
 pydantic>=2.0
 pytest
-pytorch>=1.11.0
+torch>=1.11.0
 toml
