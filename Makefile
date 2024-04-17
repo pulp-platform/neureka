@@ -165,13 +165,13 @@ $(STIMULI): $(BUILD_DIR)
 									$(SYNTH_WEIGHTS_ARG) $(SYNTH_INPUTS_ARG) && \
 	python $(MODEL_DIR)/deps/pulp-nnx/test/testgen.py test -t test -a neureka --headers -c conf.toml --skip-save --print-tensors > stimuli.log
 
-stimuli: $(STIMULI)
+stimuli: $(STIMULI) sw-clean
 
 build-cleanup:
 	rm -rf build/*
 
 # copy-pasted from local model/app makefile
-.PHONY: sw-all sw-clean
+.PHONY: sw-all sw-clean sw-bin
 
 ACCELERATOR = neureka
 
