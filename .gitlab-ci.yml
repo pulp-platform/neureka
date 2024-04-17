@@ -12,9 +12,10 @@ variables:
 
 before_script:
   - python -V  # Print out python version for debugging
-  - virtualenv venv
+  - python -m pip install --user virtualenv
+  - python -m virtualenv venv
   - source venv/bin/activate
-  - python -r model/requirements.txt
+  - python -m pip install -r model/requirements.txt
 
 cache:
   paths:
