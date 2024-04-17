@@ -1,0 +1,8 @@
+numpy
+pydantic>=2.0
+pytest
+torch>=1.11.0
+toml
+junit_xml
+pyyaml
+prettytable

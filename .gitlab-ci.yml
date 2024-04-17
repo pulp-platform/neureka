@@ -1,0 +1,63 @@
+# Copyright 2022 ETH Zurich and University of Bologna.
+# Licensed under the Apache License, Version 2.0, see LICENSE for details.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Paul Scheffler <paulsc@iis.ee.ethz.ch>
+
+# We initialize the nonfree repo, then spawn a sub-pipeline from it
+
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+  # Our reference GCC toolchain for reproducible builds
+
+before_script:
+  - python -V  # Print out python version for debugging
+  - python -m pip install --user virtualenv
+  - python -m virtualenv venv
+  - source venv/bin/activate
+  - python -m pip install torch>=1.11 --extra-index-url https://download.pytorch.org/whl/cpu
+  - python -m pip install -r model/requirements.txt
+  - export PULP_RISCV_GCC_TOOLCHAIN=/usr/pack/pulpsdk-1.0-kgf/artifactory/pulp-sdk-release/pkg/pulp_riscv_gcc/1.0.14/
+  - export PATH=$PULP_RISCV_GCC_TOOLCHAIN/bin:$PATH
+
+cache:
+  paths:
+    - venv/
+
+.base:
+  artifacts:
+    when: always
+    expire_in: 1 week
+
+stages:
+  - build
+  - test
+
+build:
+  stage: build
+  script:
+    - make update-ips
+    - make hw-all
+  artifacts:
+    when: always
+    expire_in: 1 week
+    paths: [ .bender, model/deps/pulp-nnx, sim ]
+
+.neureka-vsim-tpl:
+  extends: .base
+  needs: [ build ]
+  stage: test
+  script:
+    - FS=${FS}
+    - H_IN=${H_IN}
+    - H_OUT=${H_OUT}
+    - K_IN=${K_IN}
+    - K_OUT=${K_OUT}
+    - make stimuli
+    - make sw-all run gui=0
+    - '(grep -rn "> Success! No errors found." ./transcript)'
+
+testset:
+  extends: .neureka-vsim-tpl
+  script:
+    - regr/run_regression.sh
