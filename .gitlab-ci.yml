@@ -16,6 +16,7 @@ before_script:
   - python -m virtualenv venv
   - source venv/bin/activate
   - python -m pip install -r model/requirements.txt
+  - export PATH=$PULP_RISCV_GCC_TOOLCHAIN/bin:$PATH
 
 cache:
   paths:
