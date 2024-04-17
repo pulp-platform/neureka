@@ -13,7 +13,50 @@ In general NEureka has built-in HW supports the following features:
 - Nr of output channels: arbitrary
  
 NEureka is a direct derivative of the NE16 design https://github.com/pulp-platform/ne16 .
- 
+
+## Simulating
+
+### Building the hardware simulation environment
+The simulation infrastructure of NEureka uses QuestaSim.
+To build the environment, you can run the following with QuestaSim in your `PATH`:
+```
+# fetch Bender (if not available), update the dependencies, and generate the scripts
+make update-ips
+# build the simulation environment
+make hw-all
+```
+
+### Setting up the sim
+This version of NEureka relies on the https://github.com/pulp-platform/pulp-nnx library to generate simulation stimuli. You can fetch it in the `model/deps` folder as a submodule:
+```
+git submodule update --init
+```
+The `pulp-nnx` library has several Python requirements, such as PyTorch. Refer to `model/deps/pulp-nnx/test/requirements.txt` for a list.
+Once the Python setup is working.
+
+### Generating stimuli and running the simulation
+You can generate stimuli with
+```
+make stimuli 
+```
+To build the software generated test,
+```
+make sw-all
+```
+Finally, to run it:
+```
+# without QuestaSim GUI
+make run
+# with GUI
+make run gui=1
+```
+There are several controllable parameters, such as filter size `FS` (1 or 3), input spatial size `H_IN` and `W_IN`, input channels `K_IN`, output channels `K_OUT`, depthwise conv (with `FS=3`) `DW`.
+See the `Makefile` for a full list. All simulation commands should be augmented with modified parameters, e.g.,
+```
+make stimuli H_IN=7 W_IN=3 K_OUT=32 K_IN=32
+make sw-all run H_IN=7 W_IN=3 K_OUT=32 K_IN=32 gui=0
+```
+
 ## Contributors
 - Arpan Suravi Prasad, ETH Zurich (*prasadar@iis.ee.ethz.ch*)
 - Francesco Conti, University of Bologna (*f.conti@unibo.it*)
@@ -26,4 +69,5 @@ This repository makes use of two licenses:
 For further information have a look at the license files: `LICENSE.hw`, `LICENSE.sw`
 
 # References
-[1] F. Conti, P. Schiavone, and L Benini. "XNOR neural engine: A hardware accelerator IP for 21.6-fJ/op binary neural network inference." IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems 37.11 (2018): 2940-2951.
+- A. S. Prasad, L. Benini and F. Conti, "Specialization meets Flexibility: a Heterogeneous Architecture for High-Efficiency, High-flexibility AR/VR Processing," 2023 60th ACM/IEEE Design Automation Conference (DAC), San Francisco, CA, USA, 2023, pp. 1-6, doi: 10.1109/DAC56929.2023.10247945.
+- A. S. Prasad, M. Scherer, F. Conti, D. Rossi, A. Di Mauro, M. Eggimann, J. T. Gómez, Z. Li, S. Shakib Sarwar, Z. Wang, B. De Salvo, and L. Benini, "Siracusa: A 16 nm Heterogenous RISC-V SoC for Extended Reality with At-MRAM Neural Engine," IEEE Journal of Solid-State Circuits, 2024 (accepted), arXiv: https://arxiv.org/abs/2312.14750.
