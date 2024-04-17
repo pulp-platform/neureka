@@ -1,0 +1,53 @@
+# Copyright 2022 ETH Zurich and University of Bologna.
+# Licensed under the Apache License, Version 2.0, see LICENSE for details.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Paul Scheffler <paulsc@iis.ee.ethz.ch>
+
+# We initialize the nonfree repo, then spawn a sub-pipeline from it
+
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+  # Our reference GCC toolchain for reproducible builds
+
+.base:
+  artifacts:
+    when: always
+    expire_in: 1 week
+
+stages:
+  - build
+  - test
+
+build:
+  stage: build
+  script:
+    - make update-ips
+    - make hw-all
+    - git submodule update --init
+  artifacts:
+    when: always
+    expire_in: 1 week
+    paths: [ .bender, model/deps/pulp-nnx, scripts/compile.tcl, sim ]
+
+.neureka-vsim-tpl:
+  extends: .base
+  needs: [ build ]
+  stage: test
+  script:
+    - FS=${FS}
+    - H_IN=${H_IN}
+    - H_OUT=${H_OUT}
+    - K_IN=${K_IN}
+    - K_OUT=${K_OUT}
+    - make stimuli
+    - make sw-all run gui=0
+    - '(grep -rn "> Success! No errors found." ./transcript)'
+
+testset:
+  extends: .neureka-vsim-tpl
+  parallel:
+    matrix:
+      - { FS: 1, H_IN: 4, H_OUT: 4, K_IN: 32, K_OUT: 32 }
+      - { FS: 1, H_IN: 4, H_OUT: 4, K_IN: 32, K_OUT: 64 }
+      - { FS: 1, H_IN: 4, H_OUT: 4, K_IN: 64, K_OUT: 64 }
