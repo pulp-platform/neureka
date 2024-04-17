@@ -12,7 +12,6 @@ variables:
 
 before_script:
   - python -V  # Print out python version for debugging
-  - pip install virtualenv
   - virtualenv venv
   - source venv/bin/activate
   - python -r model/requirements.txt
