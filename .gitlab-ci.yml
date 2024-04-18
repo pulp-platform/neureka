@@ -52,6 +52,7 @@ build:
     - K_IN=${K_IN}
     - K_OUT=${K_OUT}
     - make stimuli
+    - export PATH=$PULP_RISCV_GCC_TOOLCHAIN/bin:$PATH
     - echo $PATH
     - make sw-all run gui=0
     - '(grep -rn "> Success! No errors found." ./transcript)'
