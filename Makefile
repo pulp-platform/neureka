@@ -67,7 +67,7 @@ update-ips: $(BENDER)
 	$(BENDER) script vsim        \
 	--vlog-arg="$(compile_flag)" \
 	--vcom-arg="-pedanticerrors" \
-	-t rtl -t test               \
+	-t rtl -t neureka_standalone \
 	> sim/${compile_script}
 
 .PHONY: generate-scripts
@@ -75,7 +75,7 @@ generate-scripts: $(BENDER)
 	$(BENDER) script vsim        \
 	--vlog-arg="$(compile_flag)" \
 	--vcom-arg="-pedanticerrors" \
-	-t rtl -t test               \
+	-t rtl -t neureka_standalone \
 	> sim/${compile_script}
 
 # Hardware rules
