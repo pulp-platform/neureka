@@ -19,5 +19,5 @@
 neureka_basic_tests:
   fs_1_qw_8_k_in_32_k_out_32_h_out_4_w_out_4:
     path: .
-    command: make stimuli sw-all run gui=0 FS=1 QW=8 K_IN=32 K_OUT=32 H_OUT=4 W_OUT=4 DVERBOSE=-DNVERBOSE
+    command: make stimuli sw-all run gui=0 FS=1 QW=8 K_IN=32 K_OUT=32 H_OUT=4 W_OUT=4 NOPRINT=1
 
