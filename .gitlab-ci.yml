@@ -16,6 +16,7 @@ before_script:
   - python -m virtualenv venv
   - source venv/bin/activate
   - python -m pip install -r model/requirements.txt
+  - export PULP_RISCV_GCC_TOOLCHAIN=/usr/pack/pulpsdk-1.0-kgf/artifactory/pulp-sdk-release/pkg/pulp_riscv_gcc/1.0.14/
   - export PATH=$PULP_RISCV_GCC_TOOLCHAIN/bin:$PATH
 
 cache:
@@ -52,7 +53,7 @@ build:
     - K_IN=${K_IN}
     - K_OUT=${K_OUT}
     - make stimuli
-    - PATH=$PULP_RISCV_GCC_TOOLCHAIN/bin:$PATH make sw-all run gui=0
+    - make sw-all run gui=0
     - '(grep -rn "> Success! No errors found." ./transcript)'
 
 testset:
