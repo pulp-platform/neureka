@@ -23,9 +23,12 @@ TESTBENCH ?= tb_neureka
 # Paths to folders
 mkfile_path    := $(dir $(abspath $(firstword $(MAKEFILE_LIST))))
 HW_BUILD_DIR      ?= $(mkfile_path)/sim/build
-QUESTA         ?=
-BENDER_DIR     ?= .
-BENDER         ?= sim/bender
+ifneq (,$(wildcard /etc/iis.version))
+	QUESTA ?= questa-2022.3
+else
+	QUESTA ?=
+endif
+BENDER ?= sim/bender
 WAVES          ?= $(mkfile_path)/sim/wave.do
 
 compile_script ?= compile.tcl
@@ -141,10 +144,15 @@ ifeq ($(SYNTH_INPUTS), 1)
 else
   SYNTH_INPUTS_ARG=
 endif
-
+NOPRINT ?= 0
+ifeq ($(NOPRINT), 1)
+  NOPRINT_FLAG=-DDISABLE_PRINTF
+else
+  NOPRINT_FLAG=
+endif
 
 # construct build directory
-BUILD_DIR=build/ki$(K_IN)_ko$(K_OUT)_fs$(FS)_dw$(DW)_pad$(PADDING_TOP).$(PADDING_RIGHT).$(PADDING_BOTTOM).$(PADDING_LEFT)
+BUILD_DIR=build/ki$(K_IN)_ko$(K_OUT)_in$(H_IN).$(HOUT)_fs$(FS)_dw$(DW)_pad$(PADDING_TOP).$(PADDING_RIGHT).$(PADDING_BOTTOM).$(PADDING_LEFT)
 MODEL_DIR=$(dir $(abspath model))/model
 
 $(BUILD_DIR):
@@ -175,7 +183,8 @@ build-cleanup:
 
 ACCELERATOR = neureka
 
-APPDIR := $(BUILD_DIR)/app
+APPDIR := $(MODEL_DIR)/app
+GENDIR := $(BUILD_DIR)/app/gen
 LIBDIR := $(MODEL_DIR)/deps/pulp-nnx
 ACC_DIR := $(LIBDIR)/$(ACCELERATOR)
 SW_DIR ?= sw
@@ -195,10 +204,10 @@ INC_DIRS += $(ACC_DIR)/hal $(ACC_DIR)/gvsoc $(ACC_DIR)/bsp $(ACC_DIR)/bsp/testbe
 APP_SRCS += $(wildcard $(ACC_DIR)/hal/*.c) $(wildcard $(ACC_DIR)/gvsoc/*.c) $(wildcard $(ACC_DIR)/bsp/testbench/*.c)
 SRC_DIRS += $(ACC_DIR)/hal $(ACC_DIR)/gvsoc $(ACC_DIR)/bsp/testbench
 
-## Generated 
-INC_DIRS += $(APPDIR)/gen/inc
-APP_SRCS += $(wildcard $(APPDIR)/gen/src/*.c)
-SRC_DIRS += $(APPDIR)/gen/src
+## Generated (enumerate sources manually as wildcard is evaluated at the start)
+INC_DIRS += $(GENDIR)/inc
+APP_SRCS += $(GENDIR)/src/bias.c $(GENDIR)/src/input.c $(GENDIR)/src/output.c $(GENDIR)/src/scale.c $(GENDIR)/src/weight.c
+SRC_DIRS += $(GENDIR)/src
 
 INC_FLAGS += $(addprefix -I,$(INC_DIRS))
 
@@ -207,6 +216,7 @@ ACCELERATOR_UPPERCASE := $(shell echo $(ACCELERATOR) | tr [:lower:] [:upper:])
 APP_CFLAGS += -DNNX_ACCELERATOR=\"$(ACCELERATOR)\" -DNNX_$(ACCELERATOR_UPPERCASE) -DNNX_NEUREKA_TESTBENCH
 # -DNEUREKA_WEIGHT_SOURCE_WMEM
 APP_CFLAGS += $(INC_FLAGS)
+APP_CFLAGS += $(NOPRINT_FLAG)
 
 # RISC-V options
 RISCV_PREFIX ?= riscv32-unknown-elf-

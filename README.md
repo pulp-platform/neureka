@@ -26,13 +26,17 @@ make update-ips
 make hw-all
 ```
 
-### Setting up the sim
+### Setting up the software environment
 This version of NEureka relies on the https://github.com/pulp-platform/pulp-nnx library to generate simulation stimuli. You can fetch it in the `model/deps` folder as a submodule:
 ```
 git submodule update --init
 ```
-The `pulp-nnx` library has several Python requirements, such as PyTorch. Refer to `model/deps/pulp-nnx/test/requirements.txt` for a list.
-Once the Python setup is working.
+The `pulp-nnx` library has several Python requirements, such as PyTorch. Refer to `model/requirements.txt` for a list; you can install a Python VirtualEnv by running the `create_venv.sh` script and then entering the created environment:
+```
+source create_venv.sh
+source venv/bin/activate
+```
+You also need a RISC-V GCC toolchain, i.e., `riscv32-unknown-elf-gcc` must be in your `PATH`.
 
 ### Generating stimuli and running the simulation
 You can generate stimuli with
