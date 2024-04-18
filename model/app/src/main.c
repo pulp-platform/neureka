@@ -36,9 +36,9 @@ int main() {
   execute_nnx_layer(NULL);
 
   // output checking
-  check_output();
+  int err = check_output();
 
-  *(volatile int *) (0x80000000) = 0;  // FIXME -- no error reporting for now
+  *(volatile int *) (0x80000000) = err;
   *(volatile int *) (0x80000004) = 1;
   return 0;
 }
