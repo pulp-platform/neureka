@@ -20,7 +20,6 @@ before_script:
 
 cache:
   paths:
-    - .cache/pip
     - venv/
 
 .base:
@@ -40,7 +39,7 @@ build:
   artifacts:
     when: always
     expire_in: 1 week
-    paths: [ .bender, model/deps/pulp-nnx, scripts/compile.tcl, sim ]
+    paths: [ .bender, model/deps/pulp-nnx, sim ]
 
 .neureka-vsim-tpl:
   extends: .base
@@ -53,6 +52,7 @@ build:
     - K_IN=${K_IN}
     - K_OUT=${K_OUT}
     - make stimuli
+    - echo $PATH
     - make sw-all run gui=0
     - '(grep -rn "> Success! No errors found." ./transcript)'
 
