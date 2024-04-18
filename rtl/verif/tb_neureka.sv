@@ -452,6 +452,8 @@ module tb_neureka;
     $writememh(STIM_OUTPUT_DATA, tb_neureka.i_dummy_memory.memory);
     $display("hwpe cycles = %d\n", cnt_cycles);
 
+    assert (errors == '0) else $fatal("errors happened");
+
     $finish;
 
   end
