@@ -41,6 +41,8 @@ import errno
 import pprint
 import time
 import random
+from collections import OrderedDict
+import json
 
 runtest = argparse.ArgumentParser(
     prog='bwruntests',
@@ -111,6 +113,8 @@ runtest.add_argument('-y,', '--yaml', action='store_true',
                      from a list of commands""")
 runtest.add_argument('-o,', '--output', type=str,
                      help="""Write junit.xml to file instead of stdout""")
+runtest.add_argument('-P,', '--perf', type=str, default=None,
+                     help="""Write performance results to JSON file""")
 stdout_lock = Lock()
 
 shared_total = 0
@@ -119,11 +123,11 @@ len_total = 0
 class FinishedProcess(object):
     """A process that has finished running.
     """
-    def __init__(self, name, cwd, args, returncode,
+    def __init__(self, name, cwd, runargs, returncode,
                  stdout=None, stderr=None, time=None):
         self.name = name
         self.cwd = cwd
-        self.args = args
+        self.runargs = runargs
         self.returncode = returncode
         self.stdout = stdout
         self.stderr = stderr
@@ -139,17 +143,17 @@ class FinishedProcess(object):
 
 
     def __repr__(self):
-        args = ['name={!r}'.format(self.name)]
-        args += ['cwd={!r}'.format(self.cwd)]
-        args += ['args={!r}'.format(self.args),
+        runargs = ['name={!r}'.format(self.name)]
+        runargs += ['cwd={!r}'.format(self.cwd)]
+        runargs += ['args={!r}'.format(self.runargs),
                  'returncode={!r}'.format(self.returncode)]
         if self.stdout is not None:
-            args.append('stdout={!r}'.format(self.stdout))
+            runargs.append('stdout={!r}'.format(self.stdout))
         if self.stderr is not None:
-            args.append('stderr={!r}'.format(self.stderr))
+            runargs.append('stderr={!r}'.format(self.stderr))
         if self.time is not None:
-            args.append('time={!r}'.format(self.time))
-        return "{}({})".format(type(self).__name__, ', '.join(args))
+            runargs.append('time={!r}'.format(self.time))
+        return "{}({})".format(type(self).__name__, ', '.join(runargs))
 
 def fork(name, cwd, *popenargs, check=False, shell=True,
          **kwargs):
@@ -334,6 +338,38 @@ the pyyaml library which is not installed.""",
         else:
             print(TestSuite.to_xml_string([testsuite],
                                           prettyprint=(args.disable_junit_pp)))
+
+    # # print JSON for performance regression
+    # if args.perf is not None:
+    #     # if file does not exist, create new dictionary:
+    #     if not os.path.isfile(args.perf):
+    #         d = OrderedDict([])
+    #     # else, load the existing dictionary
+    #     else:
+    #         with open(args.perf) as f:
+    #             d = json.load(f, object_pairs_hook=OrderedDict)
+    #     # save the new execution times
+    #     for p in procresults:
+    #         if p.returncode == 0:
+    #             d[p.name] = p.exec_time
+    #     with open(args.perf, 'w', encoding='utf-8') as f:
+    #         json.dump(d, f, ensure_ascii=False, indent=4)
+
+    # print JSON for performance regression
+    if args.perf is not None:
+        # if file does not exist, create new dictionary:
+        if not os.path.isfile(args.perf):
+            d = list([])
+        # else, load the existing dictionary
+        else:
+            with open(args.perf) as f:
+                d = json.load(f)
+        # save the new execution times
+        for p in procresults:
+            if p.returncode == 0:
+                d.append({ 'name': p.name, 'value': p.exec_time, 'unit': 'cycles'})
+        with open(args.perf, 'w', encoding='utf-8') as f:
+            json.dump(d, f, ensure_ascii=False, indent=4)
 
     # print summary of test results
     if not(args.disable_results_pp):

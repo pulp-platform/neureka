@@ -24,11 +24,12 @@ TIMEOUT=200
 # Declare a string array with type
 declare -a test_list=(
     "regr/basic.yml"
+#    "regr/fs1.yml"
 )
 
 # Read the list values with space
 for val in "${test_list[@]}"; do
-    nice -n10 regr/bwruntests.py --report_junit -t ${TIMEOUT} --yaml -o regr/neureka_tests.xml -p${N_PROC} $val
+    nice -n10 regr/bwruntests.py --report_junit -t ${TIMEOUT} --yaml -o regr/neureka_tests.xml -p${N_PROC} --perf regr/perf.json $val
     if test $? -ne 0; then
         echo "Error in test $val"
         exit 1

@@ -20,3 +20,12 @@ jobs:
           domain: iis-git.ee.ethz.ch
           repo: github-mirror/neureka
           token: ${{ secrets.GITLAB_TOKEN }}
+      # - name: Store benchmark result
+      #   uses: benchmark-action/github-action-benchmark@v1
+      #   with:
+      #     name: Execution cycles
+      #     tool: customSmallerIsBetter
+      #     output-file-path: regr/perf.json
+      #     token: ${{ secrets.GITHUB_TOKEN }}
+      #     auto-push: true
+          
