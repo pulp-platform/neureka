@@ -8,15 +8,34 @@ name: gitlab-ci
 
 on: [ push, pull_request, workflow_dispatch ]
 
+permissions:
+  # deployments permission to deploy GitHub pages website
+  deployments: write
+  # contents permission to update benchmark contents in gh-pages branch
+  contents: write
+
 jobs:
   gitlab-ci:
     runs-on: ubuntu-latest
     steps:
       - name: Check Gitlab CI
-        uses: pulp-platform/pulp-actions/gitlab-ci@v2.3.0
+        uses: FrancescoConti/pulp-actions/gitlab-ci@main
         # Skip on forks or pull requests from forks due to missing secrets.
         if: github.repository == 'pulp-platform/neureka' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         with:
           domain: iis-git.ee.ethz.ch
           repo: github-mirror/neureka
           token: ${{ secrets.GITLAB_TOKEN }}
+          artifact: regr/perf.json
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
+        # Skip on forks or pull requests from forks due to missing secrets.
+        if: github.repository == 'pulp-platform/neureka' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        with:
+          name: Execution cycles
+          tool: customSmallerIsBetter
+          output-file-path: regr/perf.json
+          token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+
