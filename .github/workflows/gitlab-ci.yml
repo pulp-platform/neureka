@@ -35,7 +35,6 @@ jobs:
           name: Execution cycles
           tool: customSmallerIsBetter
           output-file-path: regr/perf.json
-          token: ${{ secrets.GITHUB_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: true
 
