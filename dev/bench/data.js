@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1713803468918,
+  "lastUpdate": 1713813746649,
   "repoUrl": "https://github.com/pulp-platform/neureka",
   "entries": {
     "Execution cycles": [
@@ -147,6 +147,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "neureka_basic_tests:t5",
             "value": 404,
+            "unit": "cycles"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "FrancescoConti@users.noreply.github.com",
+            "name": "Francesco Conti",
+            "username": "FrancescoConti"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "81be8a2778e0592b64cadef677f868f88f1fe2bd",
+          "message": "Merge pull request #3 from pulp-platform/add-perf-regr-rebase\n\nAdd perf regr rebase",
+          "timestamp": "2024-04-22T21:10:30+02:00",
+          "tree_id": "ae51ff2d1149159cf51600d2370de684dfc264a7",
+          "url": "https://github.com/pulp-platform/neureka/commit/81be8a2778e0592b64cadef677f868f88f1fe2bd"
+        },
+        "date": 1713813746290,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "neureka_basic_tests:t5",
+            "value": 404,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t2",
+            "value": 140,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t3",
+            "value": 142,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t0",
+            "value": 140,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t1",
+            "value": 142,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t6",
+            "value": 494,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t4",
+            "value": 572,
             "unit": "cycles"
           }
         ]
