@@ -27,7 +27,7 @@ jobs:
           repo: github-mirror/neureka
           token: ${{ secrets.GITLAB_TOKEN }}
           artifact_in: regr/perf.json
-          artifact_out: ${{GITHUB_WORKSPACE}}/perf.json
+          artifact_out: ${{env.GITHUB_WORKSPACE}}/perf.json
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
         # Skip on forks or pull requests from forks due to missing secrets.
@@ -35,7 +35,7 @@ jobs:
         with:
           name: Execution cycles
           tool: customSmallerIsBetter
-          output-file-path: ${{GITHUB_WORKSPACE}}/perf.json
+          output-file-path: ${{env.GITHUB_WORKSPACE}}/perf.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: true
 
