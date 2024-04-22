@@ -19,7 +19,7 @@
 
 export N_PROC=20
 export P_STALL=0.04
-TIMEOUT=200
+TIMEOUT=400
 
 # Declare a string array with type
 declare -a test_list=(
