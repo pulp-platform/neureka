@@ -152,7 +152,7 @@ else
 endif
 
 # construct build directory
-BUILD_DIR=build/ki$(K_IN)_ko$(K_OUT)_in$(H_IN).$(HOUT)_fs$(FS)_dw$(DW)_pad$(PADDING_TOP).$(PADDING_RIGHT).$(PADDING_BOTTOM).$(PADDING_LEFT)
+BUILD_DIR=build/ki$(K_IN)_ko$(K_OUT)_in$(H_IN).$(W_IN)_fs$(FS)_dw$(DW)_pad$(PADDING_TOP).$(PADDING_RIGHT).$(PADDING_BOTTOM).$(PADDING_LEFT)
 MODEL_DIR=$(dir $(abspath model))/model
 
 $(BUILD_DIR):

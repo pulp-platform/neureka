@@ -64,6 +64,9 @@ make sw-all run H_IN=7 W_IN=3 K_OUT=32 K_IN=32 gui=0
 ## Contributors
 - Arpan Suravi Prasad, ETH Zurich (*prasadar@iis.ee.ethz.ch*)
 - Francesco Conti, University of Bologna (*f.conti@unibo.it*)
+
+# Performance regressions
+See https://pulp-platform.github.io/neureka/dev/bench/
  
 # License
 This repository makes use of two licenses:

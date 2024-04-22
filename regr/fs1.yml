@@ -1,0 +1,384 @@
+# Copyright (C) 2024 ETH Zurich and University of Bologna
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Author: Francesco Conti (f.conti@unibo.it)
+#
+
+neureka_fs1_tests:
+
+  fs_1_qw_8_k_in_8_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=8 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_9_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=9 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_10_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=10 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_11_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=11 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_12_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=12 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_13_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=13 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_14_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=14 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_15_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=15 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_17_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=17 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_18_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=18 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_19_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=19 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_20_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=20 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_21_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=21 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_22_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=22 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_23_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=23 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_24_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=24 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_25_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=25 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_26_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=26 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_27_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=27 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_28_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=28 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_29_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=29 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_30_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=30 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_31_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=31 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_33_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=33 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_34_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=34 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_35_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=35 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_36_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=36 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_37_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=37 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_38_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=38 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_39_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=39 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_40_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=40 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_41_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=41 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_42_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=42 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_43_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=43 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_44_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=44 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_45_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=45 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_46_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=46 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_47_k_out_32_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=47 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_1_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=1 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_2_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=2 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_3_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=3 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_4_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=4 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_5_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=5 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_6_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=6 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_7_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=7 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_8_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=8 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_9_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=9 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_10_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=10 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_11_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=11 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_12_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=12 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_13_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=13 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_14_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=14 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_15_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=15 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_16_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=16 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_17_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=17 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_18_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=18 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_19_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=19 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_20_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=20 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_21_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=21 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_22_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=22 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_23_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=23 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_24_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=24 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_25_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=25 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_26_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=26 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_27_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=27 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_28_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=28 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_29_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=29 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_30_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=30 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_31_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=31 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_33_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=33 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_34_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=34 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_35_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=35 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_36_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=36 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_37_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=37 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_38_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=38 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_39_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=39 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_40_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=40 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_41_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=41 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_42_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=42 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_43_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=43 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_44_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=44 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_45_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=45 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_46_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=46 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_47_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=47 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_48_H_IN_6_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=48 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_32_H_IN_1_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=32 H_IN=1 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_32_H_IN_2_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=32 H_IN=2 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_32_H_IN_4_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_32_H_IN_5_W_IN_6:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=32 H_IN=5 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_32_H_IN_6_W_IN_1:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=32 H_IN=4 W_IN=1 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_32_H_IN_6_W_IN_2:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=32 H_IN=4 W_IN=2 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_32_H_IN_6_W_IN_4:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=32 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_16_k_out_32_H_IN_6_W_IN_5:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=16 K_OUT=32 H_IN=4 W_IN=5 NOPRINT=1
+  fs_1_qw_8_k_in_8_k_out_1_H_IN_4_W_IN_4:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=8 K_OUT=1 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_8_k_out_1_H_IN_4_W_IN_5:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=8 K_OUT=1 H_IN=4 W_IN=5 NOPRINT=1
+  fs_1_qw_8_k_in_8_k_out_1_H_IN_5_W_IN_4:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=8 K_OUT=1 H_IN=5 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_8_k_out_1_H_IN_5_W_IN_5:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=8 K_OUT=1 H_IN=5 W_IN=5 NOPRINT=1
+  fs_1_qw_8_k_in_8_k_out_16_H_IN_4_W_IN_4:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=8 K_OUT=16 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_8_k_out_16_H_IN_4_W_IN_5:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=8 K_OUT=16 H_IN=4 W_IN=5 NOPRINT=1
+  fs_1_qw_8_k_in_8_k_out_16_H_IN_5_W_IN_4:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=8 K_OUT=16 H_IN=5 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_8_k_out_16_H_IN_5_W_IN_5:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=8 K_OUT=16 H_IN=5 W_IN=5 NOPRINT=1
+  fs_1_qw_8_k_in_8_k_out_41_H_IN_4_W_IN_4:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=8 K_OUT=41 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_8_k_out_41_H_IN_4_W_IN_5:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=8 K_OUT=41 H_IN=4 W_IN=5 NOPRINT=1
+  fs_1_qw_8_k_in_8_k_out_41_H_IN_5_W_IN_4:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=8 K_OUT=41 H_IN=5 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_8_k_out_41_H_IN_5_W_IN_5:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=8 K_OUT=41 H_IN=5 W_IN=5 NOPRINT=1
+  fs_1_qw_8_k_in_9_k_out_1_H_IN_4_W_IN_4:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=9 K_OUT=1 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_9_k_out_1_H_IN_4_W_IN_5:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=9 K_OUT=1 H_IN=4 W_IN=5 NOPRINT=1
+  fs_1_qw_8_k_in_9_k_out_1_H_IN_5_W_IN_4:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=9 K_OUT=1 H_IN=5 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_9_k_out_1_H_IN_5_W_IN_5:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=9 K_OUT=1 H_IN=5 W_IN=5 NOPRINT=1
+  fs_1_qw_8_k_in_9_k_out_16_H_IN_4_W_IN_4:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=9 K_OUT=16 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_9_k_out_16_H_IN_4_W_IN_5:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=9 K_OUT=16 H_IN=4 W_IN=5 NOPRINT=1
+  fs_1_qw_8_k_in_9_k_out_16_H_IN_5_W_IN_4:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=9 K_OUT=16 H_IN=5 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_9_k_out_16_H_IN_5_W_IN_5:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=9 K_OUT=16 H_IN=5 W_IN=5 NOPRINT=1
+  fs_1_qw_8_k_in_9_k_out_41_H_IN_4_W_IN_4:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=9 K_OUT=41 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_9_k_out_41_H_IN_4_W_IN_5:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=9 K_OUT=41 H_IN=4 W_IN=5 NOPRINT=1
+  fs_1_qw_8_k_in_9_k_out_41_H_IN_5_W_IN_4:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=9 K_OUT=41 H_IN=5 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_9_k_out_41_H_IN_5_W_IN_5:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=9 K_OUT=41 H_IN=5 W_IN=5 NOPRINT=1
+  fs_1_qw_8_k_in_17_k_out_1_H_IN_4_W_IN_4:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=17 K_OUT=1 H_IN=4 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_17_k_out_1_H_IN_4_W_IN_5:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=17 K_OUT=1 H_IN=4 W_IN=5 NOPRINT=1
+  fs_1_qw_8_k_in_17_k_out_1_H_IN_5_W_IN_4:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=17 K_OUT=1 H_IN=5 W_IN=4 NOPRINT=1
+  fs_1_qw_8_k_in_17_k_out_1_H_IN_5_W_IN_5:
+    path: . #ok
+    command: make stimuli sw-all run gui=0  FS=1 QW=8 K_IN=17 K_OUT=1 H_IN=5 W_IN=5 NOPRINT=1
+
