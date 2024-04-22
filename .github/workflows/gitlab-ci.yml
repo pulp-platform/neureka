@@ -26,7 +26,8 @@ jobs:
           domain: iis-git.ee.ethz.ch
           repo: github-mirror/neureka
           token: ${{ secrets.GITLAB_TOKEN }}
-          artifact: regr/perf.json
+          artifact_in: regr/perf.json
+          artifact_out: ${{GITHUB_WORKSPACE}}/perf.json
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
         # Skip on forks or pull requests from forks due to missing secrets.
@@ -34,7 +35,7 @@ jobs:
         with:
           name: Execution cycles
           tool: customSmallerIsBetter
-          output-file-path: regr/perf.json
+          output-file-path: ${{GITHUB_WORKSPACE}}/perf.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: true
 
