@@ -25,7 +25,7 @@ import hwpe_stream_package::*;
 import hci_package::*;
 
 module neureka_streamer #(
-  parameter int unsigned TCDM_FIFO_DEPTH = 2,
+  parameter int unsigned TCDM_FIFO_DEPTH = 8,
   parameter int unsigned BW = NEUREKA_MEM_BANDWIDTH_EXT // bandwidth
 ) (
   // global signals
@@ -212,7 +212,7 @@ module neureka_streamer #(
     .rst_ni      ( rst_ni                        ),
     .test_mode_i ( test_mode_i                   ),
     .clear_i     ( clear_i | ctrl_i.clear_source ),
-    .enable_i    ( wmem_enable                   ),
+    .enable_i    ( all_source_enable             ),
     .tcdm        ( virt_tcdm [2]                 ),
     .stream      ( weight[1]                     ),
     .ctrl_i      ( wmem_source_ctrl              ),
@@ -305,14 +305,17 @@ module neureka_streamer #(
     .tcdm_initiator ( tcdm_premux[0]       )
   );
 
+  logic [1:0] mux_ooo_prio;
+  assign mux_ooo_prio = ctrl_i.ld_which_mux_sel == LD_FEAT_SEL ? 2'b01 : 2'b10;
+  
   hci_core_mux_ooo #(
     .NB_CHAN ( 2 )
   ) i_mux_ooo (
     .clk_i            ( clk_i          ),
     .rst_ni           ( rst_ni         ),
     .clear_i          ( clear_i        ),
-    .priority_force_i ( 1'b0           ),
-    .priority_i       ( '0             ),
+    .priority_force_i ( 1'b1           ),
+    .priority_i       ( mux_ooo_prio   ),
     .in               ( tcdm_premux    ),
     .out              ( tcdm_preout    )
   );
@@ -343,8 +346,8 @@ module neureka_streamer #(
   end
 
   always_comb begin : weight_source_ctrl_mux
-    wmem_source_ctrl = '0; 
-    if(((ctrl_i.ld_which_mux_sel == LD_WEIGHT_SEL) & ctrl_i.wmem_sel) | (ctrl_i.ld_which_mux_sel == LD_FEAT_WEIGHT_SEL) )
+    // wmem_source_ctrl = '0; 
+    // if(((ctrl_i.ld_which_mux_sel == LD_WEIGHT_SEL) & ctrl_i.wmem_sel) | (ctrl_i.ld_which_mux_sel == LD_FEAT_WEIGHT_SEL) )
       wmem_source_ctrl = ctrl_i.wmem_source_ctrl;
   end 
 

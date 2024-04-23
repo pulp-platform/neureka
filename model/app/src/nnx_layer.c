@@ -75,13 +75,14 @@ static void task_prepare(nnx_task_t *task) {
 
   nnx_task_set_weight_offset(task, weightOffsetModeLayerWise, WEIGHT_OFFSET);
 
-#ifdef NEUREKA_WEIGHT_SOURCE_WMEM
-  nnx_task_set_weight_source(task, neurekaWeightSourceWmem);
-  nnx_task_set_activation_prefetch(task, activationPrefetchOn);
-#else
-  neureka_task_set_weight_source(task, neurekaWeightSourceTcdm);
-  nnx_task_set_activation_prefetch(task, activationPrefetchOff);
-#endif
+  if(WEIGHT_HEIGHT == 1) {
+    nnx_task_set_weight_source(task, neurekaWeightSourceWmem);
+    nnx_task_set_activation_prefetch(task, activationPrefetchOn);
+  }
+  else {
+    neureka_task_set_weight_source(task, neurekaWeightSourceTcdm);
+    nnx_task_set_activation_prefetch(task, activationPrefetchOff);
+  }
 #if INPUT_SIGNED == 1
   neureka_task_set_input_signed(task);
 #else

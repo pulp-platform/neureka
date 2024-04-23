@@ -34,13 +34,13 @@ package neureka_package;
   // default number of cores
   parameter int NR_CORES = 9;
 
-  parameter int NEUREKA_PE_H_DEFAULT = -1; // 4; // Number of PEs across height
-  parameter int NEUREKA_PE_W_DEFAULT = -1; // 4; // Number of PEs across width
-  parameter int NEUREKA_PE_HW_DEFAULT = -1; // NEUREKA_PE_H_DEFAULT*NEUREKA_PE_W_DEFAULT; // Total number of PEs
+  parameter int NEUREKA_PE_H_DEFAULT = 4; // Number of PEs across height
+  parameter int NEUREKA_PE_W_DEFAULT = 4; // Number of PEs across width
+  parameter int NEUREKA_PE_HW_DEFAULT = 16; // NEUREKA_PE_H_DEFAULT*NEUREKA_PE_W_DEFAULT; // Total number of PEs
 
-  parameter int NEUREKA_INFEAT_BUFFER_SIZE_H_DEFAULT = -1; // NEUREKA_PE_H_DEFAULT+2; // Input Feature buffer size across height. 
-  parameter int NEUREKA_INFEAT_BUFFER_SIZE_W_DEFAULT = -1; // NEUREKA_PE_W_DEFAULT+2; // Input Feature buffer size across width
-  parameter int NEUREKA_INFEAT_BUFFER_SIZE_HW_DEFAULT = -1; // NEUREKA_INFEAT_BUFFER_SIZE_H_DEFAULT*NEUREKA_INFEAT_BUFFER_SIZE_W_DEFAULT; // Input Feature buffer size 
+  parameter int NEUREKA_INFEAT_BUFFER_SIZE_H_DEFAULT = NEUREKA_PE_H_DEFAULT+2; // Input Feature buffer size across height. 
+  parameter int NEUREKA_INFEAT_BUFFER_SIZE_W_DEFAULT = NEUREKA_PE_W_DEFAULT+2; // Input Feature buffer size across width
+  parameter int NEUREKA_INFEAT_BUFFER_SIZE_HW_DEFAULT = NEUREKA_INFEAT_BUFFER_SIZE_H_DEFAULT*NEUREKA_INFEAT_BUFFER_SIZE_W_DEFAULT; // Input Feature buffer size 
   parameter int NEUREKA_INFEAT_BUFFER_SIZE_HW_MAX = 36; // Max. input buffer size currently considered
 
   // number of contexts
