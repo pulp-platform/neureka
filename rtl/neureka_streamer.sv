@@ -191,9 +191,9 @@ module neureka_streamer #(
   assign wmem_enable = (~ctrl_i.ld_st_mux_sel & ctrl_i.wmem_sel & (ctrl_i.ld_which_mux_sel == LD_WEIGHT_SEL)) | (ctrl_i.ld_which_mux_sel == LD_FEAT_WEIGHT_SEL);
   assign all_source_enable = (~ctrl_i.ld_st_mux_sel & (~wmem_enable)) | (ctrl_i.ld_which_mux_sel == LD_FEAT_WEIGHT_SEL);
 
-  hci_core_source #(
+  hci_ecc_source #(
     .PASSTHROUGH_FIFO ( 1                         )
-  ) i_all_source (
+  ) i_all_ecc_source (
     .clk_i       ( clk_i                         ),
     .rst_ni      ( rst_ni                        ),
     .test_mode_i ( test_mode_i                   ),
@@ -205,9 +205,9 @@ module neureka_streamer #(
     .flags_o     ( all_source_flags              )
   );
 
-  hci_core_source #(
+  hci_ecc_source #(
     .PASSTHROUGH_FIFO ( 1                         )
-  ) i_weight_source (
+  ) i_weight_ecc_source (
     .clk_i       ( clk_i                         ),
     .rst_ni      ( rst_ni                        ),
     .test_mode_i ( test_mode_i                   ),
@@ -219,7 +219,7 @@ module neureka_streamer #(
     .flags_o     ( wmem_source_flags             )
   );
 
-  hci_core_sink i_sink (
+  hci_ecc_sink i_ecc_sink (
     .clk_i       ( clk_i                       ),
     .rst_ni      ( rst_ni                      ),
     .test_mode_i ( test_mode_i                 ),
