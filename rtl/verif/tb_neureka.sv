@@ -40,6 +40,7 @@ module tb_neureka;
   parameter STIM_OUTPUT_DATA = "./stim_output_data.txt";
   parameter DATA_BASE_ADDRESS = 32'h1c01_0000;
   parameter VLEN_CNT_SIZE = 32;
+  parameter EW = ($clog2(32)+2)*9+($clog2(32+288/MP+1)+2);
 
   // global signals
   logic                         clk_i  = '0;
@@ -81,6 +82,14 @@ module tb_neureka;
   logic [MP-1:0][31:0] tcdm_data;
   logic [MP-1:0][31:0] tcdm_r_data;
   logic [MP-1:0]       tcdm_r_valid;
+
+  logic                tcdm_r_opc;
+  logic [MP-1:0][6:0]  tcdm_data_ecc;
+  logic [8:0]          tcdm_meta_ecc;
+  logic [MP-1:0][38:0] tcdm_r_data_enc;
+  logic [MP-1:0][6:0]  tcdm_r_data_ecc;
+  logic [2:0]          tcdm_r_meta_enc;
+  logic [1:0]          tcdm_r_meta_ecc;
 
   logic [MP-1:0]       tcdm_w_req;
   logic [MP-1:0]       tcdm_w_gnt;
@@ -200,6 +209,8 @@ module tb_neureka;
       assign tcdm_r_valid [ii] = tcdm[ii].r_valid;
     end
 
+    assign tcdm_r_opc = '0;
+
     for(genvar ii=0; ii<MP; ii++) begin : tcdm_w_binding
       assign tcdm_weight[ii].req  = tcdm_w_req  [ii];
       assign tcdm_weight[ii].add  = tcdm_w_add  [ii] + MEMORY_SIZE*4;
@@ -221,12 +232,36 @@ module tb_neureka;
     assign data_rvalid = periph_r_valid | stack[0].r_valid | tcdm[MP].r_valid | other_r_valid;
   endgenerate
 
+  // RESPONSE PHASE ENCODING
+  generate
+    for(genvar ii=0; ii<MP; ii++) begin : r_data_encoding
+      hsiao_ecc_enc #(
+        .DataWidth (32)
+      ) i_r_data_ecc (
+        .in  (tcdm[ii].r_data),
+        .out (tcdm_r_data_enc[ii])
+      );
+
+      assign tcdm_r_data_ecc[ii] = tcdm_r_data_enc[ii][38:32];
+    end
+  endgenerate
+
+  hsiao_ecc_enc #(
+    .DataWidth (1)
+  ) i_r_meta_ecc (
+    .in  (tcdm_r_opc),
+    .out (tcdm_r_meta_enc)
+  );
+
+  assign tcdm_r_meta_ecc = tcdm_r_meta_enc[2:1];
+
   neureka_top_wrap #(
     .TP_IN        ( TP_IN               ),
     .TP_OUT       ( TP_OUT            ),
     .CNT          ( TP_IN            ),
     // .BW           (9*32),
     // .MP           ( MP               ),
+    .EW           ( EW               ),
     .ID           ( ID               ),
     .PE_H         ( 4 ),
     .PE_W         ( 4 )
@@ -241,8 +276,13 @@ module tb_neureka;
     .tcdm_wen       ( tcdm_wen       ),
     .tcdm_be        ( tcdm_be        ),
     .tcdm_data      ( tcdm_data      ),
+    .tcdm_data_ecc  ( tcdm_data_ecc  ),
+    .tcdm_meta_ecc  ( tcdm_meta_ecc  ),
     .tcdm_gnt       ( tcdm_gnt       ),
     .tcdm_r_data    ( tcdm_r_data    ),
+    .tcdm_r_opc     ( tcdm_r_opc     ),
+    .tcdm_r_data_ecc ( tcdm_r_data_ecc ),
+    .tcdm_r_meta_ecc ( tcdm_r_meta_ecc ),
     .tcdm_r_valid   ( tcdm_r_valid   ),
     .tcdm_w_req       ( tcdm_w_req       ),
     .tcdm_w_add       ( tcdm_w_add       ),
