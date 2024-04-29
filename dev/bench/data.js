@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1713813752177,
+  "lastUpdate": 1714406109568,
   "repoUrl": "https://github.com/pulp-platform/neureka",
   "entries": {
     "Execution cycles": [
@@ -261,6 +261,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "neureka_basic_tests:t4",
             "value": 572,
+            "unit": "cycles"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "luigi.ghionda@studio.unibo.it",
+            "name": "Luigi Ghionda",
+            "username": "LuigiGhionda"
+          },
+          "committer": {
+            "email": "luigi.ghionda@studio.unibo.it",
+            "name": "Luigi Ghionda",
+            "username": "LuigiGhionda"
+          },
+          "distinct": true,
+          "id": "b23a7dba692785ce1899c4b6a81383a6e901e0c8",
+          "message": "Update wrap and testbench to be compliant with HCI ECC protected NEureka\n* This version of NEureka has the streamer ECC protected so it expects a certain number of check bits along with data from memory. To solve this, an ECC encoder was added to the testbench.\n* This version doesn't include the ability to totally handle a simulation with fault injection because the memory-side ECC decoder wasn't included.\n* The change in the makefile was included to prevent a compilation error in the package that generates the parity matrix.",
+          "timestamp": "2024-04-29T17:47:05+02:00",
+          "tree_id": "2e12dc2f1d8994e55b115b7f732a76447e4160bc",
+          "url": "https://github.com/pulp-platform/neureka/commit/b23a7dba692785ce1899c4b6a81383a6e901e0c8"
+        },
+        "date": 1714406109171,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "neureka_basic_tests:t4",
+            "value": 572,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t1",
+            "value": 142,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t3",
+            "value": 142,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t5",
+            "value": 404,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t6",
+            "value": 494,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t2",
+            "value": 140,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t0",
+            "value": 140,
             "unit": "cycles"
           }
         ]
