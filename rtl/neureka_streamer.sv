@@ -20,6 +20,8 @@
  * Authors (NEUREKA): Arpan Suravi Prasad <prasadar@iis.ee.ethz.ch>
  */
 
+`include "hci_helpers.svh"
+
 import neureka_package::*;
 import hwpe_stream_package::*;
 import hci_package::*;
@@ -52,10 +54,10 @@ module neureka_streamer #(
   output flags_streamer_t        flags_o
 );
 
-  localparam int unsigned UW = tcdm.UW;
-  localparam int unsigned IW = tcdm.IW;
-  localparam int unsigned EW = tcdm.EW;
-  localparam int unsigned EHW = tcdm.EHW;
+  localparam int unsigned UW  = `HCI_SIZE_GET_DW(tcdm);
+  localparam int unsigned IW  = `HCI_SIZE_GET_IW(tcdm);
+  localparam int unsigned EW  = `HCI_SIZE_GET_EW(tcdm);
+  localparam int unsigned EHW = `HCI_SIZE_GET_EHW(tcdm);
 
   hci_streamer_ctrl_t  all_source_ctrl, wmem_source_ctrl;
   hci_streamer_flags_t all_source_flags, wmem_source_flags;
