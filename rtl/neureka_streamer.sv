@@ -55,11 +55,7 @@ module neureka_streamer
   output flags_streamer_t        flags_o
 );
 
-<<<<<<< HEAD
-  localparam int unsigned UW  = `HCI_SIZE_GET_DW(tcdm);
-=======
   localparam int unsigned UW  = `HCI_SIZE_GET_UW(tcdm);
->>>>>>> 7a63088 (Align to HCIv2.1 without automatic parameter prop)
   localparam int unsigned IW  = `HCI_SIZE_GET_IW(tcdm);
   localparam int unsigned EW  = `HCI_SIZE_GET_EW(tcdm);
   localparam int unsigned EHW = `HCI_SIZE_GET_EHW(tcdm);
