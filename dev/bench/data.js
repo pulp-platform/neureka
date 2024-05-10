@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1715328530276,
+  "lastUpdate": 1715329716445,
   "repoUrl": "https://github.com/pulp-platform/neureka",
   "entries": {
     "Execution cycles": [
@@ -488,6 +488,65 @@ window.BENCHMARK_DATA = {
           },
           {
             "name": "neureka_basic_tests:t3",
+            "value": 142,
+            "unit": "cycles"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "FrancescoConti@users.noreply.github.com",
+            "name": "Francesco Conti",
+            "username": "FrancescoConti"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0337dcf856a7a2bfa72df39d234831646f1015f4",
+          "message": "Merge pull request #5 from pulp-platform/lg/fix-synth\n\nFix synthesis error related to HCI interface",
+          "timestamp": "2024-05-10T10:18:57+02:00",
+          "tree_id": "15b2797bd5e59d76932f6b6e0fbb654c0e114af6",
+          "url": "https://github.com/pulp-platform/neureka/commit/0337dcf856a7a2bfa72df39d234831646f1015f4"
+        },
+        "date": 1715329715888,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "neureka_basic_tests:t3",
+            "value": 142,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t5",
+            "value": 404,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t2",
+            "value": 140,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t4",
+            "value": 572,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t0",
+            "value": 140,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t6",
+            "value": 494,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t1",
             "value": 142,
             "unit": "cycles"
           }
