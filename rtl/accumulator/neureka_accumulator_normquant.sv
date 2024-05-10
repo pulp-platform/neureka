@@ -319,6 +319,7 @@ module neureka_accumulator_normquant #(
       end
 
       always_comb begin
+        shift_data_stage2_d[ii] = shift_data_stage2_q[ii]; 
         if(clear_i) begin
           shift_data_stage2_d[ii] = '0;
         end
@@ -376,6 +377,7 @@ module neureka_accumulator_normquant #(
 
     addr_cnt_en_stage1_d = 1'b0;
     addr_cnt_clear = 1'b0;
+    adder_enable = '0;
 
 
     we          = '0;
