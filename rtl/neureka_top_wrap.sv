@@ -76,6 +76,15 @@ module neureka_top_wrap #(
   output logic [     ID-1:0]                    periph_r_id
 );
 
+  localparam hci_size_parameter_t `HCI_SIZE_PARAM(tcdm) = '{
+    DW:  BW,
+    AW:  DEFAULT_AW,
+    BW:  DEFAULT_BW,
+    UW:  0,
+    IW:  0,
+    EW:  0,
+    EHW: 0
+  };
   hci_core_intf #(
     .DW ( BW ),
     .UW ( 0  ),
@@ -132,23 +141,24 @@ module neureka_top_wrap #(
     end
 
   neureka_top #(
-    .TP_IN     ( TP_IN     ),
-    .TP_OUT    ( TP_OUT    ),
-    .CNT       ( CNT       ),
-    .BW        ( BW        ),
-    .ID        ( ID        ),
-    .N_CORES   ( N_CORES   ),
-    .N_CONTEXT ( N_CONTEXT ),
-    .PE_H      ( PE_H      ),
-    .PE_W      ( PE_W      )
+    .TP_IN                 ( TP_IN                 ),
+    .TP_OUT                ( TP_OUT                ),
+    .CNT                   ( CNT                   ),
+    .BW                    ( BW                    ),
+    .ID                    ( ID                    ),
+    .N_CORES               ( N_CORES               ),
+    .N_CONTEXT             ( N_CONTEXT             ),
+    .PE_H                  ( PE_H                  ),
+    .PE_W                  ( PE_W                  ),
+    .`HCI_SIZE_PARAM(tcdm) ( `HCI_SIZE_PARAM(tcdm) )
   ) i_neureka_top (
-    .clk_i       ( clk_i        ),
-    .rst_ni      ( rst_ni       ),
-    .test_mode_i ( test_mode_i  ),
-    .evt_o       ( evt_o        ),
-    .busy_o      ( busy_o       ),
+    .clk_i       ( clk_i          ),
+    .rst_ni      ( rst_ni         ),
+    .test_mode_i ( test_mode_i    ),
+    .evt_o       ( evt_o          ),
+    .busy_o      ( busy_o         ),
     .tcdm        ( tcdm.initiator ),
-    .periph      ( periph.slave )
+    .periph      ( periph.slave   )
   );
 
 endmodule // neureka_top_wrap

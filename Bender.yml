@@ -6,7 +6,7 @@ package:
 
 dependencies:
   hwpe-stream:  { git: "https://github.com/pulp-platform/hwpe-stream.git", version: 1.6.5 }
-  hci           : { git: "https://github.com/pulp-platform/hci.git", rev: "v2.0.0-rc1"  } # branch: breaking-names
+  hci               : { git: "https://github.com/pulp-platform/hci.git"               , rev: 2a9dbd051acee0679fe32b58c3b9468ee3b739a4 } # branch: remove-automatic-parameter-prop
   hwpe-ctrl:    { git: "https://github.com/pulp-platform/hwpe-ctrl.git", rev: "a596620" }
   zeroriscy:    { git: "git@github.com:yvantor/ibex.git", rev: "bender", target: "test" } # for verification only
  
