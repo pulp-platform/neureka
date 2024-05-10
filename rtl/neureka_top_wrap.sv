@@ -20,11 +20,13 @@
  * Authors (NEUREKA): Arpan Suravi Prasad <prasadar@iis.ee.ethz.ch>
  */
 
-import neureka_package::*;
-import hwpe_ctrl_package::*;
-import hci_package::*;
+`include "hci_helpers.svh"
 
-module neureka_top_wrap #(
+module neureka_top_wrap
+  import neureka_package::*;
+  import hwpe_ctrl_package::*;
+  import hci_package::*;
+#(
   parameter int unsigned TP_IN     = NEUREKA_TP_IN,  // number of input elements processed per cycle
   parameter int unsigned TP_OUT    = NEUREKA_TP_OUT, // number of output elements processed per cycle
   parameter int unsigned CNT       = VLEN_CNT_SIZE,  // counter size
