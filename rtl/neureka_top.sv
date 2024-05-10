@@ -19,12 +19,14 @@
  * Authors (NE16): Francesco Conti <francesco.conti@greenwaves-technologies.com>
  * Authors (NEUREKA): Arpan Suravi Prasad <prasadar@iis.ee.ethz.ch>
  */
+ 
+`include "hci_helpers.svh"
 
-import neureka_package::*;
-import hwpe_ctrl_package::*;
-import hci_package::*;
-
-module neureka_top #(
+module neureka_top
+  import neureka_package::*;
+  import hwpe_ctrl_package::*;
+  import hci_package::*;
+#(
   parameter int unsigned TP_IN     = NEUREKA_TP_IN,   // number of input elements processed per cycle
   parameter int unsigned TP_OUT    = NEUREKA_TP_OUT,  // number of output elements processed per cycle
   parameter int unsigned CNT       = VLEN_CNT_SIZE,   // counter size
@@ -37,7 +39,9 @@ module neureka_top #(
   parameter int unsigned N_CONTEXT = NR_CONTEXT,
 
   parameter int unsigned PE_H      = NEUREKA_PE_H_DEFAULT,
-  parameter int unsigned PE_W      = NEUREKA_PE_W_DEFAULT
+  parameter int unsigned PE_W      = NEUREKA_PE_W_DEFAULT,
+
+  parameter hci_size_parameter_t `HCI_SIZE_PARAM(tcdm) = '0
 ) (
   // global signals
   input  logic                                  clk_i,
@@ -125,7 +129,8 @@ module neureka_top #(
   );
 
   neureka_streamer #(
-    .BW ( NEUREKA_MEM_BANDWIDTH_EXT )
+    .BW                    ( NEUREKA_MEM_BANDWIDTH_EXT ),
+    .`HCI_SIZE_PARAM(tcdm) ( `HCI_SIZE_PARAM(tcdm)     )
   ) i_streamer (
     .clk_i       ( clk_i          ),
     .rst_ni      ( rst_ni         ),
