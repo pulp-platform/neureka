@@ -22,13 +22,14 @@
 
 `include "hci_helpers.svh"
 
-import neureka_package::*;
-import hwpe_stream_package::*;
-import hci_package::*;
-
-module neureka_streamer #(
+module neureka_streamer 
+  import neureka_package::*;
+  import hwpe_stream_package::*;
+  import hci_package::*;
+#(
   parameter int unsigned TCDM_FIFO_DEPTH = 2,
-  parameter int unsigned BW = NEUREKA_MEM_BANDWIDTH_EXT // bandwidth
+  parameter int unsigned BW = NEUREKA_MEM_BANDWIDTH_EXT, // bandwidth
+  parameter hci_size_parameter_t `HCI_SIZE_PARAM(tcdm) = '0
 ) (
   // global signals
   input  logic                   clk_i,
@@ -54,7 +55,11 @@ module neureka_streamer #(
   output flags_streamer_t        flags_o
 );
 
+<<<<<<< HEAD
   localparam int unsigned UW  = `HCI_SIZE_GET_DW(tcdm);
+=======
+  localparam int unsigned UW  = `HCI_SIZE_GET_UW(tcdm);
+>>>>>>> 7a63088 (Align to HCIv2.1 without automatic parameter prop)
   localparam int unsigned IW  = `HCI_SIZE_GET_IW(tcdm);
   localparam int unsigned EW  = `HCI_SIZE_GET_EW(tcdm);
   localparam int unsigned EHW = `HCI_SIZE_GET_EHW(tcdm);
@@ -158,6 +163,15 @@ module neureka_streamer #(
     .clk ( clk_i )
   );
 
+  localparam hci_size_parameter_t `HCI_SIZE_PARAM(tcdm_preout) = '{
+    DW:  NEUREKA_MEM_BANDWIDTH_EXT,
+    AW:  DEFAULT_AW,
+    BW:  DEFAULT_BW,
+    UW:  UW,
+    IW:  1,
+    EW:  EW,
+    EHW: EHW
+  };
   hci_core_intf #(
     .DW  ( NEUREKA_MEM_BANDWIDTH_EXT ),
     .UW  ( UW                        ),
@@ -194,7 +208,8 @@ module neureka_streamer #(
   assign all_source_enable = (~ctrl_i.ld_st_mux_sel & (~wmem_enable)) | (ctrl_i.ld_which_mux_sel == LD_FEAT_WEIGHT_SEL);
 
   hci_core_source #(
-    .PASSTHROUGH_FIFO ( 1                         )
+    .PASSTHROUGH_FIFO      ( 1                     ),
+    .`HCI_SIZE_PARAM(tcdm) ( `HCI_SIZE_PARAM(tcdm) )
   ) i_all_source (
     .clk_i       ( clk_i                         ),
     .rst_ni      ( rst_ni                        ),
@@ -208,7 +223,8 @@ module neureka_streamer #(
   );
 
   hci_core_source #(
-    .PASSTHROUGH_FIFO ( 1                         )
+    .PASSTHROUGH_FIFO      ( 1                     ),
+    .`HCI_SIZE_PARAM(tcdm) ( `HCI_SIZE_PARAM(tcdm) )
   ) i_weight_source (
     .clk_i       ( clk_i                         ),
     .rst_ni      ( rst_ni                        ),
@@ -221,7 +237,9 @@ module neureka_streamer #(
     .flags_o     ( wmem_source_flags             )
   );
 
-  hci_core_sink i_sink (
+  hci_core_sink #(
+    .`HCI_SIZE_PARAM(tcdm) ( `HCI_SIZE_PARAM(tcdm) )
+  ) i_sink (
     .clk_i       ( clk_i                       ),
     .rst_ni      ( rst_ni                      ),
     .test_mode_i ( test_mode_i                 ),
@@ -229,14 +247,15 @@ module neureka_streamer #(
     .enable_i    ( ctrl_i.ld_st_mux_sel        ),
     .tcdm        ( virt_tcdm [1]               ),
     .stream      ( conv_i                      ),
-    .ctrl_i      ( ctrl_i.outfeat_sink_ctrl       ),
+    .ctrl_i      ( ctrl_i.outfeat_sink_ctrl    ),
     .flags_o     ( flags_o.conv_sink_flags     )
   );
 
   generate
     if(TCDM_FIFO_DEPTH > 0) begin : use_fifo_gen
       hci_core_mux_static #(
-        .NB_CHAN (2)
+        .NB_CHAN             ( 2                     ),
+        .`HCI_SIZE_PARAM(in) ( `HCI_SIZE_PARAM(tcdm) )
       ) i_ld_st_mux_static (
         .clk_i   ( clk_i                ),
         .rst_ni  ( rst_ni               ),
@@ -247,7 +266,8 @@ module neureka_streamer #(
       );
 
       hci_core_fifo #(
-        .FIFO_DEPTH ( TCDM_FIFO_DEPTH )
+        .FIFO_DEPTH                      ( TCDM_FIFO_DEPTH       ),
+        .`HCI_SIZE_PARAM(tcdm_initiator) ( `HCI_SIZE_PARAM(tcdm) )
       ) i_tcdm_fifo (
         .clk_i          ( clk_i                       ),
         .rst_ni         ( rst_ni                      ),
@@ -258,7 +278,8 @@ module neureka_streamer #(
       );
 
       hci_core_fifo #(
-        .FIFO_DEPTH ( TCDM_FIFO_DEPTH )
+        .FIFO_DEPTH                      ( TCDM_FIFO_DEPTH       ),
+        .`HCI_SIZE_PARAM(tcdm_initiator) ( `HCI_SIZE_PARAM(tcdm) )
       ) i_weight_tcdm_fifo (
         .clk_i          ( clk_i                       ),
         .rst_ni         ( rst_ni                      ),
@@ -270,7 +291,8 @@ module neureka_streamer #(
     end
     else begin : dont_use_fifo_gen
       hci_core_mux_static #(
-        .NB_CHAN (2)
+        .NB_CHAN             ( 2                     ),
+        .`HCI_SIZE_PARAM(in) ( `HCI_SIZE_PARAM(tcdm) )
       ) i_ld_st_mux_static (
         .clk_i   ( clk_i                ),
         .rst_ni  ( rst_ni               ),
@@ -289,7 +311,9 @@ module neureka_streamer #(
     end
   endgenerate
 
-  hci_core_r_valid_filter i_tcdm_filter (
+  hci_core_r_valid_filter #(
+    .`HCI_SIZE_PARAM(tcdm_target) ( `HCI_SIZE_PARAM(tcdm) )
+  ) i_tcdm_filter (
     .clk_i          ( clk_i                ),
     .rst_ni         ( rst_ni               ),
     .clear_i        ( clear_i              ),
@@ -298,7 +322,9 @@ module neureka_streamer #(
     .tcdm_initiator ( tcdm_premux[1]       )
   );
 
-  hci_core_r_valid_filter i_tcdm_weight_filter (
+  hci_core_r_valid_filter #(
+    .`HCI_SIZE_PARAM(tcdm_target) ( `HCI_SIZE_PARAM(tcdm) )
+  ) i_tcdm_weight_filter (
     .clk_i          ( clk_i                ),
     .rst_ni         ( rst_ni               ),
     .clear_i        ( clear_i              ),
@@ -308,7 +334,8 @@ module neureka_streamer #(
   );
 
   hci_core_mux_ooo #(
-    .NB_CHAN ( 2 )
+    .NB_CHAN              ( 2                            ),
+    .`HCI_SIZE_PARAM(out) ( `HCI_SIZE_PARAM(tcdm_preout) )
   ) i_mux_ooo (
     .clk_i            ( clk_i          ),
     .rst_ni           ( rst_ni         ),
@@ -319,7 +346,9 @@ module neureka_streamer #(
     .out              ( tcdm_preout    )
   );
 
-  hci_core_r_id_filter i_tcdm_id_filter (
+  hci_core_r_id_filter #(
+    .`HCI_SIZE_PARAM(tcdm_target) ( `HCI_SIZE_PARAM(tcdm) )
+  ) i_tcdm_id_filter (
     .clk_i          ( clk_i       ),
     .rst_ni         ( rst_ni      ),
     .clear_i        ( clear_i     ),
