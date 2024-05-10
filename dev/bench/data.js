@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1715373307496,
+  "lastUpdate": 1715373308977,
   "repoUrl": "https://github.com/pulp-platform/neureka",
   "entries": {
     "Execution cycles": [
@@ -627,6 +627,61 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/pulp-platform/neureka/commit/b3af8ec956e638d7496a901e1240b87a2223e6b2"
         },
         "date": 1715373307107,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "neureka_basic_tests:t0",
+            "value": 140,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t4",
+            "value": 572,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t2",
+            "value": 140,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t3",
+            "value": 142,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t5",
+            "value": 404,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t1",
+            "value": 142,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t6",
+            "value": 494,
+            "unit": "cycles"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "pulp-platform",
+            "username": "pulp-platform"
+          },
+          "committer": {
+            "name": "pulp-platform",
+            "username": "pulp-platform"
+          },
+          "id": "b3af8ec956e638d7496a901e1240b87a2223e6b2",
+          "message": "Move to HCI v2.1",
+          "timestamp": "2024-05-01T22:00:09Z",
+          "url": "https://github.com/pulp-platform/neureka/pull/6/commits/b3af8ec956e638d7496a901e1240b87a2223e6b2"
+        },
+        "date": 1715373308048,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
