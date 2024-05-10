@@ -343,7 +343,7 @@ module neureka_streamer
   );
 
   hci_core_r_id_filter #(
-    .`HCI_SIZE_PARAM(tcdm_target) ( `HCI_SIZE_PARAM(tcdm) )
+    .`HCI_SIZE_PARAM(tcdm_target) ( `HCI_SIZE_PARAM(tcdm_preout) )
   ) i_tcdm_id_filter (
     .clk_i          ( clk_i       ),
     .rst_ni         ( rst_ni      ),
