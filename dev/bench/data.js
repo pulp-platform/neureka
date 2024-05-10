@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1715384411117,
+  "lastUpdate": 1715384413980,
   "repoUrl": "https://github.com/pulp-platform/neureka",
   "entries": {
     "Execution cycles": [
@@ -1138,6 +1138,65 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/pulp-platform/neureka/pull/6/commits/4f201c238c7dd0c1f84306f40d66ebdaa8589307"
         },
         "date": 1715384410740,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "neureka_basic_tests:t2",
+            "value": 140,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t0",
+            "value": 140,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t5",
+            "value": 404,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t4",
+            "value": 572,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t3",
+            "value": 142,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t1",
+            "value": 142,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t6",
+            "value": 494,
+            "unit": "cycles"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "f.conti@unibo.it",
+            "name": "Francesco Conti",
+            "username": "FrancescoConti"
+          },
+          "committer": {
+            "email": "f.conti@unibo.it",
+            "name": "Francesco Conti",
+            "username": "FrancescoConti"
+          },
+          "distinct": true,
+          "id": "4f201c238c7dd0c1f84306f40d66ebdaa8589307",
+          "message": "Remove two parasitic latches",
+          "timestamp": "2024-05-11T01:30:25+02:00",
+          "tree_id": "d0d76f6f689f4e8743cb1ed9fab0d07e2ff765dc",
+          "url": "https://github.com/pulp-platform/neureka/commit/4f201c238c7dd0c1f84306f40d66ebdaa8589307"
+        },
+        "date": 1715384413051,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
