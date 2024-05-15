@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1715759493540,
+  "lastUpdate": 1715759500634,
   "repoUrl": "https://github.com/pulp-platform/neureka",
   "entries": {
     "Execution cycles": [
@@ -1252,6 +1252,65 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/pulp-platform/neureka/pull/1/commits/bae9f79ee4a6ab71f9e47342af70f19f616cfb3e"
         },
         "date": 1715759492569,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "neureka_basic_tests:t6",
+            "value": 494,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t5",
+            "value": 404,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t2",
+            "value": 140,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t0",
+            "value": 140,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t4",
+            "value": 572,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t3",
+            "value": 142,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t1",
+            "value": 142,
+            "unit": "cycles"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "FrancescoConti@users.noreply.github.com",
+            "name": "Francesco Conti",
+            "username": "FrancescoConti"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bae9f79ee4a6ab71f9e47342af70f19f616cfb3e",
+          "message": "Merge pull request #6 from pulp-platform/fc/hci-v2.1-rebase\n\nMove to HCI v2.1",
+          "timestamp": "2024-05-15T09:41:49+02:00",
+          "tree_id": "d0d76f6f689f4e8743cb1ed9fab0d07e2ff765dc",
+          "url": "https://github.com/pulp-platform/neureka/commit/bae9f79ee4a6ab71f9e47342af70f19f616cfb3e"
+        },
+        "date": 1715759500181,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
