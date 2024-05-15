@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1715795111122,
+  "lastUpdate": 1715795169464,
   "repoUrl": "https://github.com/pulp-platform/neureka",
   "entries": {
     "Execution cycles": [
@@ -1572,6 +1572,61 @@ window.BENCHMARK_DATA = {
           {
             "name": "neureka_basic_tests:t3",
             "value": 142,
+            "unit": "cycles"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "pulp-platform",
+            "username": "pulp-platform"
+          },
+          "committer": {
+            "name": "pulp-platform",
+            "username": "pulp-platform"
+          },
+          "id": "6221fd4d17809166333ace71aec37b58ac28ce72",
+          "message": "Astral configuration",
+          "timestamp": "2024-05-15T07:31:52Z",
+          "url": "https://github.com/pulp-platform/neureka/pull/1/commits/6221fd4d17809166333ace71aec37b58ac28ce72"
+        },
+        "date": 1715795168888,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "neureka_basic_tests:t0",
+            "value": 140,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t4",
+            "value": 572,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t2",
+            "value": 140,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t6",
+            "value": 494,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t1",
+            "value": 142,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t3",
+            "value": 142,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t5",
+            "value": 404,
             "unit": "cycles"
           }
         ]
