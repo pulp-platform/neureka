@@ -8,7 +8,7 @@ dependencies:
   hwpe-stream:  { git: "https://github.com/pulp-platform/hwpe-stream.git", version: 1.8 }
   hci:          { git: "https://github.com/pulp-platform/hci.git", rev: d31af36ebcaf2196fb51676b40782aa8cbd9cc69 } # branch: remove-automatic-parameter-prop
   hwpe-ctrl:    { git: "https://github.com/pulp-platform/hwpe-ctrl.git", rev: "a596620" }
-  zeroriscy:    { git: "git@github.com:yvantor/ibex.git", rev: "bender", target: "neureka_standalone" } # for verification only
+  ibex:         { git: "https://github.com/yvantor/ibex.git", rev: "bender", target: "neureka_standalone" } # for verification only
  
 sources:
   - rtl/neureka_package.sv
