@@ -186,50 +186,96 @@ module neureka_streamer #(
     .clk ( clk_i )
   );
 
-  logic wmem_enable, all_source_enable; 
+  logic wmem_enable, all_source_enable;
 
   assign wmem_enable = (~ctrl_i.ld_st_mux_sel & ctrl_i.wmem_sel & (ctrl_i.ld_which_mux_sel == LD_WEIGHT_SEL)) | (ctrl_i.ld_which_mux_sel == LD_FEAT_WEIGHT_SEL);
   assign all_source_enable = (~ctrl_i.ld_st_mux_sel & (~wmem_enable)) | (ctrl_i.ld_which_mux_sel == LD_FEAT_WEIGHT_SEL);
 
-  hci_ecc_source #(
-    .PASSTHROUGH_FIFO ( 1                         )
-  ) i_all_ecc_source (
-    .clk_i       ( clk_i                         ),
-    .rst_ni      ( rst_ni                        ),
-    .test_mode_i ( test_mode_i                   ),
-    .clear_i     ( clear_i | ctrl_i.clear_source ),
-    .enable_i    ( all_source_enable             ),
-    .tcdm        ( virt_tcdm [0]                 ),
-    .stream      ( all_source                    ),
-    .ctrl_i      ( all_source_ctrl               ),
-    .flags_o     ( all_source_flags              )
-  );
+  if (EW > 0) begin: gen_ecc_all_source
+    hci_ecc_source #(
+      .PASSTHROUGH_FIFO ( 1                         )
+    ) i_all_ecc_source (
+      .clk_i       ( clk_i                         ),
+      .rst_ni      ( rst_ni                        ),
+      .test_mode_i ( test_mode_i                   ),
+      .clear_i     ( clear_i | ctrl_i.clear_source ),
+      .enable_i    ( all_source_enable             ),
+      .tcdm        ( virt_tcdm [0]                 ),
+      .stream      ( all_source                    ),
+      .ctrl_i      ( all_source_ctrl               ),
+      .flags_o     ( all_source_flags              )
+    );
+  end else begin: gen_all_source
+    hci_core_source #(
+      .PASSTHROUGH_FIFO ( 1                         )
+    ) i_all_source (
+      .clk_i       ( clk_i                         ),
+      .rst_ni      ( rst_ni                        ),
+      .test_mode_i ( test_mode_i                   ),
+      .clear_i     ( clear_i | ctrl_i.clear_source ),
+      .enable_i    ( all_source_enable             ),
+      .tcdm        ( virt_tcdm [0]                 ),
+      .stream      ( all_source                    ),
+      .ctrl_i      ( all_source_ctrl               ),
+      .flags_o     ( all_source_flags              )
+    );
+    end
 
-  hci_ecc_source #(
-    .PASSTHROUGH_FIFO ( 1                         )
-  ) i_weight_ecc_source (
-    .clk_i       ( clk_i                         ),
-    .rst_ni      ( rst_ni                        ),
-    .test_mode_i ( test_mode_i                   ),
-    .clear_i     ( clear_i | ctrl_i.clear_source ),
-    .enable_i    ( wmem_enable                   ),
-    .tcdm        ( virt_tcdm [2]                 ),
-    .stream      ( weight[1]                     ),
-    .ctrl_i      ( wmem_source_ctrl              ),
-    .flags_o     ( wmem_source_flags             )
-  );
+  if (EW > 0) begin: gen_ecc_weight_source
+    hci_ecc_source #(
+      .PASSTHROUGH_FIFO ( 1                         )
+    ) i_weight_ecc_source (
+      .clk_i       ( clk_i                         ),
+      .rst_ni      ( rst_ni                        ),
+      .test_mode_i ( test_mode_i                   ),
+      .clear_i     ( clear_i | ctrl_i.clear_source ),
+      .enable_i    ( wmem_enable                   ),
+      .tcdm        ( virt_tcdm [2]                 ),
+      .stream      ( weight[1]                     ),
+      .ctrl_i      ( wmem_source_ctrl              ),
+      .flags_o     ( wmem_source_flags             )
+    );
+  end else begin: gen_weight_source
+    hci_core_source #(
+      .PASSTHROUGH_FIFO ( 1                         )
+    ) i_weight_source (
+      .clk_i       ( clk_i                         ),
+      .rst_ni      ( rst_ni                        ),
+      .test_mode_i ( test_mode_i                   ),
+      .clear_i     ( clear_i | ctrl_i.clear_source ),
+      .enable_i    ( wmem_enable                   ),
+      .tcdm        ( virt_tcdm [2]                 ),
+      .stream      ( weight[1]                     ),
+      .ctrl_i      ( wmem_source_ctrl              ),
+      .flags_o     ( wmem_source_flags             )
+    );
+  end
 
-  hci_ecc_sink i_ecc_sink (
-    .clk_i       ( clk_i                       ),
-    .rst_ni      ( rst_ni                      ),
-    .test_mode_i ( test_mode_i                 ),
-    .clear_i     ( clear_i | ctrl_i.clear_sink ),
-    .enable_i    ( ctrl_i.ld_st_mux_sel        ),
-    .tcdm        ( virt_tcdm [1]               ),
-    .stream      ( conv_i                      ),
-    .ctrl_i      ( ctrl_i.outfeat_sink_ctrl       ),
-    .flags_o     ( flags_o.conv_sink_flags     )
-  );
+  if (EW > 0) begin: gen_ecc_sink
+    hci_ecc_sink i_ecc_sink (
+      .clk_i       ( clk_i                       ),
+      .rst_ni      ( rst_ni                      ),
+      .test_mode_i ( test_mode_i                 ),
+      .clear_i     ( clear_i | ctrl_i.clear_sink ),
+      .enable_i    ( ctrl_i.ld_st_mux_sel        ),
+      .tcdm        ( virt_tcdm [1]               ),
+      .stream      ( conv_i                      ),
+      .ctrl_i      ( ctrl_i.outfeat_sink_ctrl    ),
+      .flags_o     ( flags_o.conv_sink_flags     )
+    );
+  end else begin : gen_sink
+    hci_core_sink i_sink (
+      .clk_i       ( clk_i                       ),
+      .rst_ni      ( rst_ni                      ),
+      .test_mode_i ( test_mode_i                 ),
+      .clear_i     ( clear_i | ctrl_i.clear_sink ),
+      .enable_i    ( ctrl_i.ld_st_mux_sel        ),
+      .tcdm        ( virt_tcdm [1]               ),
+      .stream      ( conv_i                      ),
+      .ctrl_i      ( ctrl_i.outfeat_sink_ctrl    ),
+      .flags_o     ( flags_o.conv_sink_flags     )
+    );
+  end
 
   generate
     if(TCDM_FIFO_DEPTH > 0) begin : use_fifo_gen
@@ -343,10 +389,10 @@ module neureka_streamer #(
   end
 
   always_comb begin : weight_source_ctrl_mux
-    wmem_source_ctrl = '0; 
+    wmem_source_ctrl = '0;
     if(((ctrl_i.ld_which_mux_sel == LD_WEIGHT_SEL) & ctrl_i.wmem_sel) | (ctrl_i.ld_which_mux_sel == LD_FEAT_WEIGHT_SEL) )
       wmem_source_ctrl = ctrl_i.wmem_source_ctrl;
-  end 
+  end
 
   assign flags_o.feat_source_flags = all_source_flags;
   assign flags_o.norm_source_flags = all_source_flags;

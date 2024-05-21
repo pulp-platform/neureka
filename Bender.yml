@@ -6,10 +6,10 @@ package:
 
 dependencies:
   hwpe-stream:  { git: "https://github.com/pulp-platform/hwpe-stream.git", version: 1.8 }
-  hci:          { git: "https://github.com/pulp-platform/hci.git", rev: "e670b1c" } # branch: lg/ecc
+  hci:          { git: "https://github.com/pulp-platform/hci.git", rev: "da10311" } # branch: lg/ecc
   hwpe-ctrl:    { git: "https://github.com/pulp-platform/hwpe-ctrl.git", rev: "a596620" }
   zeroriscy:    { git: "git@github.com:yvantor/ibex.git", rev: "bender", target: "neureka_standalone" } # for verification only
- 
+
 sources:
   - rtl/neureka_package.sv
   - rtl/accumulator/neureka_normquant.sv

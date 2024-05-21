@@ -28,7 +28,7 @@ module neureka_top_wrap #(
   parameter int unsigned TP_IN     = NEUREKA_TP_IN,  // number of input elements processed per cycle
   parameter int unsigned TP_OUT    = NEUREKA_TP_OUT, // number of output elements processed per cycle
   parameter int unsigned CNT       = VLEN_CNT_SIZE,  // counter size
-  parameter int unsigned BW        = NEUREKA_MEM_BANDWIDTH_EXT,          
+  parameter int unsigned BW        = NEUREKA_MEM_BANDWIDTH_EXT,
   parameter int unsigned EW        = 0,
   parameter int unsigned MP        = BW/32,          // number of memory ports (each a 32bit data)
   parameter int unsigned ID        = ID_WIDTH,
@@ -52,12 +52,10 @@ module neureka_top_wrap #(
   output logic [     MP-1:0]                    tcdm_wen,
   output logic [     MP-1:0][              3:0] tcdm_be,
   output logic [     MP-1:0][             31:0] tcdm_data,
-  output logic [     MP-1:0][              6:0] tcdm_data_ecc,
-  output logic              [              8:0] tcdm_meta_ecc,
+  output logic [     EW-1:0]                    tcdm_ecc,
   input  logic [     MP-1:0][             31:0] tcdm_r_data,
   input  logic                                  tcdm_r_opc,
-  input  logic [     MP-1:0][              6:0] tcdm_r_data_ecc,
-  input  logic              [              1:0] tcdm_r_meta_ecc,
+  input  logic [     EW-1:0]                    tcdm_r_ecc,
   input  logic [     MP-1:0]                    tcdm_r_valid,
   // dedicated weight port
   output logic [     MP-1:0]                    tcdm_w_req,
@@ -108,19 +106,12 @@ module neureka_top_wrap #(
       assign tcdm_be   [ii] = tcdm.be[(ii+1)*4-1:ii*4];
       assign tcdm_data [ii] = tcdm.data[(ii+1)*32-1:ii*32];
     end
+    assign tcdm_ecc     = tcdm.ecc;
     assign tcdm.gnt     = &(tcdm_gnt);
     assign tcdm.r_valid = &(tcdm_r_valid);
     assign tcdm.r_data  = { >> {tcdm_r_data} } ;
     assign tcdm.r_opc   = tcdm_r_opc;
-  endgenerate
-
-  generate
-    for(genvar ii=0; ii<MP; ii++) begin: tcdm_ecc_binding
-      assign tcdm_data_ecc [ii] = tcdm.ecc[(ii+1)*7+9-1:ii*7+9];
-      assign tcdm.r_ecc [(ii+1)*7+2-1:ii*7+2] = tcdm_r_data_ecc[ii];
-    end
-    assign tcdm_meta_ecc   = tcdm.ecc[8:0];
-    assign tcdm.r_ecc[1:0] = tcdm_r_meta_ecc;
+    assign tcdm.r_ecc   = tcdm_r_ecc;
   endgenerate
 
   generate

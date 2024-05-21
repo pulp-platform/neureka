@@ -40,6 +40,7 @@ RESERVOIR_SIZE = 1024
 # Useful Parameters
 gui      ?= 0
 P_STALL  ?= 0.0
+USE_ECC  ?= 0
 
 # Setup build object dirs
 VSIM_INI=$(HW_BUILD_DIR)/modelsim.ini
@@ -268,6 +269,7 @@ VSIM_DEPS=$(CRT)
 VSIM_PARAMS=-gPROB_STALL=$(P_STALL)   \
 	-gSTIM_INSTR=stim_instr.txt \
 	-gSTIM_DATA=stim_data.txt \
+	-gUSE_ECC=$(USE_ECC) \
         -suppress vsim-3009
 
 # Run the simulation
