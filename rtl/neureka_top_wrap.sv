@@ -31,6 +31,7 @@ module neureka_top_wrap
   parameter int unsigned TP_OUT    = NEUREKA_TP_OUT, // number of output elements processed per cycle
   parameter int unsigned CNT       = VLEN_CNT_SIZE,  // counter size
   parameter int unsigned BW        = NEUREKA_MEM_BANDWIDTH_EXT,          
+  parameter int unsigned EW        = 0,
   parameter int unsigned MP        = BW/32,          // number of memory ports (each a 32bit data)
   parameter int unsigned ID        = ID_WIDTH,
   parameter int unsigned N_CORES   = NR_CORES,
@@ -53,7 +54,10 @@ module neureka_top_wrap
   output logic [     MP-1:0]                    tcdm_wen,
   output logic [     MP-1:0][              3:0] tcdm_be,
   output logic [     MP-1:0][             31:0] tcdm_data,
+  output logic [     EW-1:0]                    tcdm_ecc,
   input  logic [     MP-1:0][             31:0] tcdm_r_data,
+  input  logic                                  tcdm_r_opc,
+  input  logic [     EW-1:0]                    tcdm_r_ecc,
   input  logic [     MP-1:0]                    tcdm_r_valid,
   // dedicated weight port
   output logic [     MP-1:0]                    tcdm_w_req,
@@ -84,14 +88,14 @@ module neureka_top_wrap
     BW:  DEFAULT_BW,
     UW:  0,
     IW:  0,
-    EW:  0,
+    EW:  EW,
     EHW: 0
   };
   hci_core_intf #(
     .DW ( BW ),
     .UW ( 0  ),
     .IW ( 0  ),
-    .EW ( 0  ),
+    .EW ( EW ),
     .EHW ( 0 )
 `ifndef SYNTHESIS
     ,
@@ -113,9 +117,12 @@ module neureka_top_wrap
       assign tcdm_be   [ii] = tcdm.be[(ii+1)*4-1:ii*4];
       assign tcdm_data [ii] = tcdm.data[(ii+1)*32-1:ii*32];
     end
+    assign tcdm_ecc     = tcdm.ecc;
     assign tcdm.gnt     = &(tcdm_gnt);
     assign tcdm.r_valid = &(tcdm_r_valid);
     assign tcdm.r_data  = { >> {tcdm_r_data} } ;
+    assign tcdm.r_opc   = tcdm_r_opc;
+    assign tcdm.r_ecc   = tcdm_r_ecc;
   endgenerate
 
   generate

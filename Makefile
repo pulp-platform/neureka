@@ -40,6 +40,7 @@ RESERVOIR_SIZE = 1024
 # Useful Parameters
 gui      ?= 0
 P_STALL  ?= 0.0
+USE_ECC  ?= 0
 
 # Setup build object dirs
 VSIM_INI=$(HW_BUILD_DIR)/modelsim.ini
@@ -90,7 +91,7 @@ hw-clean-all:
 	rm -rf .cached_ipdb.json
 
 hw-opt:
-	cd sim; $(QUESTA) vopt +acc=npr -o vopt_tb $(TESTBENCH) -floatparameters+$(TESTBENCH) -work $(HW_BUILD_DIR)/work
+	cd sim; $(QUESTA) vopt +acc -o vopt_tb $(TESTBENCH) -floatparameters+$(TESTBENCH) -work $(HW_BUILD_DIR)/work
 
 hw-compile:
 	cd sim; $(QUESTA) vsim -c +incdir+$(UVM_HOME) -do 'quit -code [source $(compile_script)]'
@@ -275,6 +276,7 @@ VSIM_DEPS=$(CRT)
 VSIM_PARAMS=-gPROB_STALL=$(P_STALL)   \
 	-gSTIM_INSTR=stim_instr.txt \
 	-gSTIM_DATA=stim_data.txt \
+	-gUSE_ECC=$(USE_ECC) \
         -suppress vsim-3009
 
 # Run the simulation
