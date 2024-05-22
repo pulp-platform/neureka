@@ -40,6 +40,8 @@ module tb_neureka;
   parameter STIM_OUTPUT_DATA = "./stim_output_data.txt";
   parameter DATA_BASE_ADDRESS = 32'h1c01_0000;
   parameter VLEN_CNT_SIZE = 32;
+  parameter bit USE_ECC = 0;
+  parameter int unsigned EW = (USE_ECC) ? 72 : 0;
 
   // global signals
   logic                         clk_i  = '0;
@@ -79,8 +81,11 @@ module tb_neureka;
   logic [MP-1:0]       tcdm_wen;
   logic [MP-1:0][3:0]  tcdm_be;
   logic [MP-1:0][31:0] tcdm_data;
+  logic [EW-1:0]       tcdm_ecc;
   logic [MP-1:0][31:0] tcdm_r_data;
   logic [MP-1:0]       tcdm_r_valid;
+  logic                tcdm_r_opc;
+  logic [EW-1:0]       tcdm_r_ecc;
 
   logic [MP-1:0]       tcdm_w_req;
   logic [MP-1:0]       tcdm_w_gnt;
@@ -194,11 +199,14 @@ module tb_neureka;
       assign tcdm[ii].add  = tcdm_add  [ii];
       assign tcdm[ii].wen  = tcdm_wen  [ii];
       assign tcdm[ii].be   = tcdm_be   [ii];
-      assign tcdm[ii].data = tcdm_data [ii];
+      if (~USE_ECC)
+        assign tcdm[ii].data = tcdm_data [ii];
       assign tcdm_gnt     [ii] = tcdm[ii].gnt;
       assign tcdm_r_data  [ii] = tcdm[ii].r_data;
       assign tcdm_r_valid [ii] = tcdm[ii].r_valid;
     end
+
+    assign tcdm_r_opc = '0;
 
     for(genvar ii=0; ii<MP; ii++) begin : tcdm_w_binding
       assign tcdm_weight[ii].req  = tcdm_w_req  [ii];
@@ -221,12 +229,63 @@ module tb_neureka;
     assign data_rvalid = periph_r_valid | stack[0].r_valid | tcdm[MP].r_valid | other_r_valid;
   endgenerate
 
+  if (USE_ECC) begin : gen_r_ecc
+    // RESPONSE PHASE ENCODING
+    logic [MP-1:0][38:0] tcdm_r_data_enc;
+    logic         [2:0]  tcdm_r_meta_enc;
+    for(genvar ii=0; ii<MP; ii++) begin : r_data_encoding
+      hsiao_ecc_enc #(
+        .DataWidth ( 32 )
+      ) i_r_data_enc (
+        .in  (tcdm[ii].r_data),
+        .out (tcdm_r_data_enc[ii])
+      );
+      assign tcdm_r_ecc[(ii+1)*7-1+2:ii*7+2] = (tcdm[ii].r_valid) ? tcdm_r_data_enc[ii][38:32] : '0;
+    end
+
+    hsiao_ecc_enc #(
+      .DataWidth ( 1 )
+    ) i_r_meta_enc (
+      .in  (tcdm_r_opc),
+      .out (tcdm_r_meta_enc)
+    );
+    assign tcdm_r_ecc[1:0]           = tcdm_r_meta_enc[2:1];
+    assign tcdm_r_ecc[EW-1:(7*MP+2)] = '0;
+
+  end else begin : gen_no_r_ecc
+    assign tcdm_r_ecc = '0;
+  end
+
+  if (USE_ECC) begin : gen_ecc_dec
+    // REQUEST PHASE DECODING
+    for(genvar ii=0; ii<MP; ii++) begin : data_decoding
+      hsiao_ecc_dec #(
+        .DataWidth ( 32 )
+      ) i_data_dec (
+        .in         ( { tcdm_ecc[(ii+1)*7-1+9:ii*7+9], tcdm_data[ii] } ),
+        .out        ( tcdm[ii].data ),
+        .syndrome_o ( ),
+        .err_o      ( )
+      );
+    end
+
+    hsiao_ecc_dec #(
+      .DataWidth ( 32+36+1 )
+    ) i_meta_dec (
+      .in         ( { tcdm_ecc[8:0], tcdm_add[0], tcdm_wen[0], tcdm_be } ),
+      .out        (  ),
+      .syndrome_o (  ),
+      .err_o      (  )
+    );
+  end
+
   neureka_top_wrap #(
     .TP_IN        ( TP_IN               ),
     .TP_OUT       ( TP_OUT            ),
     .CNT          ( TP_IN            ),
     // .BW           (9*32),
     // .MP           ( MP               ),
+    .EW           ( EW               ),
     .ID           ( ID               ),
     .PE_H         ( 4 ),
     .PE_W         ( 4 )
@@ -241,8 +300,11 @@ module tb_neureka;
     .tcdm_wen       ( tcdm_wen       ),
     .tcdm_be        ( tcdm_be        ),
     .tcdm_data      ( tcdm_data      ),
+    .tcdm_ecc       ( tcdm_ecc       ),
     .tcdm_gnt       ( tcdm_gnt       ),
     .tcdm_r_data    ( tcdm_r_data    ),
+    .tcdm_r_opc     ( tcdm_r_opc     ),
+    .tcdm_r_ecc     ( tcdm_r_ecc     ),
     .tcdm_r_valid   ( tcdm_r_valid   ),
     .tcdm_w_req       ( tcdm_w_req       ),
     .tcdm_w_add       ( tcdm_w_add       ),
