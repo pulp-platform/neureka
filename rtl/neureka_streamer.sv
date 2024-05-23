@@ -203,7 +203,7 @@ module neureka_streamer
   assign wmem_enable = (~ctrl_i.ld_st_mux_sel & ctrl_i.wmem_sel & (ctrl_i.ld_which_mux_sel == LD_WEIGHT_SEL)) | (ctrl_i.ld_which_mux_sel == LD_FEAT_WEIGHT_SEL);
   assign all_source_enable = (~ctrl_i.ld_st_mux_sel & (~wmem_enable)) | (ctrl_i.ld_which_mux_sel == LD_FEAT_WEIGHT_SEL);
 
-  if (EW > 0) begin : gen_ecc_all_source
+  if (EW > 1) begin : gen_ecc_all_source
     hci_ecc_source #(
       .PASSTHROUGH_FIFO ( 1                          ),
       .`HCI_SIZE_PARAM(tcdm) ( `HCI_SIZE_PARAM(tcdm) )
@@ -235,7 +235,7 @@ module neureka_streamer
     );
   end
 
-  if (EW > 0) begin : gen_ecc_weight_source
+  if (EW > 1) begin : gen_ecc_weight_source
     hci_ecc_source #(
       .PASSTHROUGH_FIFO ( 1                          ),
       .`HCI_SIZE_PARAM(tcdm) ( `HCI_SIZE_PARAM(tcdm) )
@@ -267,7 +267,7 @@ module neureka_streamer
     );
   end
 
-  if (EW > 0) begin : gen_ecc_sink
+  if (EW > 1) begin : gen_ecc_sink
     hci_ecc_sink #(
       .`HCI_SIZE_PARAM(tcdm) ( `HCI_SIZE_PARAM(tcdm) )
     ) i_ecc_sink (
