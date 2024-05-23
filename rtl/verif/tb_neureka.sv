@@ -21,6 +21,7 @@
 timeunit 1ps;
 timeprecision 1ps;
 import neureka_package::*;
+import hci_package::*;
 module tb_neureka;
 
   // parameters
@@ -41,7 +42,7 @@ module tb_neureka;
   parameter DATA_BASE_ADDRESS = 32'h1c01_0000;
   parameter VLEN_CNT_SIZE = 32;
   parameter bit USE_ECC = 0;
-  parameter int unsigned EW = (USE_ECC) ? 72 : 0;
+  parameter int unsigned EW = (USE_ECC) ? 72 : DEFAULT_EW;
 
   // global signals
   logic                         clk_i  = '0;
