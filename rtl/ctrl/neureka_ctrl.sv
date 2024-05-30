@@ -77,7 +77,7 @@ module neureka_ctrl #(
 
   logic periph_ecc_redirect, periph_ecc_redirect_q;
 
-  assign periph_ecc_redirect = ((periph.add[7:4] == HCI_ECC_MASK) && periph.req) ? 1 : 0;
+  assign periph_ecc_redirect = ((periph.add[7:2] > REGFILE_N_MAX_IO_REGS + REGFILE_N_MAX_GENERIC_REGS -1) && periph.req) ? 1 : 0;
 
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if(~rst_ni) begin
