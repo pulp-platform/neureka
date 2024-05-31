@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1717084676079,
+  "lastUpdate": 1717148777800,
   "repoUrl": "https://github.com/pulp-platform/neureka",
   "entries": {
     "Execution cycles": [
@@ -2377,6 +2377,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "neureka_basic_tests:t6",
             "value": 497,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t1",
+            "value": 135,
+            "unit": "cycles"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "luigi.ghionda2@unibo.it",
+            "name": "Luigi Ghionda",
+            "username": "LuigiGhionda"
+          },
+          "committer": {
+            "email": "luigi.ghionda2@unibo.it",
+            "name": "Luigi Ghionda",
+            "username": "LuigiGhionda"
+          },
+          "distinct": true,
+          "id": "d6ef85f743f78133b9000c3d36203854b18fd030",
+          "message": "[SW] Add memory-mapped registers to count detected faults on the ECC-extended HCI",
+          "timestamp": "2024-05-31T11:34:06+02:00",
+          "tree_id": "749ed825c85ad29761b164886e8c0ec0d2859f5a",
+          "url": "https://github.com/pulp-platform/neureka/commit/d6ef85f743f78133b9000c3d36203854b18fd030"
+        },
+        "date": 1717148776959,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "neureka_basic_tests:t3",
+            "value": 135,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t5",
+            "value": 404,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t2",
+            "value": 135,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t6",
+            "value": 497,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t0",
+            "value": 135,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t4",
+            "value": 562,
             "unit": "cycles"
           },
           {
