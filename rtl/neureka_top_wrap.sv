@@ -86,14 +86,13 @@ module neureka_top_wrap
     DW:  BW,
     AW:  DEFAULT_AW,
     BW:  DEFAULT_BW,
-    UW:  0,
+    UW:  DEFAULT_UW,
     IW:  0,
     EW:  EW,
     EHW: 0
   };
   hci_core_intf #(
     .DW ( BW ),
-    .UW ( 0  ),
     .IW ( 0  ),
     .EW ( EW ),
     .EHW ( 0 )
