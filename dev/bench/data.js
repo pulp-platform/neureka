@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1718749425754,
+  "lastUpdate": 1718749433364,
   "repoUrl": "https://github.com/pulp-platform/neureka",
   "entries": {
     "Execution cycles": [
@@ -2638,6 +2638,61 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/pulp-platform/neureka/commit/c984fa0eefd0292bd38dd1dc2156793fd655b2bb"
         },
         "date": 1718749425169,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "neureka_basic_tests:t6",
+            "value": 497,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t4",
+            "value": 562,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t1",
+            "value": 135,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t3",
+            "value": 135,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t2",
+            "value": 135,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t5",
+            "value": 404,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t0",
+            "value": 135,
+            "unit": "cycles"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "pulp-platform",
+            "username": "pulp-platform"
+          },
+          "committer": {
+            "name": "pulp-platform",
+            "username": "pulp-platform"
+          },
+          "id": "c984fa0eefd0292bd38dd1dc2156793fd655b2bb",
+          "message": "Integrate ECC-extended HCI",
+          "timestamp": "2024-06-02T12:41:59Z",
+          "url": "https://github.com/pulp-platform/neureka/pull/9/commits/c984fa0eefd0292bd38dd1dc2156793fd655b2bb"
+        },
+        "date": 1718749432995,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
