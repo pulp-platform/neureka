@@ -91,7 +91,7 @@ hw-clean-all:
 	rm -rf .cached_ipdb.json
 
 hw-opt:
-	cd sim; $(QUESTA) vopt +acc -o vopt_tb $(TESTBENCH) -floatparameters+$(TESTBENCH) -work $(HW_BUILD_DIR)/work
+	cd sim; $(QUESTA) vopt +acc=npr -o vopt_tb $(TESTBENCH) -floatparameters+$(TESTBENCH) -work $(HW_BUILD_DIR)/work
 
 hw-compile:
 	cd sim; $(QUESTA) vsim -c +incdir+$(UVM_HOME) -do 'quit -code [source $(compile_script)]'
