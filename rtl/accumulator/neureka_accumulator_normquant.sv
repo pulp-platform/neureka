@@ -56,7 +56,7 @@ module neureka_accumulator_normquant #(
 
   logic signed [4*ACC-1:0]                  normalized_q;
   logic signed [ACC-1:0]                    accumulator_plus_d;
-  logic                                     addr_cnt_en_stage1_d, addr_cnt_en_stage1_q;
+  logic                                     addr_cnt_en_stage1_d, addr_cnt_en_stage1_q, addr_cnt_en_stage1_2q;
   logic                                     addr_cnt_en_stage2_d, addr_cnt_en_stage2_q;
   logic                                     accumulator_clr;
 
@@ -67,7 +67,7 @@ module neureka_accumulator_normquant #(
   
   state_aq_t fsm_state_q, fsm_state_d;
 
-  logic [CNT-1:0] addr_cnt_stage2_d,addr_cnt_stage2_q;
+  logic [CNT-1:0] addr_cnt_stage2_d, addr_cnt_stage2_q, addr_cnt_stage2_2q;
   logic [CNT-1:0] addr_cnt_stage1_d, addr_cnt_stage1_q;
   logic           addr_cnt_clear;
 
@@ -89,7 +89,7 @@ module neureka_accumulator_normquant #(
   logic [AP*ACC-1:0]          rdata_all; 
   logic [AP*ACC-1:0]          add_rdata_all; 
 
-  logic conv_handshake_d ,conv_handshake_q;
+  logic conv_handshake_d, conv_handshake_q, conv_handshake_2q;
 
   logic [CNT-1:0] full_accumulation_cnt_d, full_accumulation_cnt_q;
   logic [CNT-1:0] qw_accumulation_cnt_d, qw_accumulation_cnt_q ;
@@ -150,7 +150,7 @@ module neureka_accumulator_normquant #(
   always_comb
   begin
     ctrl_normquant = ctrl_i.ctrl_normquant;
-    ctrl_normquant.start = fsm_state_q == AQ_NORMQUANT ? 1'b1 : 1'b0;
+    ctrl_normquant.start = (fsm_state_q == AQ_NORMQUANT) ? 1'b1 : (fsm_state_q == AQ_ACCUM & ctrl_i.weight_offset == 1) ? 1'b1 : 1'b0;
   end
  
   assign streamin_i.ready = (fsm_state_q == AQ_STREAMIN) ? streamin_i.valid : 1'b0;
@@ -198,6 +198,7 @@ module neureka_accumulator_normquant #(
     if(~rst_ni) begin
       addr_cnt_stage1_q <= '0;
       addr_cnt_stage2_q    <= '0;
+      addr_cnt_stage2_2q   <= '0;
       addr_cnt_en_stage1_q <= '0;
       addr_cnt_en_stage2_q <= '0;
 
@@ -205,7 +206,9 @@ module neureka_accumulator_normquant #(
     else begin
       addr_cnt_stage1_q <= addr_cnt_stage1_d;
       addr_cnt_stage2_q <= addr_cnt_stage2_d;
+      addr_cnt_stage2_2q <= addr_cnt_stage2_q;
       addr_cnt_en_stage1_q <= addr_cnt_en_stage1_d;
+      addr_cnt_en_stage1_2q <= addr_cnt_en_stage1_q;
       addr_cnt_en_stage2_q <= addr_cnt_en_stage2_d;
     end
   end
@@ -263,7 +266,8 @@ module neureka_accumulator_normquant #(
   neureka_normquant #(
     .NMULT           ( 4              ),
     .ACC             ( ACC            ),
-    .PIPE            ( PIPE_NORMQUANT )
+    .PIPE            ( PIPE_NORMQUANT ),
+    .OUTPUT_REGISTER ( 1              )
   ) i_normquant (
     .clk_i         ( clk_gated       ),
     .rst_ni        ( rst_ni          ),
@@ -423,7 +427,7 @@ module neureka_accumulator_normquant #(
     // selector for addresses
     if(fsm_state_q == AQ_ACCUM) begin
       partial_sum = depthwise_accumulator_active ? dw_conv_data : ctrl_i.weight_offset ? {AP{normalized_q[ACC-1:0]}} : {AP{conv_data}};
-      we_all      = ctrl_i.weight_offset ? conv_handshake_q : conv_handshake_d; // during weight offset the normalization takes 1 cycle thus handshaking with conv_handshake_q
+      we_all      = ctrl_i.weight_offset ? conv_handshake_2q : conv_handshake_d; // during weight offset the normalization takes 1 cycle thus handshaking with conv_handshake_q (2 cycles if normquant is pipelined, so conv_handshake_2q)
       we          = 1'b0;
       adder_enable= ctrl_i.weight_offset & (!ctrl_i.depthwise) ? '1 :
                     depthwise_accumulator_active  ? '1 : 
@@ -434,10 +438,10 @@ module neureka_accumulator_normquant #(
     else if(fsm_state_q == AQ_NORMQUANT) begin
       partial_sum = ctrl_i.norm_mode==NEUREKA_MODE_8B ? {8{normalized_q}} : 
                     ctrl_i.norm_mode==NEUREKA_MODE_16B ? {(2*AP/WIDTH_FACTOR){normalized_q[2*ACC-1:0]}} :{AP{normalized_q[ACC-1:0]}};
-      we_all      = addr_cnt_en_stage1_q;
+      we_all      = addr_cnt_en_stage1_2q;
       adder_enable= 0;
-      bypass      = ctrl_i.norm_mode==NEUREKA_MODE_8B     ? 32'h0f << { addr_cnt_stage2_q[2:0], 2'b0 } :
-                    ctrl_i.norm_mode==NEUREKA_MODE_16B    ? 32'h03 << { addr_cnt_stage2_q[3:0], 1'b0 } : 32'h01<<addr_cnt_stage2_q[4:0];
+      bypass      = ctrl_i.norm_mode==NEUREKA_MODE_8B     ? 32'h0f << { addr_cnt_stage2_2q[2:0], 2'b0 } :
+                    ctrl_i.norm_mode==NEUREKA_MODE_16B    ? 32'h03 << { addr_cnt_stage2_2q[3:0], 1'b0 } : 32'h01<<addr_cnt_stage2_2q[4:0];
       raddr       = addr_cnt_stage1_q;
       we_all_mask = bypass;
     end
@@ -526,7 +530,7 @@ module neureka_accumulator_normquant #(
       end
 
       AQ_NORMQUANT : begin
-        if(addr_cnt_stage2_q == ctrl_i.scale_len-1 && addr_cnt_en_stage1_q == 1'b1) begin
+        if(addr_cnt_stage2_2q == ctrl_i.scale_len-1 && addr_cnt_en_stage1_2q == 1'b1) begin
           if(ctrl_i.norm_option_bias)
             fsm_state_d = AQ_NORMQUANT_TOBIAS;
           else
@@ -581,9 +585,11 @@ module neureka_accumulator_normquant #(
   begin
     if(~rst_ni) begin
       conv_handshake_q <= '0;
+      conv_handshake_2q <= '0;
     end
     else begin
       conv_handshake_q <= conv_handshake_d;
+      conv_handshake_2q <= conv_handshake_q;
     end
   end
 
@@ -597,7 +603,7 @@ module neureka_accumulator_normquant #(
       else if(full_accumulation_cnt_en)
         full_accumulation_cnt_d = full_accumulation_cnt_q + 1;
     end
-  end 
+  end
 
 
   always_ff @(posedge clk_i or negedge rst_ni)
@@ -609,8 +615,7 @@ module neureka_accumulator_normquant #(
       full_accumulation_cnt_q <= full_accumulation_cnt_d;
     end
   end
- assign full_accumulation_cnt_en = conv_handshake_q;
- 
+ assign full_accumulation_cnt_en = (ctrl_i.weight_offset == 1'b1) ? conv_handshake_2q : conv_handshake_q;
 
  logic qw_accumulation_cnt_en;
   assign qw_accumulation_cnt_en = conv_handshake_d & (ctrl_i.qw != '0);
