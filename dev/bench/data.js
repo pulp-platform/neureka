@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1719329351783,
+  "lastUpdate": 1719329354827,
   "repoUrl": "https://github.com/pulp-platform/neureka",
   "entries": {
     "Execution cycles": [
@@ -2866,6 +2866,61 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/pulp-platform/neureka/commit/5328994a6444c5143a1de8863bdb2e9e64d1dd7a"
         },
         "date": 1719329351439,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "neureka_basic_tests:t4",
+            "value": 574,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t1",
+            "value": 143,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t6",
+            "value": 494,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t5",
+            "value": 405,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t2",
+            "value": 141,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t0",
+            "value": 141,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t3",
+            "value": 143,
+            "unit": "cycles"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "pulp-platform",
+            "username": "pulp-platform"
+          },
+          "committer": {
+            "name": "pulp-platform",
+            "username": "pulp-platform"
+          },
+          "id": "5328994a6444c5143a1de8863bdb2e9e64d1dd7a",
+          "message": "Enable normquant output register to cut critical path",
+          "timestamp": "2024-06-02T12:41:59Z",
+          "url": "https://github.com/pulp-platform/neureka/pull/10/commits/5328994a6444c5143a1de8863bdb2e9e64d1dd7a"
+        },
+        "date": 1719329354341,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
