@@ -480,14 +480,15 @@ module neureka_streamer
 
 // Error signaling
 
-logic [1:0] valid_read;
+logic [1:0] valid_read, valid_handshake;
 assign {valid_read[0], valid_read[1]} = {virt_tcdm[0].r_valid, virt_tcdm[2].r_valid};
+assign {valid_handshake[0], valid_handshake[1]} = {virt_tcdm[0].req & virt_tcdm[0].gnt, virt_tcdm[2].req & virt_tcdm[2].gnt};
 
 for (genvar i = 0; i < 2; i++) begin: error_bind
   assign ecc_errors_o.r_data_single_err[i] = r_data_single_err[i] & {ECC_N_CHUNK{valid_read[i]}};
   assign ecc_errors_o.r_data_multi_err [i] = r_data_multi_err [i] & {ECC_N_CHUNK{valid_read[i]}};
-  assign ecc_errors_o.r_meta_single_err[i] = r_meta_single_err[i] & valid_read[i];
-  assign ecc_errors_o.r_meta_multi_err [i] = r_meta_multi_err [i] & valid_read[i];
+  assign ecc_errors_o.r_meta_single_err[i] = r_meta_single_err[i] & valid_handshake[i];
+  assign ecc_errors_o.r_meta_multi_err [i] = r_meta_multi_err [i] & valid_handshake[i];
 end
 
 
