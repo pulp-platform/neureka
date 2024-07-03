@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1719591225939,
+  "lastUpdate": 1719993570649,
   "repoUrl": "https://github.com/pulp-platform/neureka",
   "entries": {
     "Execution cycles": [
@@ -3070,6 +3070,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "neureka_basic_tests:t2",
             "value": 135,
+            "unit": "cycles"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "prasadar@iis.ee.ethz.ch",
+            "name": "Arpan Suravi Prasad",
+            "username": "arpansur"
+          },
+          "committer": {
+            "email": "prasadar@iis.ee.ethz.ch",
+            "name": "Arpan Suravi Prasad",
+            "username": "arpansur"
+          },
+          "distinct": true,
+          "id": "8e0883bd0c19c6844122456c749c2bdfde18011f",
+          "message": "[update] pointed to the latest hci update on the master branch",
+          "timestamp": "2024-07-03T09:52:44+02:00",
+          "tree_id": "d8d5bc094034a29ab6b8bb7537887331f38e7cc7",
+          "url": "https://github.com/pulp-platform/neureka/commit/8e0883bd0c19c6844122456c749c2bdfde18011f"
+        },
+        "date": 1719993570383,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "neureka_basic_tests:t0",
+            "value": 140,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t5",
+            "value": 404,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t4",
+            "value": 572,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t1",
+            "value": 142,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t3",
+            "value": 142,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t6",
+            "value": 494,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t2",
+            "value": 140,
             "unit": "cycles"
           }
         ]
