@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1720795717411,
+  "lastUpdate": 1720795771501,
   "repoUrl": "https://github.com/pulp-platform/neureka",
   "entries": {
     "Execution cycles": [
@@ -3188,6 +3188,60 @@ window.BENCHMARK_DATA = {
           {
             "name": "neureka_basic_tests:t6",
             "value": 494,
+            "unit": "cycles"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "f.conti@unibo.it",
+            "name": "Francesco Conti",
+            "username": "FrancescoConti"
+          },
+          "committer": {
+            "email": "f.conti@unibo.it",
+            "name": "Francesco Conti",
+            "username": "FrancescoConti"
+          },
+          "distinct": true,
+          "id": "85b69d52580c07bac142657aaccf47274c9f9157",
+          "message": "disable t6 in CI basic.yml (not actually working)",
+          "timestamp": "2024-07-12T16:44:49+02:00",
+          "tree_id": "c126aece071b2491b66a46373f603d5a829b09e1",
+          "url": "https://github.com/pulp-platform/neureka/commit/85b69d52580c07bac142657aaccf47274c9f9157"
+        },
+        "date": 1720795771037,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "neureka_basic_tests:t5",
+            "value": 404,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t0",
+            "value": 140,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t3",
+            "value": 142,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t4",
+            "value": 572,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t2",
+            "value": 140,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t1",
+            "value": 142,
             "unit": "cycles"
           }
         ]
