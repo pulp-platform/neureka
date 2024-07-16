@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1721135707098,
+  "lastUpdate": 1721135898424,
   "repoUrl": "https://github.com/pulp-platform/neureka",
   "entries": {
     "Execution cycles": [
@@ -3450,6 +3450,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "neureka_basic_tests:t2",
             "value": 140,
+            "unit": "cycles"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "prasadar@iis.ee.ethz.ch",
+            "name": "Arpan Suravi Prasad",
+            "username": "arpansur"
+          },
+          "committer": {
+            "email": "prasadar@iis.ee.ethz.ch",
+            "name": "Arpan Suravi Prasad",
+            "username": "arpansur"
+          },
+          "distinct": true,
+          "id": "621fad0e91a0ba5480cc2c48a63323f3a8d017bc",
+          "message": "[update] enable 3x3 in the regression tests",
+          "timestamp": "2024-07-16T15:10:11+02:00",
+          "tree_id": "5212d337594f8e8015eeb54f8f3e76e7e847eb7f",
+          "url": "https://github.com/pulp-platform/neureka/commit/621fad0e91a0ba5480cc2c48a63323f3a8d017bc"
+        },
+        "date": 1721135898028,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "neureka_basic_tests:t2",
+            "value": 140,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t0",
+            "value": 140,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t1",
+            "value": 142,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t5",
+            "value": 404,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t6",
+            "value": 494,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t4",
+            "value": 572,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t3",
+            "value": 142,
             "unit": "cycles"
           }
         ]
