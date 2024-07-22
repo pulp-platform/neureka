@@ -21,6 +21,10 @@ export N_PROC=20
 export P_STALL=0.04
 TIMEOUT=200
 
+export PE_H=4
+export PE_W=4
+echo "Running with config (H, W)=($PE_H, $PE_W)"
+
 # Declare a string array with type
 declare -a test_list=(
     "regr/basic.yml"
@@ -36,3 +40,5 @@ for val in "${test_list[@]}"; do
     fi
 done
 unset P_STALL
+unset PE_H
+unset PE_W
