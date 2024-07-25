@@ -29,7 +29,9 @@ module neureka_engine #(
   parameter int unsigned TP_IN          = NEUREKA_TP_IN,       // number of input elements processed per cycle
   parameter int unsigned TP_OUT         = NEUREKA_TP_OUT,
   parameter int unsigned PE_H           = NEUREKA_PE_H_DEFAULT,
-  parameter int unsigned PE_W           = NEUREKA_PE_W_DEFAULT
+  parameter int unsigned PE_W           = NEUREKA_PE_W_DEFAULT,
+  parameter bit          FAULT_TOLERANCE = 1,
+  parameter int unsigned N_COPIES       = FAULT_TOLERANCE ? 2 : 1
 ) (
   // global signals
   input  logic                   clk_i,
@@ -121,7 +123,7 @@ module neureka_engine #(
     .BYPASS_VCR_ASSERT( 1'b1  ),
     .BYPASS_VDR_ASSERT( 1'b1  )
 `endif
-  ) in_from_buf [INPUT_BUF_SIZE-1:0] (
+  ) in_from_buf [N_COPIES*INPUT_BUF_SIZE-1:0] (
     .clk ( clk_i )
   );
 
@@ -132,7 +134,7 @@ module neureka_engine #(
     .BYPASS_VCR_ASSERT( 1'b1  ),
     .BYPASS_VDR_ASSERT( 1'b1  )
 `endif
-  ) pres [NR_PE-1:0] (
+  ) pres [N_COPIES*NR_PE-1:0] (
     .clk ( clk_i )
   );
 
@@ -143,7 +145,7 @@ module neureka_engine #(
     .BYPASS_VCR_ASSERT( 1'b1  ),
     .BYPASS_VDR_ASSERT( 1'b1  )
 `endif
-  ) pres_depthwise [BLOCK_SIZE*NR_PE-1:0] (
+  ) pres_depthwise [N_COPIES*BLOCK_SIZE*NR_PE-1:0] (
     .clk ( clk_i )
   );
 
@@ -339,53 +341,213 @@ module neureka_engine #(
   localparam int INFEAT_BUFFER_SIZE_H  = PE_H+2; // Input Feature buffer size across height. 
   localparam int INFEAT_BUFFER_SIZE_W  = PE_W+2; // Input Feature buffer size across width
   localparam int INFEAT_BUFFER_SIZE_HW = INFEAT_BUFFER_SIZE_H*INFEAT_BUFFER_SIZE_W; // Input Feature buffer size 
-  neureka_double_infeat_buffer #(
-    .INPUT_BUF_SIZE        ( INPUT_BUF_SIZE        ),
-    .BLOCK_SIZE            ( BLOCK_SIZE            ),
-    .DW                    ( NEUREKA_QA_IN         ),
-    .PE_H                  ( PE_H                  ),
-    .PE_W                  ( PE_W                  ),
-    .INFEAT_BUFFER_SIZE_H  ( INFEAT_BUFFER_SIZE_H  ),
-    .INFEAT_BUFFER_SIZE_W  ( INFEAT_BUFFER_SIZE_W  ),
-    .INFEAT_BUFFER_SIZE_HW ( INFEAT_BUFFER_SIZE_HW )
-  ) i_double_infeat_buffer (
-    .clk_i       ( clk_i                              ),
-    .rst_ni      ( rst_ni                             ),
-    .test_mode_i ( test_mode_i                        ),
-    .enable_i    ( enable_i                           ),
-    .clear_i     ( clear_i                            ),
-    .ctrl_i      ( ctrl_i.ctrl_double_infeat_buffer   ),
-    .flags_o     ( flags_o.flags_double_infeat_buffer ),
-    .feat_i      ( load_in_blocks                     ),
-    .feat_o      ( in_from_buf                        )
-  );
+  if (FAULT_TOLERANCE) begin : ft_datapath_gen
 
-  /* BinConv Array */
-  neureka_binconv_array #(
-    .COLUMN_SIZE         ( COLUMN_SIZE          ),
-    .NR_PE               ( NR_PE                ),
-    .NR_ACTIVATIONS      ( INPUT_BUF_SIZE       ),
-    .BLOCK_SIZE          ( BLOCK_SIZE           ),
-    .INPUT_BUFFER_SIZE_W ( INFEAT_BUFFER_SIZE_W ),
-    .TP_IN               ( TP_IN                ),
-    .PE_H                ( PE_H                 ),
-    .PE_W                ( PE_W                 )
-  ) i_binconv_array (
-    .clk_i             ( clk_i                          ),
-    .rst_ni            ( rst_ni                         ),
-    .test_mode_i       ( test_mode_i                    ),
-    .enable_i          ( enable_i                       ),
-    .clear_i           ( clear_i                        ),
-    .activation_i      ( in_from_buf                    ),
-    .weight_conv_i     ( load_weight_rows_conv          ),
-    .pres_o            ( pres                           ),
-    .pres_depthwise_o  ( pres_depthwise                 ),
-    .ctrl_i            ( ctrl_i.ctrl_binconv_array      ),
-    .flags_o           ( flags_o.flags_binconv_array    )
-  );
+    hwpe_stream_intf_stream #(
+      .DATA_WIDTH ( NEUREKA_MEM_BANDWIDTH )
+  `ifndef SYNTHESIS
+      ,
+      .BYPASS_VCR_ASSERT( 1'b1  ),
+      .BYPASS_VDR_ASSERT( 1'b1  )
+  `endif
+    ) store_out_cols_pre_check [N_COPIES*NR_PE-1:0] (
+      .clk ( clk_i )
+    );
 
-  /* Accumulators + Normalization/Quantization */
-  generate
+    hwpe_stream_intf_stream #(
+      .DATA_WIDTH ( NEUREKA_QA_IN )
+  `ifndef SYNTHESIS
+      ,
+      .BYPASS_VCR_ASSERT( 1'b1  ),
+      .BYPASS_VDR_ASSERT( 1'b1  )
+  `endif
+    ) load_in_blocks_copy [N_COPIES*BLOCK_SIZE-1:0] (
+      .clk ( clk_i )
+    );
+
+    hwpe_stream_intf_stream #(
+      .DATA_WIDTH ( TP_IN )
+  `ifndef SYNTHESIS
+      ,
+      .BYPASS_VCR_ASSERT( 1'b1  ),
+      .BYPASS_VDR_ASSERT( 1'b1  )
+  `endif
+    ) load_weight_rows_conv_copy [N_COPIES*COLUMN_SIZE-1:0] (
+      .clk ( clk_i )
+    );
+
+    hwpe_stream_intf_stream #(
+      .DATA_WIDTH ( NEUREKA_MEM_BANDWIDTH )
+  `ifndef SYNTHESIS
+      ,
+      .BYPASS_VCR_ASSERT( 1'b1  ),
+      .BYPASS_VDR_ASSERT( 1'b1  )
+  `endif
+    ) load_streamin_cols_copy [N_COPIES*NR_PE-1:0] (
+      .clk ( clk_i )
+    );
+
+    hwpe_stream_intf_stream #(
+      .DATA_WIDTH ( NEUREKA_MEM_BANDWIDTH )
+  `ifndef SYNTHESIS
+      ,
+      .BYPASS_VCR_ASSERT( 1'b1  ),
+      .BYPASS_VDR_ASSERT( 1'b1  )
+  `endif
+    ) norm_copy [N_COPIES*NR_PE-1:0] (
+      .clk ( clk_i )
+    );
+
+    flags_engine_t [N_COPIES-1:0] flags;
+
+    // duplicate load_in_blocks, load_weight_rows_conv, load_streamin_cols, norm stream
+    hwpe_stream_copy #( .NB_IN_STREAMS (BLOCK_SIZE), .NB_COPY_STREAMS (N_COPIES) )
+      i_copy_load_in_blocks ( .push_i (load_in_blocks.sink), .pop_o (load_in_blocks_copy.source) );
+    hwpe_stream_copy #( .NB_IN_STREAMS (COLUMN_SIZE), .NB_COPY_STREAMS (N_COPIES) )
+      i_copy_load_weight_rows_conv ( .push_i (load_weight_rows_conv.sink), .pop_o (load_weight_rows_conv_copy.source) );
+    hwpe_stream_copy #( .NB_IN_STREAMS (NR_PE), .NB_COPY_STREAMS (N_COPIES) )
+      i_copy_load_streamin_cols    ( .push_i (load_streamin_cols.sink), .pop_o (load_streamin_cols_copy.source) );
+    hwpe_stream_copy #( .NB_IN_STREAMS (NR_PE), .NB_COPY_STREAMS (N_COPIES) )
+      i_copy_norm                  ( .push_i (norm.sink), .pop_o (norm_copy.source) );
+
+    for (genvar jj=0; jj<N_COPIES; jj++) begin : redundancy_gen
+
+      neureka_double_infeat_buffer #(
+        .INPUT_BUF_SIZE        ( INPUT_BUF_SIZE        ),
+        .BLOCK_SIZE            ( BLOCK_SIZE            ),
+        .DW                    ( NEUREKA_QA_IN         ),
+        .PE_H                  ( PE_H                  ),
+        .PE_W                  ( PE_W                  ),
+        .INFEAT_BUFFER_SIZE_H  ( INFEAT_BUFFER_SIZE_H  ),
+        .INFEAT_BUFFER_SIZE_W  ( INFEAT_BUFFER_SIZE_W  ),
+        .INFEAT_BUFFER_SIZE_HW ( INFEAT_BUFFER_SIZE_HW )
+      ) i_double_infeat_buffer (
+        .clk_i       ( clk_i                              ),
+        .rst_ni      ( rst_ni                             ),
+        .test_mode_i ( test_mode_i                        ),
+        .enable_i    ( enable_i                           ),
+        .clear_i     ( clear_i                            ),
+        .ctrl_i      ( ctrl_i.ctrl_double_infeat_buffer   ),
+        .flags_o     ( flags[jj].flags_double_infeat_buffer ),
+        .feat_i      ( load_in_blocks_copy[jj*BLOCK_SIZE+:BLOCK_SIZE] ),
+        .feat_o      ( in_from_buf[jj*INPUT_BUF_SIZE+:INPUT_BUF_SIZE] )
+      );
+
+      /* BinConv Array */
+      neureka_binconv_array #(
+        .COLUMN_SIZE         ( COLUMN_SIZE          ),
+        .NR_PE               ( NR_PE                ),
+        .NR_ACTIVATIONS      ( INPUT_BUF_SIZE       ),
+        .BLOCK_SIZE          ( BLOCK_SIZE           ),
+        .INPUT_BUFFER_SIZE_W ( INFEAT_BUFFER_SIZE_W ),
+        .TP_IN               ( TP_IN                ),
+        .PE_H                ( PE_H                 ),
+        .PE_W                ( PE_W                 )
+      ) i_binconv_array (
+        .clk_i             ( clk_i                          ),
+        .rst_ni            ( rst_ni                         ),
+        .test_mode_i       ( test_mode_i                    ),
+        .enable_i          ( enable_i                       ),
+        .clear_i           ( clear_i                        ),
+        .activation_i      ( in_from_buf[jj*INPUT_BUF_SIZE+:INPUT_BUF_SIZE] ),
+        .weight_conv_i     ( load_weight_rows_conv_copy[jj*COLUMN_SIZE+:COLUMN_SIZE]          ),
+        .pres_o            ( pres[jj*NR_PE+:NR_PE]          ),
+        .pres_depthwise_o  ( pres_depthwise[jj*BLOCK_SIZE*NR_PE+:BLOCK_SIZE*NR_PE] ), // check this
+        .ctrl_i            ( ctrl_i.ctrl_binconv_array      ),
+        .flags_o           ( flags[jj].flags_binconv_array  )
+      );
+
+      /* Accumulators + Normalization/Quantization */
+      for (genvar ii=0; ii<NR_PE; ii++) begin : accumulator_gen
+
+        ctrl_aq_t ctrl_accumulator;
+        always_comb
+        begin
+          ctrl_accumulator = ctrl_i.ctrl_accumulator;
+          ctrl_accumulator.enable_streamout = ctrl_i.enable_accumulator[ii];
+        end
+
+        neureka_accumulator_normquant #(
+          .TP  ( TP_IN  ),
+          .AP  ( TP_OUT ),
+          .ACC ( 32     )
+        ) i_accumulator (
+          .clk_i       ( clk_i                                              ),
+          .rst_ni      ( rst_ni                                             ),
+          .test_mode_i ( test_mode_i                                        ),
+          .enable_i    ( enable_i                                           ),
+          .clear_i     ( clear_i                                            ),
+          .conv_i      ( pres             [jj*NR_PE+ii]                    ),
+          .conv_dw_i   ( pres_depthwise   [(jj*NR_PE+ii)*BLOCK_SIZE+:BLOCK_SIZE] ), // check this
+          .norm_i      ( norm_copy                       [jj*NR_PE+ii]      ),
+          .streamin_i  ( load_streamin_cols_copy         [jj*NR_PE+ii]      ),
+          .conv_o      ( store_out_cols_pre_check        [jj*NR_PE+ii]      ),
+          .ctrl_i      ( ctrl_accumulator                                   ),
+          .flags_o     ( flags[jj].flags_accumulator    [ii]                )
+        );
+
+      end // accumulator_gen
+    end // redundancy_gen
+
+    // PUT THE CHECKER HERE
+
+    assign flags_o = flags[0];
+    for (genvar ii=0; ii<NR_PE; ii++) begin : out_cols_assign
+      hwpe_stream_assign i_to_store_out_cols (.push_i(store_out_cols_pre_check[ii]), .pop_o(store_out_cols[ii]));
+      assign store_out_cols_pre_check[NR_PE+ii].ready = store_out_cols[ii].ready; // temporary solution
+    end
+
+  end else begin : datapath_gen
+    /* Input Buffer */
+    localparam int INFEAT_BUFFER_SIZE_H  = PE_H+2; // Input Feature buffer size across height.
+    localparam int INFEAT_BUFFER_SIZE_W  = PE_W+2; // Input Feature buffer size across width
+    localparam int INFEAT_BUFFER_SIZE_HW = INFEAT_BUFFER_SIZE_H*INFEAT_BUFFER_SIZE_W; // Input Feature buffer size
+    neureka_double_infeat_buffer #(
+      .INPUT_BUF_SIZE        ( INPUT_BUF_SIZE        ),
+      .BLOCK_SIZE            ( BLOCK_SIZE            ),
+      .DW                    ( NEUREKA_QA_IN         ),
+      .PE_H                  ( PE_H                  ),
+      .PE_W                  ( PE_W                  ),
+      .INFEAT_BUFFER_SIZE_H  ( INFEAT_BUFFER_SIZE_H  ),
+      .INFEAT_BUFFER_SIZE_W  ( INFEAT_BUFFER_SIZE_W  ),
+      .INFEAT_BUFFER_SIZE_HW ( INFEAT_BUFFER_SIZE_HW )
+    ) i_double_infeat_buffer (
+      .clk_i       ( clk_i                              ),
+      .rst_ni      ( rst_ni                             ),
+      .test_mode_i ( test_mode_i                        ),
+      .enable_i    ( enable_i                           ),
+      .clear_i     ( clear_i                            ),
+      .ctrl_i      ( ctrl_i.ctrl_double_infeat_buffer   ),
+      .flags_o     ( flags_o.flags_double_infeat_buffer ),
+      .feat_i      ( load_in_blocks                     ),
+      .feat_o      ( in_from_buf                        )
+    );
+
+    /* BinConv Array */
+    neureka_binconv_array #(
+      .COLUMN_SIZE         ( COLUMN_SIZE          ),
+      .NR_PE               ( NR_PE                ),
+      .NR_ACTIVATIONS      ( INPUT_BUF_SIZE       ),
+      .BLOCK_SIZE          ( BLOCK_SIZE           ),
+      .INPUT_BUFFER_SIZE_W ( INFEAT_BUFFER_SIZE_W ),
+      .TP_IN               ( TP_IN                ),
+      .PE_H                ( PE_H                 ),
+      .PE_W                ( PE_W                 )
+    ) i_binconv_array (
+      .clk_i             ( clk_i                          ),
+      .rst_ni            ( rst_ni                         ),
+      .test_mode_i       ( test_mode_i                    ),
+      .enable_i          ( enable_i                       ),
+      .clear_i           ( clear_i                        ),
+      .activation_i      ( in_from_buf                    ),
+      .weight_conv_i     ( load_weight_rows_conv          ),
+      .pres_o            ( pres                           ),
+      .pres_depthwise_o  ( pres_depthwise                 ),
+      .ctrl_i            ( ctrl_i.ctrl_binconv_array      ),
+      .flags_o           ( flags_o.flags_binconv_array    )
+    );
+
+    /* Accumulators + Normalization/Quantization */
     for (genvar ii=0; ii<NR_PE; ii++) begin : accumulator_gen
 
       ctrl_aq_t ctrl_accumulator;
@@ -429,6 +591,7 @@ module neureka_engine #(
       );
 
     end // accumulator_gen
-  endgenerate
+
+  end
 
 endmodule // neureka_engine
