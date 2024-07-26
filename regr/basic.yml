@@ -35,13 +35,13 @@ neureka_basic_tests:
   t5:
     path: .
     command: make stimuli sw-all run gui=0 FS=1 QW=8 K_IN=32 K_OUT=32 H_IN=7 W_IN=7 NOPRINT=1
-  t5:
+  t6:
     path: .
     command: make stimuli sw-all run gui=0 FS=1 QW=8 K_IN=64 K_OUT=64 H_IN=4 W_IN=4 NOPRINT=1
-  t5:
+  t7:
     path: .
     command: make stimuli sw-all run gui=0 FS=1 QW=8 K_IN=48 K_OUT=48 H_IN=4 W_IN=4 NOPRINT=1
-  t6:
+  t8:
     path: .
     command: make stimuli sw-all run gui=0 FS=3 QW=8 K_IN=32 K_OUT=32 H_IN=6 W_IN=6 NOPRINT=1
 

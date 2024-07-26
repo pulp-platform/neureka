@@ -111,6 +111,8 @@ hw-all: hw-lib hw-compile hw-opt
 # Software stuff... to be moved?
 .PHONY: stimuli build-cleanup
 
+PE_H ?= 4
+PE_W ?= 4
 FS ?= 1
 ifeq ($(FS), 3)
   H_IN ?= 6
@@ -213,7 +215,7 @@ INC_FLAGS += $(addprefix -I,$(INC_DIRS))
 
 # Flags
 ACCELERATOR_UPPERCASE := $(shell echo $(ACCELERATOR) | tr [:lower:] [:upper:])
-APP_CFLAGS += -DNNX_ACCELERATOR=\"$(ACCELERATOR)\" -DNNX_$(ACCELERATOR_UPPERCASE) -DNNX_NEUREKA_TESTBENCH
+APP_CFLAGS += -DNNX_ACCELERATOR=\"$(ACCELERATOR)\" -DNNX_$(ACCELERATOR_UPPERCASE) -DNNX_NEUREKA_TESTBENCH -DNNX_NEUREKA_PE_H=$(PE_H) -DNNX_NEUREKA_PE_W=$(PE_W)
 # -DNEUREKA_WEIGHT_SOURCE_WMEM
 APP_CFLAGS += $(INC_FLAGS)
 APP_CFLAGS += $(NOPRINT_FLAG)
@@ -268,6 +270,8 @@ VSIM_DEPS=$(CRT)
 VSIM_PARAMS=-gPROB_STALL=$(P_STALL)   \
 	-gSTIM_INSTR=stim_instr.txt \
 	-gSTIM_DATA=stim_data.txt \
+	-gPE_H=$(PE_H) \
+	-gPE_W=$(PE_W) \
         -suppress vsim-3009
 
 # Run the simulation

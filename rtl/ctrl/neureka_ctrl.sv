@@ -876,14 +876,14 @@ module neureka_ctrl #(
                                                                                    (state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN) & state_change )):(state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN) & state_change ;
   end
 
-  // the NEUREKA array has 36 PEs -- one per each spatial pixel in the output space that it can support (3x3)
-  logic [PE_H-1:0] enable_pe_vert, enable_pe_horiz;
+  logic [PE_H-1:0] enable_pe_h;
+  logic [PE_W-1:0] enable_pe_w;
   logic [PE_H*PE_W-1:0] enable_pe_strided, pe_col_strided;
   logic [PE_H*PE_W-1:0] enable_pe, enable_pe_temp;
 
   // enable pe_cols depending on the subtile size considering residuals in the horizontal & vertical directions
-  assign enable_pe_vert  = (1 << h_size_out) - 1;
-  assign enable_pe_horiz = (1 << w_size_out) - 1;
+  assign enable_pe_h = (1 << h_size_out) - 1;
+  assign enable_pe_w = (1 << w_size_out) - 1;
 
   for(genvar h=0; h<PE_H; h++) begin : strided_output_height
     for(genvar w=0; w<PE_W; w++) begin : strided_output_width
@@ -909,10 +909,10 @@ module neureka_ctrl #(
   // overall column enable takes into account both horizontal and vertical enables, as well as strided mode
 
   for(genvar ii=0; ii<PE_H; ii++) begin
-    assign enable_pe_temp[(ii+1)*PE_W-1:ii*PE_W] = {PE_W{enable_pe_vert[ii]}};  
-  end 
-  assign enable_pe = {PE_H{enable_pe_horiz}} & enable_pe_temp & enable_pe_strided;
-  
+    assign enable_pe_temp[(ii+1)*PE_W-1:ii*PE_W] = {PE_W{enable_pe_h[ii]}};
+  end
+  assign enable_pe = {PE_H{enable_pe_w}} & enable_pe_temp & enable_pe_strided;
+
 
   // propagate config to NEUREKA binconv array
   assign ctrl_engine.ctrl_binconv_array.weight_offset                   = state==LOAD | state==WEIGHTOFFS;
