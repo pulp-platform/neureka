@@ -77,8 +77,15 @@ static void task_prepare(nnx_task_t *task) {
 
 #define NEUREKA_WEIGHT_SOURCE_WMEM
 #ifdef NEUREKA_WEIGHT_SOURCE_WMEM
-  nnx_task_set_weight_source(task, neurekaWeightSourceWmem);
-  nnx_task_set_activation_prefetch(task, activationPrefetchOn);
+  // activate prefetching via Wmem source only for 1x1 layers
+  if(WEIGHT_HEIGHT == 1) {
+    nnx_task_set_weight_source(task, neurekaWeightSourceWmem);
+    nnx_task_set_activation_prefetch(task, activationPrefetchOn);
+  }
+  else {
+    neureka_task_set_weight_source(task, neurekaWeightSourceTcdm);
+    nnx_task_set_activation_prefetch(task, activationPrefetchOff);
+  }
 #else
   neureka_task_set_weight_source(task, neurekaWeightSourceTcdm);
   nnx_task_set_activation_prefetch(task, activationPrefetchOff);
