@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1722000350266,
+  "lastUpdate": 1722084009186,
   "repoUrl": "https://github.com/pulp-platform/neureka",
   "entries": {
     "Execution cycles": [
@@ -3989,6 +3989,61 @@ window.BENCHMARK_DATA = {
           {
             "name": "neureka_basic_tests:t1",
             "value": 135,
+            "unit": "cycles"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "pulp-platform",
+            "username": "pulp-platform"
+          },
+          "committer": {
+            "name": "pulp-platform",
+            "username": "pulp-platform"
+          },
+          "id": "594379963edb9329fcd4d02bece3101a84042583",
+          "message": "Wmem active",
+          "timestamp": "2024-07-26T13:14:26Z",
+          "url": "https://github.com/pulp-platform/neureka/pull/14/commits/594379963edb9329fcd4d02bece3101a84042583"
+        },
+        "date": 1722084008777,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "neureka_basic_tests:t4",
+            "value": 557,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t2",
+            "value": 141,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t5",
+            "value": 378,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t3",
+            "value": 143,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t1",
+            "value": 143,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t6",
+            "value": 494,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t0",
+            "value": 141,
             "unit": "cycles"
           }
         ]
