@@ -119,6 +119,12 @@ else
   H_IN ?= 4
   W_IN ?= 4
 endif
+QW ?= 8
+ifeq ($(QW), 8)
+  QW_BUILD=
+else
+  QW_BUILD=_q$(QW)
+endif
 K_IN ?= 64
 K_OUT ?= 32
 DW ?= 0
@@ -152,7 +158,7 @@ else
 endif
 
 # construct build directory
-BUILD_DIR=build/ki$(K_IN)_ko$(K_OUT)_in$(H_IN).$(W_IN)_fs$(FS)_dw$(DW)_pad$(PADDING_TOP).$(PADDING_RIGHT).$(PADDING_BOTTOM).$(PADDING_LEFT)
+BUILD_DIR=build/ki$(K_IN)_ko$(K_OUT)_in$(H_IN).$(W_IN)_fs$(FS)_dw$(DW)$(QW_BUILD)_pad$(PADDING_TOP).$(PADDING_RIGHT).$(PADDING_BOTTOM).$(PADDING_LEFT)
 MODEL_DIR=$(dir $(abspath model))/model
 
 $(BUILD_DIR):
@@ -170,6 +176,7 @@ $(STIMULI): $(BUILD_DIR)
 	python $(MODEL_DIR)/gen_toml.py --in_height=$(H_IN) --in_width=$(W_IN) --in_channel=$(K_IN) --out_channel=$(K_OUT) $(DW_ARG) \
 	                                --kernel_height=$(FS) --kernel_width=$(FS) --stride_height=1 --stride_width=1 \
 	                                --padding_top=$(PADDING_TOP) --padding_right=$(PADDING_RIGHT) --padding_bottom=$(PADDING_BOTTOM) --padding_left=$(PADDING_LEFT) \
+									--weight_type=int$(QW) \
 									$(SYNTH_WEIGHTS_ARG) $(SYNTH_INPUTS_ARG) && \
 	python $(MODEL_DIR)/deps/pulp-nnx/test/testgen.py test -t test -a neureka --headers -c conf.toml --skip-save --print-tensors > stimuli.log
 
