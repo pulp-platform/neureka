@@ -930,8 +930,8 @@ module neureka_ctrl #(
 
   // block-level enables depend on the operating mode -- during WEIGHTOFFS, only 1; in 1x1 mode, as many as the weight_bits are; and in 3x3, all 9 according to the filter_mask_map
   assign ctrl_engine.ctrl_binconv_array.ctrl_pe.ctrl_col.enable_block  = ((state==LOAD || state==WEIGHTOFFS) && config_.filter_mode == NEUREKA_FILTER_MODE_1X1) ? '1 :
-                                                                            (config_.filter_mode == NEUREKA_FILTER_MODE_1X1)                                      ? '1:
-                                                                            ~filter_mask_map;
+                                                                          (config_.filter_mode == NEUREKA_FILTER_MODE_1X1)                                      ? (1 << config_.weight_bits) - 1:
+                                                                                                                                                                  ~filter_mask_map;
 
 
   // clear array state when entering LOAD or MATRIXVEC
