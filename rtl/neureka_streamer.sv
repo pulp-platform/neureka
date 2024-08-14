@@ -203,49 +203,99 @@ module neureka_streamer
   assign wmem_enable = (~ctrl_i.ld_st_mux_sel & ctrl_i.wmem_sel & (ctrl_i.ld_which_mux_sel == LD_WEIGHT_SEL)) | (ctrl_i.ld_which_mux_sel == LD_FEAT_WEIGHT_SEL);
   assign all_source_enable = (~ctrl_i.ld_st_mux_sel & (~wmem_enable)) | (ctrl_i.ld_which_mux_sel == LD_FEAT_WEIGHT_SEL);
 
-  hci_core_source #(
-    .PASSTHROUGH_FIFO      ( 1                     ),
-    .`HCI_SIZE_PARAM(tcdm) ( `HCI_SIZE_PARAM(tcdm) )
-  ) i_all_source (
-    .clk_i       ( clk_i                         ),
-    .rst_ni      ( rst_ni                        ),
-    .test_mode_i ( test_mode_i                   ),
-    .clear_i     ( clear_i | ctrl_i.clear_source ),
-    .enable_i    ( all_source_enable             ),
-    .tcdm        ( virt_tcdm[0].initiator        ),
-    .stream      ( all_source.source             ),
-    .ctrl_i      ( all_source_ctrl               ),
-    .flags_o     ( all_source_flags              )
-  );
+  if (EW > 0) begin : gen_ecc_all_source
+    hci_ecc_source #(
+      .PASSTHROUGH_FIFO ( 1                          ),
+      .`HCI_SIZE_PARAM(tcdm) ( `HCI_SIZE_PARAM(tcdm) )
+    ) i_all_ecc_source (
+      .clk_i       ( clk_i                         ),
+      .rst_ni      ( rst_ni                        ),
+      .test_mode_i ( test_mode_i                   ),
+      .clear_i     ( clear_i | ctrl_i.clear_source ),
+      .enable_i    ( all_source_enable             ),
+      .tcdm        ( virt_tcdm[0].initiator        ),
+      .stream      ( all_source.source             ),
+      .ctrl_i      ( all_source_ctrl               ),
+      .flags_o     ( all_source_flags              )
+    );
+  end else begin : gen_all_source
+    hci_core_source #(
+      .PASSTHROUGH_FIFO ( 1                          ),
+      .`HCI_SIZE_PARAM(tcdm) ( `HCI_SIZE_PARAM(tcdm) )
+    ) i_all_source (
+      .clk_i       ( clk_i                         ),
+      .rst_ni      ( rst_ni                        ),
+      .test_mode_i ( test_mode_i                   ),
+      .clear_i     ( clear_i | ctrl_i.clear_source ),
+      .enable_i    ( all_source_enable             ),
+      .tcdm        ( virt_tcdm[0].initiator        ),
+      .stream      ( all_source.source             ),
+      .ctrl_i      ( all_source_ctrl               ),
+      .flags_o     ( all_source_flags              )
+    );
+  end
 
-  hci_core_source #(
-    .PASSTHROUGH_FIFO      ( 1                     ),
-    .`HCI_SIZE_PARAM(tcdm) ( `HCI_SIZE_PARAM(tcdm) )
-  ) i_weight_source (
-    .clk_i       ( clk_i                         ),
-    .rst_ni      ( rst_ni                        ),
-    .test_mode_i ( test_mode_i                   ),
-    .clear_i     ( clear_i | ctrl_i.clear_source ),
-    .enable_i    ( wmem_enable                   ),
-    .tcdm        ( virt_tcdm[2].initiator        ),
-    .stream      ( weight[1].source              ),
-    .ctrl_i      ( wmem_source_ctrl              ),
-    .flags_o     ( wmem_source_flags             )
-  );
+  if (EW > 0) begin : gen_ecc_weight_source
+    hci_ecc_source #(
+      .PASSTHROUGH_FIFO ( 1                          ),
+      .`HCI_SIZE_PARAM(tcdm) ( `HCI_SIZE_PARAM(tcdm) )
+    ) i_weight_ecc_source (
+      .clk_i       ( clk_i                         ),
+      .rst_ni      ( rst_ni                        ),
+      .test_mode_i ( test_mode_i                   ),
+      .clear_i     ( clear_i | ctrl_i.clear_source ),
+      .enable_i    ( wmem_enable                   ),
+      .tcdm        ( virt_tcdm[2].initiator        ),
+      .stream      ( weight[1].source              ),
+      .ctrl_i      ( wmem_source_ctrl              ),
+      .flags_o     ( wmem_source_flags             )
+    );
+  end else begin : gen_weight_source
+    hci_core_source #(
+      .PASSTHROUGH_FIFO ( 1                          ),
+      .`HCI_SIZE_PARAM(tcdm) ( `HCI_SIZE_PARAM(tcdm) )
+    ) i_weight_source (
+      .clk_i       ( clk_i                         ),
+      .rst_ni      ( rst_ni                        ),
+      .test_mode_i ( test_mode_i                   ),
+      .clear_i     ( clear_i | ctrl_i.clear_source ),
+      .enable_i    ( wmem_enable                   ),
+      .tcdm        ( virt_tcdm[2].initiator        ),
+      .stream      ( weight[1].source              ),
+      .ctrl_i      ( wmem_source_ctrl              ),
+      .flags_o     ( wmem_source_flags             )
+    );
+  end
 
-  hci_core_sink #(
-    .`HCI_SIZE_PARAM(tcdm) ( `HCI_SIZE_PARAM(tcdm) )
-  ) i_sink (
-    .clk_i       ( clk_i                       ),
-    .rst_ni      ( rst_ni                      ),
-    .test_mode_i ( test_mode_i                 ),
-    .clear_i     ( clear_i | ctrl_i.clear_sink ),
-    .enable_i    ( ctrl_i.ld_st_mux_sel        ),
-    .tcdm        ( virt_tcdm[1].initiator      ),
-    .stream      ( conv_i.sink                 ),
-    .ctrl_i      ( ctrl_i.outfeat_sink_ctrl    ),
-    .flags_o     ( flags_o.conv_sink_flags     )
-  );
+  if (EW > 0) begin : gen_ecc_sink
+    hci_ecc_sink #(
+      .`HCI_SIZE_PARAM(tcdm) ( `HCI_SIZE_PARAM(tcdm) )
+    ) i_ecc_sink (
+      .clk_i       ( clk_i                       ),
+      .rst_ni      ( rst_ni                      ),
+      .test_mode_i ( test_mode_i                 ),
+      .clear_i     ( clear_i | ctrl_i.clear_sink ),
+      .enable_i    ( ctrl_i.ld_st_mux_sel        ),
+      .tcdm        ( virt_tcdm[1].initiator      ),
+      .stream      ( conv_i.sink                 ),
+      .ctrl_i      ( ctrl_i.outfeat_sink_ctrl    ),
+      .flags_o     ( flags_o.conv_sink_flags     )
+    );
+  end else begin : gen_sink
+    hci_core_sink #(
+      .`HCI_SIZE_PARAM(tcdm) ( `HCI_SIZE_PARAM(tcdm) )
+    )i_sink (
+      .clk_i       ( clk_i                       ),
+      .rst_ni      ( rst_ni                      ),
+      .test_mode_i ( test_mode_i                 ),
+      .clear_i     ( clear_i | ctrl_i.clear_sink ),
+      .enable_i    ( ctrl_i.ld_st_mux_sel        ),
+      .tcdm        ( virt_tcdm[1].initiator      ),
+      .stream      ( conv_i.sink                 ),
+      .ctrl_i      ( ctrl_i.outfeat_sink_ctrl    ),
+      .flags_o     ( flags_o.conv_sink_flags     )
+    );
+  end
 
   generate
     if(TCDM_FIFO_DEPTH > 0) begin : use_fifo_gen
