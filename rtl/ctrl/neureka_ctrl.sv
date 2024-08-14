@@ -20,6 +20,8 @@
  * Authors (NEUREKA): Arpan Suravi Prasad <prasadar@iis.ee.ethz.ch>
  */
 
+`include "register_interface/typedef.svh"
+
 import neureka_package::*;
 import hwpe_ctrl_package::*;
 import hci_package::*;
@@ -43,6 +45,8 @@ module neureka_ctrl #(
   input  flags_streamer_t                       flags_streamer_i,
   output ctrl_engine_t                          ctrl_engine_o,
   input  flags_engine_t                         flags_engine_i,
+  // ECC error signals
+  input errs_streamer_t                         errs_streamer_i,
   // periph slave port
   hwpe_ctrl_intf_periph.slave                   periph
 );
@@ -68,6 +72,44 @@ module neureka_ctrl #(
   ctrl_engine_t   ctrl_engine, ctrl_engine_d, ctrl_engine_q;
   ctrl_streamer_t ctrl_streamer, ctrl_streamer_d, ctrl_streamer_q;
 
+  hwpe_ctrl_intf_periph   #( .ID_WIDTH   ( ID_WIDTH    ) ) periph_slave ( .clk( clk_i ) );
+  hwpe_ctrl_intf_periph   #( .ID_WIDTH   ( ID_WIDTH    ) ) periph_ecc   ( .clk( clk_i ) );
+
+  logic periph_ecc_redirect, periph_ecc_redirect_q;
+
+  assign periph_ecc_redirect = ((periph.add[7:4] == HCI_ECC_MASK) && periph.req) ? 1 : 0;
+
+  always_ff @(posedge clk_i or negedge rst_ni) begin
+    if(~rst_ni) begin
+      periph_ecc_redirect_q <= 1'b0;
+    end else begin
+      if (clear_o)
+          periph_ecc_redirect_q <= 1'b0;
+      else
+          periph_ecc_redirect_q <= periph_ecc_redirect;
+    end
+  end
+
+  // Periph port binding
+  always_comb begin
+    periph_slave.req  = periph.req;
+    periph_slave.add  = periph.add;
+    periph_slave.wen  = periph.wen;
+    periph_slave.be   = periph.be;
+    periph_slave.data = periph.data;
+    periph_slave.id   = periph.id;
+    periph_ecc.req    = (periph_ecc_redirect)   ? periph.req         : '0;
+    periph_ecc.add    = (periph_ecc_redirect)   ? periph.add         : '0;
+    periph_ecc.wen    = (periph_ecc_redirect)   ? periph.wen         : '0;
+    periph_ecc.be     = (periph_ecc_redirect)   ? periph.be          : '0;
+    periph_ecc.data   = (periph_ecc_redirect)   ? periph.data        : '0;
+    periph_ecc.id     = (periph_ecc_redirect)   ? periph.id          : '0;
+    periph.gnt        = (periph_ecc_redirect)   ? periph_ecc.gnt     : periph_slave.gnt;
+    periph.r_data     = (periph_ecc_redirect_q) ? periph_ecc.r_data  : periph_slave.r_data;
+    periph.r_valid    = (periph_ecc_redirect_q) ? periph_ecc.r_valid : periph_slave.r_valid;
+    periph.r_id       = (periph_ecc_redirect)   ? periph_ecc.r_id    : periph_slave.r_id;
+  end
+
   /* HWPE controller slave port + register file */
   hwpe_ctrl_slave #(
     .N_CORES        ( N_CORES ),
@@ -79,7 +121,7 @@ module neureka_ctrl #(
     .clk_i    ( clk_i       ),
     .rst_ni   ( rst_ni      ),
     .clear_o  ( clear_o     ),
-    .cfg      ( periph      ),
+    .cfg      ( periph_slave ),
     .ctrl_i   ( slave_ctrl  ),
     .flags_o  ( slave_flags ),
     .reg_file ( reg_file    )
@@ -91,6 +133,51 @@ module neureka_ctrl #(
     slave_ctrl.done = (state==DONE) & state_change;
   end
   assign busy_o = slave_flags.is_working;
+
+  /* Error-counting memory-mapped registers */
+
+  `REG_BUS_TYPEDEF_ALL(hci_ecc, logic[31:0], logic[31:0], logic[7:0])
+  hci_ecc_req_t hci_ecc_req;
+  hci_ecc_rsp_t hci_ecc_rsp;
+
+  periph_to_reg #(
+    .IW             ( ID_WIDTH           ),
+    .req_t          ( hci_ecc_req_t      ),
+    .rsp_t          ( hci_ecc_rsp_t      )
+  ) i_periph_to_ecc_reg (
+    .clk_i          ( clk_i              ),
+    .rst_ni         ( rst_ni             ),
+    .req_i          ( periph_ecc.req     ),
+    .add_i          ( periph_ecc.add     ),
+    .wen_i          ( periph_ecc.wen     ),
+    .wdata_i        ( periph_ecc.data    ),
+    .be_i           ( periph_ecc.be      ),
+    .id_i           ( periph_ecc.id      ),
+    .gnt_o          ( periph_ecc.gnt     ),
+    .r_rdata_o      ( periph_ecc.r_data  ),
+    .r_opc_o        (                    ),
+    .r_id_o         ( periph_ecc.r_id    ),
+    .r_valid_o      ( periph_ecc.r_valid ),
+    .reg_req_o      ( hci_ecc_req        ),
+    .reg_rsp_i      ( hci_ecc_rsp        )
+  );
+
+  hci_ecc_manager #(
+    .N_CHUNK       ( ECC_N_CHUNK   ),
+    .ParData       ( 2             ),
+    .ParMeta       ( 2             ),
+    .hci_ecc_req_t ( hci_ecc_req_t ),
+    .hci_ecc_rsp_t ( hci_ecc_rsp_t )
+  ) i_hci_ecc_manager (
+    .clk_i                    ( clk_i                             ),
+    .rst_ni                   ( rst_ni                            ),
+    .hci_ecc_req_i            ( hci_ecc_req                       ),
+    .hci_ecc_rsp_o            ( hci_ecc_rsp                       ),
+    .data_correctable_err_i   ( errs_streamer_i.r_data_single_err ),
+    .data_uncorrectable_err_i ( errs_streamer_i.r_data_multi_err  ),
+    .meta_correctable_err_i   ( errs_streamer_i.r_meta_single_err ),
+    .meta_uncorrectable_err_i ( errs_streamer_i.r_meta_multi_err  )
+  );
 
   /* Main FSM driving the NEUREKA */
   neureka_ctrl_fsm #(
