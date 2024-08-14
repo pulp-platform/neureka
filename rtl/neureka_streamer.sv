@@ -50,6 +50,8 @@ module neureka_streamer
   hwpe_stream_intf_stream.sink   conv_i,
   // TCDM ports
   hci_core_intf.initiator        tcdm,
+  // ECC error signals
+  output errs_streamer_t         ecc_errors_o,
   // control channel
   input  ctrl_streamer_t         ctrl_i,
   output flags_streamer_t        flags_o
@@ -64,6 +66,11 @@ module neureka_streamer
   hci_streamer_flags_t all_source_flags, wmem_source_flags;
   flags_fifo_t tcdm_fifo_flags;
   flags_fifo_t tcdm_weight_fifo_flags;
+
+  logic [1:0][ECC_N_CHUNK-1:0] r_data_single_err;
+  logic [1:0][ECC_N_CHUNK-1:0] r_data_multi_err;
+  logic [1:0]                  r_meta_single_err;
+  logic [1:0]                  r_meta_multi_err;
 
   hwpe_stream_intf_stream #(
     .DATA_WIDTH ( NEUREKA_MEM_BANDWIDTH_EXT )
@@ -215,6 +222,10 @@ module neureka_streamer
       .enable_i    ( all_source_enable             ),
       .tcdm        ( virt_tcdm[0].initiator        ),
       .stream      ( all_source.source             ),
+      .r_data_single_err_o  ( r_data_single_err[0] ),
+      .r_data_multi_err_o   ( r_data_multi_err[0]  ),
+      .r_meta_single_err_o  ( r_meta_single_err[0] ),
+      .r_meta_multi_err_o   ( r_meta_multi_err[0]  ),
       .ctrl_i      ( all_source_ctrl               ),
       .flags_o     ( all_source_flags              )
     );
@@ -247,6 +258,10 @@ module neureka_streamer
       .enable_i    ( wmem_enable                   ),
       .tcdm        ( virt_tcdm[2].initiator        ),
       .stream      ( weight[1].source              ),
+      .r_data_single_err_o  ( r_data_single_err[1] ),
+      .r_data_multi_err_o   ( r_data_multi_err[1]  ),
+      .r_meta_single_err_o  ( r_meta_single_err[1] ),
+      .r_meta_multi_err_o   ( r_meta_multi_err[1]  ),
       .ctrl_i      ( wmem_source_ctrl              ),
       .flags_o     ( wmem_source_flags             )
     );
@@ -462,6 +477,18 @@ module neureka_streamer
     .push_1_i( weight[1].sink        ),
     .pop_o   ( weight_o.source         )
   );
+
+// Error signaling
+
+logic [1:0] valid_read;
+assign {valid_read[0], valid_read[1]} = {virt_tcdm[0].r_valid, virt_tcdm[2].r_valid};
+
+for (genvar i = 0; i < 2; i++) begin: error_bind
+  assign ecc_errors_o.r_data_single_err[i] = r_data_single_err[i] & {ECC_N_CHUNK{valid_read[i]}};
+  assign ecc_errors_o.r_data_multi_err [i] = r_data_multi_err [i] & {ECC_N_CHUNK{valid_read[i]}};
+  assign ecc_errors_o.r_meta_single_err[i] = r_meta_single_err[i] & valid_read[i];
+  assign ecc_errors_o.r_meta_multi_err [i] = r_meta_multi_err [i] & valid_read[i];
+end
 
 
 endmodule // neureka_streamer

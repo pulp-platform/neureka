@@ -62,6 +62,7 @@ module neureka_top
 
   ctrl_streamer_t  streamer_ctrl;
   flags_streamer_t streamer_flags;
+  errs_streamer_t  streamer_ecc_errs;
   ctrl_engine_t    engine_ctrl;
   flags_engine_t   engine_flags;
 
@@ -143,6 +144,7 @@ module neureka_top
     .streamin_o  ( streamin       ),
     .conv_i      ( conv           ),
     .tcdm        ( tcdm           ),
+    .ecc_errors_o( streamer_ecc_errs ),
     .ctrl_i      ( streamer_ctrl  ),
     .flags_o     ( streamer_flags )
   );
@@ -163,6 +165,7 @@ module neureka_top
     .flags_streamer_i ( streamer_flags ),
     .ctrl_engine_o    ( engine_ctrl    ),
     .flags_engine_i   ( engine_flags   ),
+    .errs_streamer_i  ( streamer_ecc_errs ),
     .periph           ( periph         )
   );
 

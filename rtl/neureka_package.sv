@@ -103,6 +103,12 @@ package neureka_package;
   parameter int unsigned NORM_MULT_SIZE = 8;
 
   // ========================================================================
+  // ECC-extended HCI related types
+  // number of data bits to encode separately
+  parameter int unsigned ECC_CHUNK_SIZE = 32;
+  parameter int unsigned ECC_N_CHUNK    = NEUREKA_MEM_BANDWIDTH_EXT / ECC_CHUNK_SIZE;
+
+  // ========================================================================
   // FEAT_BUFFER related types
   // ========================================================================
   typedef struct packed {
@@ -565,5 +571,12 @@ package neureka_package;
     -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1
   };
+
+  typedef struct packed {
+    logic [1:0][ECC_N_CHUNK-1:0] r_data_single_err;
+    logic [1:0][ECC_N_CHUNK-1:0] r_data_multi_err;
+    logic [1:0]                  r_meta_single_err;
+    logic [1:0]                  r_meta_multi_err;
+  } errs_streamer_t;
 
 endpackage
