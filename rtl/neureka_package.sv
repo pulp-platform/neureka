@@ -29,6 +29,7 @@ package neureka_package;
   parameter int NR_HWPE_REG   = 11;
   parameter int NR_HCI_REG    = 1;
   parameter int NR_UCODE_REG  = 12;
+  parameter int REGFILE_SCM   = 0;
 
   // general PULP environment parameters including clusters etc
   // default number of cores
