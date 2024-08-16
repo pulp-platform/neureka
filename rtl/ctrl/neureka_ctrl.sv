@@ -70,11 +70,12 @@ module neureka_ctrl #(
 
   /* HWPE controller slave port + register file */
   hwpe_ctrl_slave #(
-    .N_CORES        ( N_CORES ),
-    .N_CONTEXT      ( 2       ),
-    .N_IO_REGS      ( 25      ),
-    .N_GENERIC_REGS ( 0       ),
-    .ID_WIDTH       ( ID      )
+    .N_CORES        ( N_CORES                      ),
+    .N_CONTEXT      ( 2                            ),
+    .N_IO_REGS      ( 25                           ),
+    .N_GENERIC_REGS ( 0                            ),
+    .ID_WIDTH       ( ID                           ),
+    .REGFILE_SCM    ( neureka_package::REGFILE_SCM )
   ) i_slave (
     .clk_i    ( clk_i       ),
     .rst_ni   ( rst_ni      ),
