@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1723823401771,
+  "lastUpdate": 1723842143192,
   "repoUrl": "https://github.com/pulp-platform/neureka",
   "entries": {
     "Execution cycles": [
@@ -4215,6 +4215,63 @@ window.BENCHMARK_DATA = {
           {
             "name": "neureka_basic_tests:t4",
             "value": 562,
+            "unit": "cycles"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "ytortorella@fenga9.ee.ethz.ch",
+            "name": "Yvan Tortorella"
+          },
+          "committer": {
+            "email": "ytortorella@fenga9.ee.ethz.ch",
+            "name": "Yvan Tortorella"
+          },
+          "distinct": true,
+          "id": "97be61c6305d6959b7fb70d1d3cfc87cb93556d1",
+          "message": "Use FF-based register-file.",
+          "timestamp": "2024-08-16T22:54:34+02:00",
+          "tree_id": "35596ac758591b70c36a5484eb2eade56f78d081",
+          "url": "https://github.com/pulp-platform/neureka/commit/97be61c6305d6959b7fb70d1d3cfc87cb93556d1"
+        },
+        "date": 1723842142373,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "neureka_basic_tests:t2",
+            "value": 140,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t1",
+            "value": 142,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t6",
+            "value": 494,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t4",
+            "value": 572,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t0",
+            "value": 140,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t3",
+            "value": 142,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t5",
+            "value": 404,
             "unit": "cycles"
           }
         ]
