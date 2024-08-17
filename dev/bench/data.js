@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1723908252309,
+  "lastUpdate": 1723908253002,
   "repoUrl": "https://github.com/pulp-platform/neureka",
   "entries": {
     "Execution cycles": [
@@ -4520,6 +4520,63 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/pulp-platform/neureka/pull/21/commits/d4e06c86af92912e2b3b6115e69921a2da31a043"
         },
         "date": 1723908251966,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "neureka_basic_tests:t6",
+            "value": 501,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t3",
+            "value": 137,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t2",
+            "value": 137,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t1",
+            "value": 137,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t0",
+            "value": 137,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t4",
+            "value": 576,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t5",
+            "value": 413,
+            "unit": "cycles"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "ytortorella@fenga9.ee.ethz.ch",
+            "name": "Yvan Tortorella"
+          },
+          "committer": {
+            "email": "ytortorella@lagrev5.ee.ethz.ch",
+            "name": "Yvan Tortorella"
+          },
+          "distinct": true,
+          "id": "d4e06c86af92912e2b3b6115e69921a2da31a043",
+          "message": "Use FF-based register-file.",
+          "timestamp": "2024-08-17T17:12:22+02:00",
+          "tree_id": "0fd1e4b3022a53f4ec9c17cf42e7d0b2dcd94f05",
+          "url": "https://github.com/pulp-platform/neureka/commit/d4e06c86af92912e2b3b6115e69921a2da31a043"
+        },
+        "date": 1723908252588,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
