@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1723903043290,
+  "lastUpdate": 1723906316872,
   "repoUrl": "https://github.com/pulp-platform/neureka",
   "entries": {
     "Execution cycles": [
@@ -4331,6 +4331,61 @@ window.BENCHMARK_DATA = {
           {
             "name": "neureka_basic_tests:t5",
             "value": 413,
+            "unit": "cycles"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "pulp-platform",
+            "username": "pulp-platform"
+          },
+          "committer": {
+            "name": "pulp-platform",
+            "username": "pulp-platform"
+          },
+          "id": "daa12ad963e92427e92daf7f961e27c9c92aec35",
+          "message": "Use FF-based Register File.",
+          "timestamp": "2024-08-11T20:14:05Z",
+          "url": "https://github.com/pulp-platform/neureka/pull/21/commits/daa12ad963e92427e92daf7f961e27c9c92aec35"
+        },
+        "date": 1723906316016,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "neureka_basic_tests:t1",
+            "value": 137,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t3",
+            "value": 137,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t2",
+            "value": 137,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t5",
+            "value": 413,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t0",
+            "value": 137,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t6",
+            "value": 501,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t4",
+            "value": 576,
             "unit": "cycles"
           }
         ]
