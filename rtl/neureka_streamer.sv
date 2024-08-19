@@ -220,8 +220,8 @@ module neureka_streamer
       .test_mode_i ( test_mode_i                   ),
       .clear_i     ( clear_i | ctrl_i.clear_source ),
       .enable_i    ( all_source_enable             ),
-      .tcdm        ( virt_tcdm[0].initiator        ),
-      .stream      ( all_source.source             ),
+      .tcdm        ( virt_tcdm[0]                  ),
+      .stream      ( all_source                    ),
       .r_data_single_err_o  ( r_data_single_err[0] ),
       .r_data_multi_err_o   ( r_data_multi_err[0]  ),
       .r_meta_single_err_o  ( r_meta_single_err[0] ),
@@ -239,8 +239,8 @@ module neureka_streamer
       .test_mode_i ( test_mode_i                   ),
       .clear_i     ( clear_i | ctrl_i.clear_source ),
       .enable_i    ( all_source_enable             ),
-      .tcdm        ( virt_tcdm[0].initiator        ),
-      .stream      ( all_source.source             ),
+      .tcdm        ( virt_tcdm[0]                  ),
+      .stream      ( all_source                    ),
       .ctrl_i      ( all_source_ctrl               ),
       .flags_o     ( all_source_flags              )
     );
@@ -256,8 +256,8 @@ module neureka_streamer
       .test_mode_i ( test_mode_i                   ),
       .clear_i     ( clear_i | ctrl_i.clear_source ),
       .enable_i    ( wmem_enable                   ),
-      .tcdm        ( virt_tcdm[2].initiator        ),
-      .stream      ( weight[1].source              ),
+      .tcdm        ( virt_tcdm[2]                  ),
+      .stream      ( weight[1]                     ),
       .r_data_single_err_o  ( r_data_single_err[1] ),
       .r_data_multi_err_o   ( r_data_multi_err[1]  ),
       .r_meta_single_err_o  ( r_meta_single_err[1] ),
@@ -275,8 +275,8 @@ module neureka_streamer
       .test_mode_i ( test_mode_i                   ),
       .clear_i     ( clear_i | ctrl_i.clear_source ),
       .enable_i    ( wmem_enable                   ),
-      .tcdm        ( virt_tcdm[2].initiator        ),
-      .stream      ( weight[1].source              ),
+      .tcdm        ( virt_tcdm[2]                  ),
+      .stream      ( weight[1]                     ),
       .ctrl_i      ( wmem_source_ctrl              ),
       .flags_o     ( wmem_source_flags             )
     );
@@ -291,8 +291,8 @@ module neureka_streamer
       .test_mode_i ( test_mode_i                 ),
       .clear_i     ( clear_i | ctrl_i.clear_sink ),
       .enable_i    ( ctrl_i.ld_st_mux_sel        ),
-      .tcdm        ( virt_tcdm[1].initiator      ),
-      .stream      ( conv_i.sink                 ),
+      .tcdm        ( virt_tcdm[1]                ),
+      .stream      ( conv_i                      ),
       .ctrl_i      ( ctrl_i.outfeat_sink_ctrl    ),
       .flags_o     ( flags_o.conv_sink_flags     )
     );
@@ -305,8 +305,8 @@ module neureka_streamer
       .test_mode_i ( test_mode_i                 ),
       .clear_i     ( clear_i | ctrl_i.clear_sink ),
       .enable_i    ( ctrl_i.ld_st_mux_sel        ),
-      .tcdm        ( virt_tcdm[1].initiator      ),
-      .stream      ( conv_i.sink                 ),
+      .tcdm        ( virt_tcdm[1]                ),
+      .stream      ( conv_i                      ),
       .ctrl_i      ( ctrl_i.outfeat_sink_ctrl    ),
       .flags_o     ( flags_o.conv_sink_flags     )
     );
@@ -322,8 +322,8 @@ module neureka_streamer
         .rst_ni  ( rst_ni                 ),
         .clear_i ( clear_i                ),
         .sel_i   ( ctrl_i.ld_st_mux_sel   ),
-        .in      ( virt_tcdm[0:1].target  ),
-        .out     ( tcdm_prefifo.initiator )
+        .in      ( virt_tcdm[0:1]         ),
+        .out     ( tcdm_prefifo           )
       );
 
       hci_core_fifo #(
@@ -334,8 +334,8 @@ module neureka_streamer
         .rst_ni         ( rst_ni                      ),
         .clear_i        ( clear_i | ctrl_i.clear_fifo ),
         .flags_o        ( tcdm_fifo_flags             ),
-        .tcdm_target    ( tcdm_prefifo.target         ),
-        .tcdm_initiator ( tcdm_prefilter.initiator    )
+        .tcdm_target    ( tcdm_prefifo                ),
+        .tcdm_initiator ( tcdm_prefilter              )
       );
 
       hci_core_fifo #(
@@ -346,8 +346,8 @@ module neureka_streamer
         .rst_ni         ( rst_ni                      ),
         .clear_i        ( clear_i | ctrl_i.clear_fifo ),
         .flags_o        ( tcdm_weight_fifo_flags      ),
-        .tcdm_target    ( virt_tcdm[2].target                ),
-        .tcdm_initiator ( tcdm_weight_prefilter.initiator       )
+        .tcdm_target    ( virt_tcdm[2]                ),
+        .tcdm_initiator ( tcdm_weight_prefilter       )
       );
     end
     else begin : dont_use_fifo_gen
@@ -359,8 +359,8 @@ module neureka_streamer
         .rst_ni  ( rst_ni               ),
         .clear_i ( clear_i              ),
         .sel_i   ( ctrl_i.ld_st_mux_sel ),
-        .in      ( virt_tcdm[0:1].target       ),
-        .out     ( tcdm_prefilter.initiator       )
+        .in      ( virt_tcdm[0:1]       ),
+        .out     ( tcdm_prefilter       )
       );
 
       hci_core_assign i_weight_tcdm (
@@ -379,8 +379,8 @@ module neureka_streamer
     .rst_ni         ( rst_ni               ),
     .clear_i        ( clear_i              ),
     .enable_i       ( 1'b1                 ),
-    .tcdm_target    ( tcdm_prefilter.target       ),
-    .tcdm_initiator ( tcdm_premux[1].initiator       )
+    .tcdm_target    ( tcdm_prefilter       ),
+    .tcdm_initiator ( tcdm_premux[1]       )
   );
 
   hci_core_r_valid_filter #(
@@ -390,8 +390,8 @@ module neureka_streamer
     .rst_ni         ( rst_ni               ),
     .clear_i        ( clear_i              ),
     .enable_i       ( ctrl_i.wmem_sel      ),
-    .tcdm_target    ( tcdm_weight_prefilter.target),
-    .tcdm_initiator ( tcdm_premux[0].initiator       )
+    .tcdm_target    ( tcdm_weight_prefilter),
+    .tcdm_initiator ( tcdm_premux[0]       )
   );
 
   hci_core_mux_ooo #(
@@ -403,8 +403,8 @@ module neureka_streamer
     .clear_i          ( clear_i        ),
     .priority_force_i ( 1'b0           ),
     .priority_i       ( '0             ),
-    .in               ( tcdm_premux.target    ),
-    .out              ( tcdm_preout.initiator    )
+    .in               ( tcdm_premux    ),
+    .out              ( tcdm_preout    )
   );
 
   hci_core_r_id_filter #(
@@ -414,8 +414,8 @@ module neureka_streamer
     .rst_ni         ( rst_ni      ),
     .clear_i        ( clear_i     ),
     .enable_i       ( 1'b1        ),
-    .tcdm_target    ( tcdm_preout.target ),
-    .tcdm_initiator ( tcdm.initiator        )
+    .tcdm_target    ( tcdm_preout ),
+    .tcdm_initiator ( tcdm        )
   );
 
   always_comb
@@ -459,23 +459,23 @@ module neureka_streamer
     .rst_ni  ( rst_ni           ),
     .clear_i ( clear_i          ),
     .sel_i   ( ld_which_mux_sel ),
-    .push_i  ( all_source.sink       ),
-    .pop_o   ( virt_source.source      )
+    .push_i  ( all_source       ),
+    .pop_o   ( virt_source      )
   );
 
-  hwpe_stream_assign i_assign_feat     ( .push_i (virt_source[0].sink), .pop_o ( feat_o.source     ) );
-  hwpe_stream_assign i_assign_weight   ( .push_i (virt_source[1].sink), .pop_o ( weight[0].source  ) );
-  hwpe_stream_assign i_assign_norm     ( .push_i (virt_source[2].sink), .pop_o ( norm_o.source     ) );
-  hwpe_stream_assign i_assign_streamin ( .push_i (virt_source[3].sink), .pop_o ( streamin_o.source ) );
+  hwpe_stream_assign i_assign_feat     ( .push_i (virt_source[0]), .pop_o ( feat_o     ) );
+  hwpe_stream_assign i_assign_weight   ( .push_i (virt_source[1]), .pop_o ( weight[0]  ) );
+  hwpe_stream_assign i_assign_norm     ( .push_i (virt_source[2]), .pop_o ( norm_o     ) );
+  hwpe_stream_assign i_assign_streamin ( .push_i (virt_source[3]), .pop_o ( streamin_o ) );
 
   hwpe_stream_mux_static i_weight_source_mux (
     .clk_i   ( clk_i            ),
     .rst_ni  ( rst_ni           ),
     .clear_i ( clear_i          ),
     .sel_i   ( ctrl_i.wmem_sel  ),
-    .push_0_i( weight[0].sink        ),
-    .push_1_i( weight[1].sink        ),
-    .pop_o   ( weight_o.source         )
+    .push_0_i( weight[0]        ),
+    .push_1_i( weight[1]        ),
+    .pop_o   ( weight_o         )
   );
 
 // Error signaling
