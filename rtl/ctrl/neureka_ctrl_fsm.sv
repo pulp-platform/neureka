@@ -73,15 +73,14 @@ module neureka_ctrl_fsm
   logic accum_done_d, accum_done_q;
   logic prefetch_matrixvec_done;
   logic load_done;
-
-
-
   
   assign prefetch_o               = prefetch_valid_q;
   assign load_done                = (flags_engine_i.flags_double_infeat_buffer.flags_odd_infeat_buffer.state == IB_EXTRACT)|(flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT);
   assign prefetch_done            = ((flags_engine_i.flags_double_infeat_buffer.flags_odd_infeat_buffer.state == IB_EXTRACT)&(~flags_engine_i.flags_double_infeat_buffer.read)) || ((flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT) & (flags_engine_i.flags_double_infeat_buffer.read));
   assign prefetch_matrixvec_done  = (prefetch_done_d & accum_done_d)|(prefetch_done_d & accum_done_q)|(prefetch_done_q & accum_done_d)|(prefetch_done_q & accum_done_q);
   
+  state_aq_t accumulators_state;
+  assign accumulators_state = flags_engine_i.flags_accumulator[NUM_PE-1].state;
 
   /* finite state machine */
   always_ff @(posedge clk_i or negedge rst_ni)
@@ -112,7 +111,7 @@ module neureka_ctrl_fsm
   assign prefetch_valid_d = clear_i ? '0 : (state_d == UPDATEIDX & state_change_o) ? 0 : 
                             flags_uloop.next_valid ? 1'b1 : 
                             prefetch_valid_q;
-  assign accum_done_d     = clear_i ? '0 : (state_q == MATRIXVEC) ? (flags_engine_i.flags_accumulator[0].state == AQ_ACCUM_DONE) ? 1'b1 : accum_done_q :0;
+  assign accum_done_d     = clear_i ? '0 : (state_q == MATRIXVEC) ? (accumulators_state == AQ_ACCUM_DONE) ? 1'b1 : accum_done_q :0;
   assign prefetch_done_d  = clear_i ? '0 : (state_q == MATRIXVEC) ? (~config_i.prefetch ? 1'b1 : (flags_uloop.next_done? 1'b1 : (prefetch_done ? 1'b1 : prefetch_done_q))) : 
                             ~config_i.prefetch;
 
@@ -141,14 +140,14 @@ module neureka_ctrl_fsm
       end
 
       WEIGHTOFFS: begin
-          if(flags_engine_i.flags_accumulator[0].state == AQ_ACCUM_DONE) begin
+          if(accumulators_state == AQ_ACCUM_DONE) begin
               state_d = MATRIXVEC;
               state_change_d = 1'b1;
           end
         end
 
       STREAMIN: begin
-        if(flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_STREAMIN_DONE) begin
+        if(accumulators_state == AQ_STREAMIN_DONE) begin
           state_d = WEIGHTOFFS;
           state_change_d = 1'b1;
         end
@@ -168,32 +167,32 @@ module neureka_ctrl_fsm
       end
 
       NORMQUANT_SHIFT: begin
-        if(flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_NORMQUANT) begin
+        if(accumulators_state == AQ_NORMQUANT) begin
           state_d = NORMQUANT;
           state_change_d = 1'b1;
         end
       end
 
       NORMQUANT: begin
-        if(flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_NORMQUANT_BIAS) begin
+        if(accumulators_state == AQ_NORMQUANT_BIAS) begin
           state_d = NORMQUANT_BIAS;
           state_change_d = 1'b1;
         end
-        else if(~config_i.norm_option_bias & flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_NORMQUANT_DONE) begin
+        else if(~config_i.norm_option_bias & accumulators_state == AQ_NORMQUANT_DONE) begin
           state_d = STREAMOUT;
           state_change_d = 1'b1;
         end
       end
 
       NORMQUANT_BIAS: begin
-        if(flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_NORMQUANT_DONE) begin
+        if(accumulators_state == AQ_NORMQUANT_DONE) begin
           state_d = STREAMOUT;
           state_change_d = 1'b1;
         end
       end
 
       STREAMOUT: begin
-        if(flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_STREAMOUT_DONE) begin
+        if(accumulators_state == AQ_STREAMOUT_DONE) begin
           if(flags_uloop.done) begin
             state_d = DONE;
             state_change_d = 1'b1;

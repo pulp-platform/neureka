@@ -28,7 +28,8 @@ module neureka_accumulator_normquant #(
   parameter int unsigned ACC              = NEUREKA_ACCUM_SIZE,
   parameter int unsigned CNT              = VLEN_CNT_SIZE,
   parameter int unsigned PIPE_NORMQUANT   = 1,
-  parameter int unsigned OUTREG_NORMQUANT = 0
+  parameter int unsigned OUTREG_NORMQUANT = 0,
+  parameter int unsigned LAST_PE          = 0
 ) (
   // global signals
   input  logic                   clk_i,
@@ -53,7 +54,8 @@ module neureka_accumulator_normquant #(
 
   localparam WIDTH_FACTOR = NEUREKA_MEM_BANDWIDTH / ACC;
 
-  logic clk_gated;
+  logic clk_en_gated, clk_en_regs, clk_en_normquant, clk_en_normquant_bias;
+  logic clk_gated, clk_state, clk_regs, clk_normquant, clk_normquant_bias;
 
   logic signed [4*ACC-1:0]                  normalized_q;
   logic signed [ACC-1:0]                    accumulator_plus_d;
@@ -194,7 +196,7 @@ module neureka_accumulator_normquant #(
     end 
   end 
 
-  always_ff @(posedge clk_i or negedge rst_ni)
+  always_ff @(posedge clk_state or negedge rst_ni)
   begin : address_counter
     if(~rst_ni) begin
       addr_cnt_stage1_q <= '0;
@@ -214,20 +216,57 @@ module neureka_accumulator_normquant #(
     end
   end
 
-  cluster_clock_gating i_hier_accum_gate (
-    .clk_i     ( clk_i                                                    ),
-    .en_i      ( ctrl_i.enable_streamout  & ctrl_i.clock_gating | clear_i ),
-    .test_en_i ( test_mode_i                                              ),
-    .clk_o     ( clk_gated                                                )
-  );
-  
   assign accumulator_clr  = clear_i | ctrl_i.clear;
+
+  // clock-gate modules hierarchically to save dynamic power
+  assign clk_en_gated          = ctrl_i.enable_streamout  & ctrl_i.clock_gating | accumulator_clr;
+  assign clk_en_regs           = (ctrl_i.enable_streamout & (fsm_state_q != AQ_IDLE)) | accumulator_clr;
+  assign clk_en_normquant      = (ctrl_i.enable_streamout & ((fsm_state_q == AQ_NORMQUANT
+                                                           || fsm_state_q == AQ_NORMQUANT_SHIFT))) | accumulator_clr | ctrl_i.weight_offset;
+  assign clk_en_normquant_bias = (ctrl_i.enable_streamout & (fsm_state_q == AQ_NORMQUANT
+                                                          || fsm_state_q == AQ_NORMQUANT_BIAS)) | accumulator_clr;
+
+  cluster_clock_gating i_hier_accum_gate (
+    .clk_i     ( clk_i        ),
+    .en_i      ( clk_en_gated ),
+    .test_en_i ( test_mode_i  ),
+    .clk_o     ( clk_gated    )
+  );
+
+  cluster_clock_gating i_hier_regs_gate (
+    .clk_i     ( clk_i       ),
+    .en_i      ( clk_en_regs ),
+    .test_en_i ( test_mode_i ),
+    .clk_o     ( clk_regs    )
+  );
+
+  cluster_clock_gating i_hier_nq_gate (
+    .clk_i     ( clk_i            ),
+    .en_i      ( clk_en_normquant ),
+    .test_en_i ( test_mode_i      ),
+    .clk_o     ( clk_normquant    )
+  );
+
+  cluster_clock_gating i_hier_nqb_gate (
+    .clk_i     ( clk_i                 ),
+    .en_i      ( clk_en_normquant_bias ),
+    .test_en_i ( test_mode_i           ),
+    .clk_o     ( clk_normquant_bias    )
+  );
+
+  // state is kept in the last PE
+  if(LAST_PE) begin : last_accumulator_state_clock_gen
+    assign clk_state = clk_i;
+  end
+  else begin : not_last_accumulator_state_clock_gen
+    assign clk_state = clk_gated;
+  end
 
   neureka_accumulator_buffer #(
     .DATA_WIDTH(NEUREKA_ACCUM_SIZE),
     .NUM_WORDS(NEUREKA_TP_OUT)
   ) i_accumulator_buffer (
-    .clk_i        ( clk_gated       ),
+    .clk_i        ( clk_regs        ),
     .rst_ni       ( rst_ni          ),
 
     .enable_i     ( enable_i        ),
@@ -265,12 +304,12 @@ module neureka_accumulator_normquant #(
 
 
   neureka_normquant #(
-    .NMULT           ( 4                ),
+    .NMULT           ( NMULT            ),
     .ACC             ( ACC              ),
     .PIPE            ( PIPE_NORMQUANT   ),
     .OUTPUT_REGISTER ( OUTREG_NORMQUANT )
   ) i_normquant (
-    .clk_i         ( clk_gated       ),
+    .clk_i         ( clk_normquant   ),
     .rst_ni        ( rst_ni          ),
     .test_mode_i   ( test_mode_i     ),
     .clear_i       ( clear_i         ),
@@ -288,7 +327,7 @@ module neureka_accumulator_normquant #(
 
 // Only used for the shift as the bias is done using neureka_accumulator_adder 
   neureka_normquant_bias i_normquant_bias (
-    .clk_i         ( clk_gated          ),
+    .clk_i         ( clk_normquant_bias ),
     .rst_ni        ( rst_ni             ),
     .test_mode_i   ( test_mode_i        ),
     .clear_i       ( clear_i            ),
@@ -345,7 +384,7 @@ module neureka_accumulator_normquant #(
         end 
       end 
 
-      always_ff @(posedge clk_i or negedge rst_ni)
+      always_ff @(posedge clk_state or negedge rst_ni)
       begin
         if(~rst_ni) begin
           shift_data_stage2_q[ii] <= '0;
@@ -363,7 +402,7 @@ module neureka_accumulator_normquant #(
   assign flags_o.addr_cnt_en_q = addr_cnt_en_stage1_q;
   assign flags_o.count    = full_accumulation_cnt_q;
   
-  always_ff @(posedge clk_i or negedge rst_ni)
+  always_ff @(posedge clk_state or negedge rst_ni)
   begin : fsm_state_seq
     if(~rst_ni) begin
       fsm_state_q <= AQ_IDLE;
@@ -586,7 +625,7 @@ module neureka_accumulator_normquant #(
   end
 
 
-  always_ff @(posedge clk_i or negedge rst_ni)
+  always_ff @(posedge clk_state or negedge rst_ni)
   begin
     if(~rst_ni) begin
       conv_handshake_q <= '0;
@@ -611,7 +650,7 @@ module neureka_accumulator_normquant #(
   end
 
 
-  always_ff @(posedge clk_i or negedge rst_ni)
+  always_ff @(posedge clk_state or negedge rst_ni)
   begin : accum_counter
     if(~rst_ni) begin
       full_accumulation_cnt_q <= '0;
@@ -641,7 +680,7 @@ module neureka_accumulator_normquant #(
     end
   end 
 
-  always_ff @(posedge clk_i or negedge rst_ni)
+  always_ff @(posedge clk_state or negedge rst_ni)
   begin : qw_counter
     if(~rst_ni) begin
       qw_accumulation_cnt_q <= '0;
@@ -664,7 +703,7 @@ module neureka_accumulator_normquant #(
     end
   end 
 
-  always_ff @(posedge clk_i or negedge rst_ni)
+  always_ff @(posedge clk_state or negedge rst_ni)
   begin
     if(~rst_ni) begin
       shift_data_stage1_q <= '0;
@@ -676,7 +715,7 @@ module neureka_accumulator_normquant #(
 
   assign shift_data_stage2_en_d = clear_i ? '0 : ctrl_i.weight_offset | (~ctrl_i.norm_option_shift & ctrl_i.sample_shift) | (fsm_state_q==AQ_NORMQUANT_SHIFT) | (fsm_state_q==AQ_NORMQUANT_BIAS) | (fsm_state_q==AQ_NORMQUANT);
 
-  always_ff @(posedge clk_i or negedge rst_ni)
+  always_ff @(posedge clk_state or negedge rst_ni)
   begin
     if(~rst_ni) begin
       shift_data_stage2_en_q <= '0;
