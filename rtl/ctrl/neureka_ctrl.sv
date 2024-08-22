@@ -912,8 +912,32 @@ module neureka_ctrl #(
     assign enable_pe_temp[(ii+1)*PE_W-1:ii*PE_W] = {PE_W{enable_pe_vert[ii]}};  
   end 
   assign enable_pe = {PE_H{enable_pe_horiz}} & enable_pe_temp & enable_pe_strided;
-  
 
+  // compute last enabled PE
+  logic [$clog2(NEUREKA_NUM_PE_MAX)-1:0] last_pe_d, last_pe_q;
+  always_comb
+  begin : last_pe_comb
+    last_pe_d = 0;
+    for(int i=0; i<PE_H*PE_W; i++) begin
+      if(enable_pe[i]) begin
+        last_pe_d = i;
+      end
+    end
+  end
+  always_ff @(posedge clk_i or negedge rst_ni)
+  begin
+    if(~rst_ni) begin
+      last_pe_q <= '0;
+    end
+    else if(clear_o) begin
+      last_pe_q <= '0;
+    end
+    else begin
+      last_pe_q <= last_pe_d;
+    end
+  end
+  assign config_.last_pe = last_pe_q;
+ 
   // propagate config to NEUREKA binconv array
   assign ctrl_engine.ctrl_binconv_array.weight_offset                   = state==LOAD | state==WEIGHTOFFS;
   assign ctrl_engine.ctrl_binconv_array.filter_mode                     = config_.filter_mode;
@@ -964,6 +988,7 @@ module neureka_ctrl #(
 
   // enable accumulator ICG cells
   assign ctrl_engine.enable_accumulator = enable_pe;
+  assign ctrl_engine.last_pe = config_.last_pe;
 
   // control the accumulator's state or the norm/quant unit's state
   assign ctrl_engine.ctrl_accumulator.clear          = (state==IDLE && state_change==1'b1) | (state==STREAMOUT_DONE && state_change==1'b1);
@@ -1016,6 +1041,7 @@ module neureka_ctrl #(
   assign ctrl_engine.ctrl_accumulator.weight_offset_scale = config_.weight_offset_scale;
   assign ctrl_engine.ctrl_accumulator.norm_option_bias    = config_.norm_option_bias;
   assign ctrl_engine.ctrl_accumulator.norm_option_shift   = config_.norm_option_shift;
+  assign ctrl_engine.ctrl_accumulator.last_pe = 1'b0; // overridden in neureka_engine
 
   // the serializer is used to combine data from multiple columns
   assign ctrl_engine.ctrl_serialize_streamin.first_stream       = '0;
