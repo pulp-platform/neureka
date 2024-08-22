@@ -80,7 +80,7 @@ module neureka_ctrl_fsm
   assign prefetch_matrixvec_done  = (prefetch_done_d & accum_done_d)|(prefetch_done_d & accum_done_q)|(prefetch_done_q & accum_done_d)|(prefetch_done_q & accum_done_q);
   
   state_aq_t accumulators_state;
-  assign accumulators_state = flags_engine_i.flags_accumulator[NUM_PE-1].state;
+  assign accumulators_state = flags_engine_i.flags_accumulator[config_i.last_pe].state;
 
   /* finite state machine */
   always_ff @(posedge clk_i or negedge rst_ni)

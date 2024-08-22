@@ -238,6 +238,7 @@ package neureka_package;
     logic [$clog2(QUANT_CNT_SIZE):0] qw;       // weights quantization
     logic                            enable_streamout;
     logic                            depthwise;
+    logic                            last_pe;
   } ctrl_aq_t;
 
   typedef enum {
@@ -326,6 +327,7 @@ package neureka_package;
     logic [NEUREKA_NUM_PE_MAX-1:0]      enable_accumulator;
     logic                               clear_des;
     logic                               mode_linear;
+    logic [$clog2(NEUREKA_NUM_PE_MAX)-1:0] last_pe;
   } ctrl_engine_t;
 
   typedef struct packed {
@@ -462,6 +464,7 @@ package neureka_package;
     logic        use_rounding;
     logic [4:0]  shift_reqnt;
     uloop_iter_neureka_t uloop_iter;
+    logic [$clog2(NEUREKA_NUM_PE_MAX)-1:0] last_pe;
   } config_neureka_t;
 
   typedef struct packed {

@@ -28,8 +28,7 @@ module neureka_accumulator_normquant #(
   parameter int unsigned ACC              = NEUREKA_ACCUM_SIZE,
   parameter int unsigned CNT              = VLEN_CNT_SIZE,
   parameter int unsigned PIPE_NORMQUANT   = 1,
-  parameter int unsigned OUTREG_NORMQUANT = 0,
-  parameter int unsigned LAST_PE          = 0
+  parameter int unsigned OUTREG_NORMQUANT = 0
 ) (
   // global signals
   input  logic                   clk_i,
@@ -54,7 +53,7 @@ module neureka_accumulator_normquant #(
 
   localparam WIDTH_FACTOR = NEUREKA_MEM_BANDWIDTH / ACC;
 
-  logic clk_en_gated, clk_en_regs, clk_en_normquant, clk_en_normquant_bias;
+  logic clk_en_gated, clk_en_state, clk_en_regs, clk_en_normquant, clk_en_normquant_bias;
   logic clk_gated, clk_state, clk_regs, clk_normquant, clk_normquant_bias;
 
   logic signed [4*ACC-1:0]                  normalized_q;
@@ -131,7 +130,8 @@ module neureka_accumulator_normquant #(
   logic norm_ready_en;
   assign norm_ready_en = fsm_state_q == AQ_NORMQUANT_BIAS ? (addr_cnt_stage1_q[2] & addr_cnt_stage1_q[1] & addr_cnt_stage1_q[0]) | (addr_cnt_stage2_q == ctrl_i.bias_len-1 && addr_cnt_en_stage1_q == 1'b1) :
                                                        (addr_cnt_stage1_q[2] & addr_cnt_stage1_q[1] & addr_cnt_stage1_q[0]) | (addr_cnt_stage2_q == ctrl_i.scale_len-1 && addr_cnt_en_stage1_q == 1'b1); // norm_ready when addr_cnt is full, or in the last cycle of AQ_NORMQUANT
-  assign norm_i.ready = (fsm_state_q == AQ_NORMQUANT) ? norm_i.valid & norm_ready_en :
+  assign norm_i.ready = ~ctrl_i.enable_streamout ? 1'b1 :
+                        (fsm_state_q == AQ_NORMQUANT) ? norm_i.valid & norm_ready_en :
                         (fsm_state_q == AQ_NORMQUANT_SHIFT) ? norm_i.valid :
                         (fsm_state_q == AQ_NORMQUANT_BIAS) ? norm_i.valid : 1'b0;
 
@@ -156,10 +156,12 @@ module neureka_accumulator_normquant #(
     ctrl_normquant.start = (fsm_state_q == AQ_NORMQUANT) ? 1'b1 : (fsm_state_q == AQ_ACCUM & ctrl_i.weight_offset == 1) ? 1'b1 : 1'b0;
   end
  
-  assign streamin_i.ready = (fsm_state_q == AQ_STREAMIN) ? streamin_i.valid : 1'b0;
+  assign streamin_i.ready = ~ctrl_i.enable_streamout ? 1'b1 : 
+                            (fsm_state_q == AQ_STREAMIN) ? streamin_i.valid : 1'b0;
 
   assign conv_handshake_d = clear_i ? '0 : depthwise_accumulator_active ? conv_dw_i[0].ready & conv_dw_i[0].valid : conv_i.valid & conv_i.ready; 
-  assign conv_i.ready = (fsm_state_q == AQ_ACCUM) ? 1'b1 : 1'b0;
+  assign conv_i.ready = ~ctrl_i.enable_streamout ? 1'b1 :
+                        (fsm_state_q == AQ_ACCUM) ? 1'b1 : 1'b0;
 
 
   logic [255:0] streamin_data_in;
@@ -220,6 +222,7 @@ module neureka_accumulator_normquant #(
 
   // clock-gate modules hierarchically to save dynamic power
   assign clk_en_gated          = ctrl_i.enable_streamout  & ctrl_i.clock_gating | accumulator_clr;
+  assign clk_en_state          = ctrl_i.last_pe | clk_en_gated;
   assign clk_en_regs           = (ctrl_i.enable_streamout & (fsm_state_q != AQ_IDLE)) | accumulator_clr;
   assign clk_en_normquant      = (ctrl_i.enable_streamout & ((fsm_state_q == AQ_NORMQUANT
                                                            || fsm_state_q == AQ_NORMQUANT_SHIFT))) | accumulator_clr | ctrl_i.weight_offset;
@@ -231,6 +234,13 @@ module neureka_accumulator_normquant #(
     .en_i      ( clk_en_gated ),
     .test_en_i ( test_mode_i  ),
     .clk_o     ( clk_gated    )
+  );
+
+  cluster_clock_gating i_hier_state_gate (
+    .clk_i     ( clk_i        ),
+    .en_i      ( clk_en_state ),
+    .test_en_i ( test_mode_i  ),
+    .clk_o     ( clk_state    )
   );
 
   cluster_clock_gating i_hier_regs_gate (
@@ -253,14 +263,6 @@ module neureka_accumulator_normquant #(
     .test_en_i ( test_mode_i           ),
     .clk_o     ( clk_normquant_bias    )
   );
-
-  // state is kept in the last PE
-  if(LAST_PE) begin : last_accumulator_state_clock_gen
-    assign clk_state = clk_i;
-  end
-  else begin : not_last_accumulator_state_clock_gen
-    assign clk_state = clk_gated;
-  end
 
   neureka_accumulator_buffer #(
     .DATA_WIDTH(NEUREKA_ACCUM_SIZE),
@@ -725,7 +727,8 @@ module neureka_accumulator_normquant #(
     end
   end
 
-  assign conv_o.valid     = (fsm_state_q == AQ_STREAMOUT) ? 1'b1 : 1'b0;
+  assign conv_o.valid     = ~ctrl_i.enable_streamout      ? 1'b1 :
+                            (fsm_state_q == AQ_STREAMOUT) ? 1'b1 : 1'b0;
   assign conv_o.data = (ctrl_i.quant_mode == NEUREKA_MODE_8B)  ? conv_data_8b  :
                        (ctrl_i.quant_mode == NEUREKA_MODE_32B) ? conv_data_32b : '0; // 256 bit
   assign conv_o.strb = ~ctrl_i.enable_streamout             ? '0 :
