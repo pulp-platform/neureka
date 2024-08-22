@@ -387,19 +387,51 @@ module neureka_engine #(
   /* Accumulators + Normalization/Quantization */
   generate
     for (genvar ii=0; ii<NR_PE; ii++) begin : accumulator_gen
+      localparam int unsigned LAST_PE = (ii==NR_PE-1) ? 1 : 0;
 
       ctrl_aq_t ctrl_accumulator;
-      always_comb
-      begin
-        ctrl_accumulator = ctrl_i.ctrl_accumulator;
-        ctrl_accumulator.enable_streamout = ctrl_i.enable_accumulator[ii];
+      if(LAST_PE) begin : last_gen
+        always_comb
+        begin
+          ctrl_accumulator = ctrl_i.ctrl_accumulator;
+          ctrl_accumulator.enable_streamout = ctrl_i.enable_accumulator[ii];
+          if(ctrl_i.enable_accumulator[ii] == '0) begin
+            ctrl_accumulator.goto_normquant        = '0;
+            ctrl_accumulator.goto_accum            = '0;
+            ctrl_accumulator.goto_streamin         = '0;
+            ctrl_accumulator.goto_streamout        = '0;
+            ctrl_accumulator.goto_idle             = '0;
+            ctrl_accumulator.ctrl_normquant        = '0;
+            ctrl_accumulator.weight_offset         = '0;
+            ctrl_accumulator.sample_shift          = '0;
+          end
+        end
+      end
+      else begin : non_last_gen
+        always_comb
+        begin
+          ctrl_accumulator = ctrl_i.ctrl_accumulator;
+          ctrl_accumulator.enable_streamout = ctrl_i.enable_accumulator[ii];
+          if(ctrl_i.enable_accumulator[ii] == '0) begin
+            ctrl_accumulator.goto_normquant        = '0;
+            ctrl_accumulator.goto_accum            = '0;
+            ctrl_accumulator.goto_streamin         = '0;
+            ctrl_accumulator.goto_streamout        = '0;
+            ctrl_accumulator.goto_idle             = '0;
+            ctrl_accumulator.ctrl_normquant        = '0;
+            ctrl_accumulator.weight_offset         = '0;
+            ctrl_accumulator.sample_shift          = '0;
+          end
+        end
       end
 
+
       neureka_accumulator_normquant #(
-        .TP               ( TP_IN  ),
-        .AP               ( TP_OUT ),
-        .ACC              ( 32     ),
-        .OUTREG_NORMQUANT ( 1      )
+        .TP               ( TP_IN   ),
+        .AP               ( TP_OUT  ),
+        .ACC              ( 32      ),
+        .OUTREG_NORMQUANT ( 1       ),
+        .LAST_PE          ( LAST_PE )
       ) i_accumulator (
         .clk_i       ( clk_i                                              ),
         .rst_ni      ( rst_ni                                             ),

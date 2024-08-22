@@ -966,8 +966,8 @@ module neureka_ctrl #(
   assign ctrl_engine.enable_accumulator = enable_pe;
 
   // control the accumulator's state or the norm/quant unit's state
-  assign ctrl_engine.ctrl_accumulator.clear          = (state==IDLE) | (state==STREAMOUT_DONE && state_change==1'b1);
-  assign ctrl_engine.ctrl_accumulator.clock_gating   = ~((state==LOAD) | (state==STREAMOUT && state_change==1'b1));
+  assign ctrl_engine.ctrl_accumulator.clear          = (state==IDLE && state_change==1'b1) | (state==STREAMOUT_DONE && state_change==1'b1);
+  assign ctrl_engine.ctrl_accumulator.clock_gating   = ~(state==LOAD | state==IDLE);
   assign ctrl_engine.ctrl_accumulator.clear_offset   = (state==IDLE) | (state==WEIGHTOFFS && state_change==1'b1);
   assign ctrl_engine.ctrl_accumulator.goto_normquant = ((state==NORMQUANT & ~config_.norm_option_shift) | (state==NORMQUANT_SHIFT)) & state_change;
   assign ctrl_engine.ctrl_accumulator.goto_accum     = (state==MATRIXVEC || state==WEIGHTOFFS) & state_change;
