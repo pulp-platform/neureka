@@ -244,12 +244,12 @@ module neureka_engine #(
     .NB_IN_STREAMS ( NR_PE          ),
     .DATA_WIDTH    ( NEUREKA_MEM_BANDWIDTH )
   ) i_serialize_store_out (
-    .clk_i   ( clk_i                 ),
-    .rst_ni  ( rst_ni                ),
-    .clear_i ( clear_i               ),
+    .clk_i   ( clk_i                           ),
+    .rst_ni  ( rst_ni                          ),
+    .clear_i ( clear_i | ctrl_i.clear_ser      ),
     .ctrl_i  ( ctrl_i.ctrl_serialize_streamout ),
-    .push_i  ( store_out_cols        ),
-    .pop_o   ( store_out             )
+    .push_i  ( store_out_cols                  ),
+    .pop_o   ( store_out                       )
   );
 
   // Streamin data goingo into the column accumulators comes per column and is deserialized
@@ -287,12 +287,12 @@ module neureka_engine #(
     .NB_OUT_STREAMS ( NR_PE          ),
     .DATA_WIDTH     ( NEUREKA_MEM_BANDWIDTH )
   ) i_deserialize_load_streamin (
-    .clk_i   ( clk_i                      ),
-    .rst_ni  ( rst_ni                     ),
-    .clear_i ( clear_i | ctrl_i.clear_des ),
-    .ctrl_i  ( ctrl_i.ctrl_serialize_streamin      ),
-    .push_i  ( load_streamin_fifo         ),
-    .pop_o   ( load_streamin_cols         )
+    .clk_i   ( clk_i                          ),
+    .rst_ni  ( rst_ni                         ),
+    .clear_i ( clear_i | ctrl_i.clear_des     ),
+    .ctrl_i  ( ctrl_i.ctrl_serialize_streamin ),
+    .push_i  ( load_streamin_fifo             ),
+    .pop_o   ( load_streamin_cols             )
   );
 
   // The same norm stream, coming simply from a FIFO, is shared between all columns.

@@ -326,6 +326,7 @@ package neureka_package;
     hwpe_stream_package::ctrl_serdes_t  ctrl_serialize_streamout;
     logic [NEUREKA_NUM_PE_MAX-1:0]      enable_accumulator;
     logic                               clear_des;
+    logic                               clear_ser;
     logic                               mode_linear;
     logic [$clog2(NEUREKA_NUM_PE_MAX)-1:0] last_pe;
   } ctrl_engine_t;
