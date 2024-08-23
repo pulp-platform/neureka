@@ -565,14 +565,14 @@ module neureka_ctrl #(
   logic [31:0] h_size_out_X_w_size_out_with_strb; // currently using a nil'd strobe to remove outputs --> constant h_size_out / w_size_out
   logic [1:0]  streamin_quant_mode;
 
-  assign h_size_out_X_w_size_out_with_strb = (config_.quant_mode == NEUREKA_MODE_8B) || (k_out_lim <= 8)  ? NUM_PE  :
-                                                                                     (k_out_lim <= 16) ? 2*NUM_PE :
-                                                                                     (k_out_lim <= 24) ? 3*NUM_PE : 
-                                                                                     4*NUM_PE;
-  assign h_size_X_w_size_with_strb_streamin= (config_.streamin_mode == NEUREKA_STREAMIN_MODE_8B) || (k_out_lim <= 8)  ? NUM_PE :
-                                                                                     (k_out_lim <= 16) ? 2*NUM_PE :
-                                                                                     (k_out_lim <= 24) ? 3*NUM_PE : 
-                                                                                     4*NUM_PE;
+  assign h_size_out_X_w_size_out_with_strb = (config_.quant_mode == NEUREKA_MODE_8B) || (k_out_lim <= 8)? (config_.last_pe+1)   :
+                                                                                     (k_out_lim <= 16)  ? 2*(config_.last_pe+1) :
+                                                                                     (k_out_lim <= 24)  ? 3*(config_.last_pe+1) : 
+                                                                                     4*(config_.last_pe+1);
+  assign h_size_X_w_size_with_strb_streamin= (config_.streamin_mode == NEUREKA_STREAMIN_MODE_8B) || (k_out_lim <= 8)  ? (config_.last_pe+1) :
+                                                                                     (k_out_lim <= 16) ? 2*(config_.last_pe+1) :
+                                                                                     (k_out_lim <= 24) ? 3*(config_.last_pe+1) : 
+                                                                                     4*(config_.last_pe+1);
 
 
   assign streamin_quant_mode = (config_.quant_mode == NEUREKA_MODE_8B) && (config_.streamin_mode == NEUREKA_STREAMIN_MODE_8B) ? NEUREKA_STREAMIN_8B_QUANT_8B :
@@ -1053,7 +1053,8 @@ module neureka_ctrl #(
   assign ctrl_engine.ctrl_serialize_streamout.clear_serdes_state = '0;
   assign ctrl_engine.ctrl_serialize_streamout.nb_contig_m1       = (config_.quant_mode == NEUREKA_MODE_32B) ? (k_out_lim/(NEUREKA_MEM_BANDWIDTH/NEUREKA_ACCUM_SIZE) + (k_out_lim%(NEUREKA_MEM_BANDWIDTH/NEUREKA_ACCUM_SIZE)==0 ? 0 : 1) )-1 : 
                                                                       0;
-  assign ctrl_engine.clear_des                                   = (state != STREAMIN) ? 1'b1 : 1'b0;
+  assign ctrl_engine.clear_des                                   = (state == MATRIXVEC || state == STREAMOUT) & state_change;
+  assign ctrl_engine.clear_ser                                   = (state==STREAMOUT_DONE || state==DONE) & state_change;
 
   assign ctrl_engine.mode_linear  = config_.mode_linear;
 
