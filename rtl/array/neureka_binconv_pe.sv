@@ -118,8 +118,8 @@ module neureka_binconv_pe #(
       begin
         ctrl_col = ctrl_i.ctrl_col;
         ctrl_col.scale_shift = ii/4; // used for 1x1
-        ctrl_col.dw_weight_offset = ctrl_i.enable_col[ii] | depthwise_accumulator_active;
-        ctrl_col.enable_block = ctrl_col.enable_block & ctrl_i.enable_col_pw[9*(ii_rem_4+1)-1:9*ii_rem_4];
+        ctrl_col.dw_weight_offset = ctrl_i.dw_weight_offset[ii] | depthwise_accumulator_active;
+        ctrl_col.enable_block = ctrl_i.ctrl_col.enable_block & ctrl_i.enable_col_pw[9*(ii_rem_4+1)-1:9*ii_rem_4] & {9{ctrl_i.enable_col[ii]}} | {9{depthwise_accumulator_active}};
       end
 
       neureka_binconv_column #(
@@ -140,7 +140,7 @@ module neureka_binconv_pe #(
         .flags_o      (                                                       )
       );
 
-      assign col_pres_data[ii] = ctrl_col.enable_block[0] ? col_pres[ii].data : '0;
+      assign col_pres_data[ii] = col_pres[ii].valid ? col_pres[ii].data : '0;
 
       assign column_pres_depthwise_o[ii].data  = col_pres[ii].data;
       assign column_pres_depthwise_o[ii].valid = depthwise_accumulator_active ? col_pres[0].valid : 0; 
