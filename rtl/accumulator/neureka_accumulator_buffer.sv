@@ -19,10 +19,10 @@
 
 module neureka_accumulator_buffer #(
 
- parameter DATA_WIDTH   = 8,
+ parameter DATA_WIDTH     = 32,
  parameter NUM_WORDS    = 32,
  parameter WIDTH_FACTOR = 8,
- parameter NMULT        = 4, 
+ parameter NMULT        = 4,
  localparam ADDR_WIDTH  = $clog2(NUM_WORDS)
 )(
 
@@ -54,16 +54,16 @@ module neureka_accumulator_buffer #(
   logic [NUM_WORDS-1:0][DATA_WIDTH-1:0] buffer_all; // masked buffer used for all;
   logic [NUM_WORDS-1:0][DATA_WIDTH-1:0] buffer_wide; // masked buffer used for wide;
 
+  logic [NUM_WORDS-1:0] clk_word, clk_word_en;
 
-  generate 
-    for(genvar ii=0; ii<NUM_WORDS/WIDTH_FACTOR; ii++) begin 
-      for(genvar jj=0; jj<WIDTH_FACTOR; jj++) begin
-        localparam ii_jj = ii*WIDTH_FACTOR+jj;
-        assign buffer_wide[ii_jj] = (we_all_mask_i[(ii+1)*WIDTH_FACTOR-1:ii*WIDTH_FACTOR] ==8'hff) ? wdata_wide_i[(jj+1)*DATA_WIDTH-1:jj*DATA_WIDTH] : buffer_q[ii_jj];
-        assign buffer_all[ii_jj] = we_all_mask_i[ii_jj] & we_all_i ? wdata_all_i[(ii_jj+1)*DATA_WIDTH-1:ii_jj*DATA_WIDTH] : buffer_q[ii_jj];
-      end
-    end 
-  endgenerate
+  for(genvar ii=0; ii<NUM_WORDS/WIDTH_FACTOR; ii++) begin : buffer_comb_gen
+    for(genvar jj=0; jj<WIDTH_FACTOR; jj++) begin : buffer_comb_gen2
+      localparam ii_jj = ii*WIDTH_FACTOR+jj;
+      assign buffer_wide[ii_jj] = (we_all_mask_i[(ii+1)*WIDTH_FACTOR-1:ii*WIDTH_FACTOR] == 8'hff) ? wdata_wide_i[(jj+1)*DATA_WIDTH-1:jj*DATA_WIDTH] : buffer_q[ii_jj];
+      assign buffer_all[ii_jj]  = we_all_mask_i[ii_jj] & we_all_i ? wdata_all_i[(ii_jj+1)*DATA_WIDTH-1:ii_jj*DATA_WIDTH] : buffer_q[ii_jj];
+      assign clk_word_en[ii_jj] = (we_all_mask_i[(ii+1)*WIDTH_FACTOR-1:ii*WIDTH_FACTOR] == 8'hff) | (we_all_mask_i[ii_jj] & we_all_i);
+    end
+  end 
 
   always_comb begin : comb_buffer_update
     buffer_d = buffer_q;
@@ -96,13 +96,27 @@ module neureka_accumulator_buffer #(
     endcase
   end 
 
-  always_ff @(posedge clk_i or negedge rst_ni)
-  begin
-    if(~rst_ni) begin 
-      buffer_q <= 0;
-    end else begin 
-      buffer_q <= buffer_d;
-    end 
+  for(genvar ii=0; ii<NUM_WORDS; ii++) begin : buffer_gen
+
+    // word-level clock gating cell
+    cluster_clock_gating i_cg (
+      .clk_o     ( clk_word[ii]              ),
+      .en_i      ( clk_word_en[ii] | clear_i ),
+      .test_en_i ( 1'b0                      ),
+      .clk_i     ( clk_i                     )
+    );
+
+    // generate flip-flop-based buffers (can not use
+    // latches here due to the direct feedback with adders)
+    always_ff @(posedge clk_word[ii] or negedge rst_ni)
+    begin
+      if(~rst_ni) begin 
+        buffer_q[ii] <= '0;
+      end
+      else begin 
+        buffer_q[ii] <= buffer_d[ii];
+      end 
+    end
   end 
 
 endmodule
