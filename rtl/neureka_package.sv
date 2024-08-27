@@ -276,6 +276,7 @@ package neureka_package;
     logic [NEUREKA_COLUMN_SIZE-1:0] enable_block;
     logic [$clog2(NEUREKA_QA_IN):0] block_cnt;
     logic invalidate;
+    logic sign_and_magn_1x1;
   } ctrl_binconv_col_t;
 
   typedef struct packed {
@@ -292,6 +293,7 @@ package neureka_package;
     logic [4*NEUREKA_COLUMN_SIZE-1:0] enable_col_pw;
     logic                             dw_accum;
     logic [31:0]                      padding_value;
+    logic [NEUREKA_BLOCK_SIZE-1:0]    sign_and_magn_1x1;
   } ctrl_binconv_pe_t;
 
   typedef struct packed {
@@ -447,6 +449,7 @@ package neureka_package;
     logic        norm_option_bias;
     logic        norm_option_shift;
     logic [31:0] weight_offset_scale;
+    logic        sign_and_magn_1x1;
     logic [7:0]  filter_mask_top;
     logic [7:0]  filter_mask_right;
     logic [7:0]  filter_mask_bottom;

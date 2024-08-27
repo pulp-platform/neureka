@@ -295,7 +295,7 @@ module neureka_binconv_column #(
     assign scale_ctrl.shift_sel = (ctrl_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW & ctrl_i.weight_offset) ? '0 :
                                   (ctrl_i.filter_mode == NEUREKA_FILTER_MODE_1X1)     ? ctrl_i.scale_shift :
                                   ctrl_i.block_cnt;
-    assign scale_ctrl.invert = 1'b0;
+    assign scale_ctrl.invert = ctrl_i.sign_and_magn_1x1;
   endgenerate
 
 endmodule // neureka_binconv_column

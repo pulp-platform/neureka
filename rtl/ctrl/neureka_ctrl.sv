@@ -169,6 +169,7 @@ module neureka_ctrl #(
   assign config_.filter_mode         = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][6:5];
   assign config_.streamout_quant     = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][4];
   assign config_.weight_bits         = {1'b0, reg_file.hwpe_params[NEUREKA_REG_CONFIG0][2:0]} + 1;
+  assign config_.sign_and_magn_1x1   = 1'b1; // FIXME
   assign start = slave_flags.start;
 
   /* norm variables */
@@ -197,6 +198,7 @@ module neureka_ctrl #(
   logic [2:0]  dim_enable_1h_weights;
   logic [15:0] qw_lim;
   logic [31:0] qw_k_out_lim;
+  logic [NEUREKA_BLOCK_SIZE-1:0] sign_and_magn_1x1;
 
   logic infeat_buffer_write_sel_d, infeat_buffer_write_sel_q;
   logic infeat_buffer_read_sel_d, infeat_buffer_read_sel_q;
@@ -937,18 +939,29 @@ module neureka_ctrl #(
     end
   end
   assign config_.last_pe = last_pe_q;
+
+  // pointwise WEIGHTOFFS-less sign & magnitude mode
+  always_comb
+  begin
+    sign_and_magn_1x1 = '0;
+    for(int i=0; i<NEUREKA_BLOCK_SIZE; i++) begin
+      if(i/4+1 == config_.weight_bits) begin
+        sign_and_magn_1x1[i] = config_.sign_and_magn_1x1;
+      end
+    end
+  end
  
   // propagate config to NEUREKA binconv array
-  assign ctrl_engine.ctrl_binconv_array.weight_offset                   = state==LOAD | state==WEIGHTOFFS;
-  assign ctrl_engine.ctrl_binconv_array.filter_mode                     = config_.filter_mode;
-  assign ctrl_engine.ctrl_binconv_array.depthwise_len                   = k_in_lim[$clog2(NEUREKA_TP_IN):0];
-  assign ctrl_engine.ctrl_binconv_array.mode_linear                     = config_.mode_linear;
-  assign ctrl_engine.ctrl_binconv_array.ctrl_pe.padding_value           = config_.padding_value;
-  assign ctrl_engine.ctrl_binconv_array.ctrl_pe.dw_accum                = (state==MATRIXVEC) & (config_.filter_mode == NEUREKA_FILTER_MODE_3X3_DW) & (state != WEIGHTOFFS);
-  assign ctrl_engine.ctrl_binconv_array.ctrl_pe.ctrl_col.qw             = config_.weight_bits;
-  assign ctrl_engine.ctrl_binconv_array.ctrl_pe.ctrl_col.filter_mode    = config_.filter_mode;
-  assign ctrl_engine.ctrl_binconv_array.ctrl_pe.ctrl_col.weight_offset  = state==LOAD | state==WEIGHTOFFS;
-  
+  assign ctrl_engine.ctrl_binconv_array.weight_offset                      = state==LOAD | state==WEIGHTOFFS;
+  assign ctrl_engine.ctrl_binconv_array.filter_mode                        = config_.filter_mode;
+  assign ctrl_engine.ctrl_binconv_array.depthwise_len                      = k_in_lim[$clog2(NEUREKA_TP_IN):0];
+  assign ctrl_engine.ctrl_binconv_array.mode_linear                        = config_.mode_linear;
+  assign ctrl_engine.ctrl_binconv_array.ctrl_pe.padding_value              = config_.padding_value;
+  assign ctrl_engine.ctrl_binconv_array.ctrl_pe.dw_accum                   = (state==MATRIXVEC) & (config_.filter_mode == NEUREKA_FILTER_MODE_3X3_DW) & (state != WEIGHTOFFS);
+  assign ctrl_engine.ctrl_binconv_array.ctrl_pe.sign_and_magn_1x1          = (config_.filter_mode == NEUREKA_FILTER_MODE_1X1) ? sign_and_magn_1x1 : '0;
+  assign ctrl_engine.ctrl_binconv_array.ctrl_pe.ctrl_col.qw                = config_.weight_bits;
+  assign ctrl_engine.ctrl_binconv_array.ctrl_pe.ctrl_col.filter_mode       = config_.filter_mode;
+  assign ctrl_engine.ctrl_binconv_array.ctrl_pe.ctrl_col.weight_offset     = state==LOAD | state==WEIGHTOFFS;
   
   assign ctrl_engine.ctrl_binconv_array.enable_pe = enable_pe;
 

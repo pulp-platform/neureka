@@ -140,11 +140,15 @@ module neureka_ctrl_fsm
       end
 
       WEIGHTOFFS: begin
-          if(accumulators_state == AQ_ACCUM_DONE) begin
-              state_d = MATRIXVEC;
-              state_change_d = 1'b1;
-          end
+        if(config_i.sign_and_magn_1x1==1'b1 && config_i.filter_mode==NEUREKA_FILTER_MODE_1X1) begin
+          state_d = MATRIXVEC;
+          state_change_d = 1'b1;
         end
+        else if(accumulators_state == AQ_ACCUM_DONE) begin
+          state_d = MATRIXVEC;
+          state_change_d = 1'b1;
+        end
+      end
 
       STREAMIN: begin
         if(accumulators_state == AQ_STREAMIN_DONE) begin
