@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724798872380,
+  "lastUpdate": 1724858192751,
   "repoUrl": "https://github.com/pulp-platform/neureka",
   "entries": {
     "Execution cycles": [
@@ -6113,6 +6113,90 @@ window.BENCHMARK_DATA = {
           {
             "name": "neureka_basic_tests:t1",
             "value": 137,
+            "unit": "cycles"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "luigi.ghionda2@unibo.it",
+            "name": "Luigi Ghionda",
+            "username": "LuigiGhionda"
+          },
+          "committer": {
+            "email": "f.conti@unibo.it",
+            "name": "Francesco Conti",
+            "username": "FrancescoConti"
+          },
+          "distinct": true,
+          "id": "3f4f691743326f89930058be6b88417a88811fa8",
+          "message": "Fix synthesis errors",
+          "timestamp": "2024-08-28T17:03:28+02:00",
+          "tree_id": "ea446c5b88537071ccec2b514a568b5a9d298711",
+          "url": "https://github.com/pulp-platform/neureka/commit/3f4f691743326f89930058be6b88417a88811fa8"
+        },
+        "date": 1724858191825,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "neureka_basic_tests:t8",
+            "value": 501,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t4",
+            "value": 551,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t1",
+            "value": 138,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t3",
+            "value": 120,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t0",
+            "value": 143,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t2",
+            "value": 123,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t11",
+            "value": 386,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t10",
+            "value": 440,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t7",
+            "value": 384,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t9",
+            "value": 542,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t5",
+            "value": 542,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t6",
+            "value": 443,
             "unit": "cycles"
           }
         ]
