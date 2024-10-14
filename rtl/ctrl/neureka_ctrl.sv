@@ -986,11 +986,12 @@ module neureka_ctrl #(
   always_comb begin 
     ctrl_engine.ctrl_double_infeat_buffer.ctrl_even_infeat_buffer              = ctrl_engine.ctrl_double_infeat_buffer.ctrl_odd_infeat_buffer;
     ctrl_engine.ctrl_double_infeat_buffer.ctrl_even_infeat_buffer.goto_load    = (!infeat_buffer_write_sel_q) & ( config_.prefetch ? ((state==LOAD) & state_change | (uloop_prefetch & (state!=LOAD))): (state==LOAD) & state_change);
-    ctrl_engine.ctrl_double_infeat_buffer.ctrl_even_infeat_buffer.goto_extract = (ctrl_engine.active_datapath == 0 && state==UPDATEIDX) ? '1 : '0;
+    ctrl_engine.ctrl_double_infeat_buffer.ctrl_even_infeat_buffer.goto_extract = (config_.resilience_mode == 0 && ctrl_engine.active_datapath == 0 && state==UPDATEIDX) ? '1 : '0;
     ctrl_engine.ctrl_double_infeat_buffer.ctrl_even_infeat_buffer.goto_idle    = config_.prefetch ? ((infeat_buffer_read_sel_d) &
                                                                                                                                   ( config_.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? (state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN && state!=UPDATEIDX) & state_change :
                                                                                                                                                                                         (state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN) & state_change )):
-                                                                                                                                                                                        (state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN && state!=UPDATEIDX) & state_change ; // TODO check if it's ok also in resilience_mode
+                                                                                                                                                                                        (state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN) & state_change
+                                                                                                                                                                                         & !ctrl_engine.ctrl_double_infeat_buffer.ctrl_even_infeat_buffer.goto_extract;
   end
 
   logic [PE_H-1:0] enable_pe_h, next_enable_pe_h;
@@ -1034,7 +1035,6 @@ module neureka_ctrl #(
   end
   assign enable_pe = {PE_H{enable_pe_w}} & enable_pe_temp & enable_pe_strided;
   assign next_enable_pe = {PE_H{next_enable_pe_w}} & next_enable_pe_temp; // TODO Adjust for the stride also
-+
 
   // compute last enabled PE
   logic [$clog2(NEUREKA_NUM_PE_MAX)-1:0] last_pe_d, last_pe_q;
