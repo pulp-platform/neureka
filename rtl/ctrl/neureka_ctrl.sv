@@ -869,9 +869,9 @@ module neureka_ctrl #(
   /*
     implicit_padding_map encodes which of the 8x8 elements in the array are valid (1) and which ones are unused (0).
   */
-  assign h_size_in_map = config_.prefetch & ((state==WEIGHTOFFS) | (state==MATRIXVEC)) ? (1 << next_h_size_in) - 1 : (1 << h_size_in) - 1;
-  assign w_size_in_map = config_.prefetch & ((state==WEIGHTOFFS) | (state==MATRIXVEC)) ? (1 << next_w_size_in) - 1 : (1 << w_size_in) - 1;
-  always_comb 
+  assign h_size_in_map = (config_.prefetch & ((state==WEIGHTOFFS) | (state==MATRIXVEC))) | (active_datapath==1 & state==LOAD) ? (1 << next_h_size_in) - 1 : (1 << h_size_in) - 1;
+  assign w_size_in_map = (config_.prefetch & ((state==WEIGHTOFFS) | (state==MATRIXVEC))) | (active_datapath==1 & state==LOAD) ? (1 << next_w_size_in) - 1 : (1 << w_size_in) - 1;
+  always_comb
   begin : padding_from_incomplete_infeat
     implicit_padding_map = '1;
     implicit_padding_map[INFEAT_BUFFER_SIZE_HW-1:0] &= {INFEAT_BUFFER_SIZE_H{w_size_in_map}};
