@@ -481,11 +481,10 @@ module neureka_engine #(
     logic [NR_PE-1:0] data_fault_d, data_fault_q;
 
     ctrl_double_infeat_buffer_t [N_COPIES-1:0] ctrl_double_infeat_buffer_copy;
+    assign ctrl_double_infeat_buffer_copy[0] = (ctrl_i.resilience_mode == 1 | ctrl_i.broadcast) ? ctrl_i.ctrl_double_infeat_buffer :  (ctrl_i.active_datapath == 0) ? ctrl_i.ctrl_double_infeat_buffer : '0;
+    assign ctrl_double_infeat_buffer_copy[1] = (ctrl_i.resilience_mode == 1 | ctrl_i.broadcast) ? ctrl_i.ctrl_double_infeat_buffer :  (ctrl_i.active_datapath == 1) ? ctrl_i.ctrl_double_infeat_buffer : '0;
 
-    assign ctrl_double_infeat_buffer_copy[0] = (ctrl_i.resilience_mode == 1) ? ctrl_i.ctrl_double_infeat_buffer : (ctrl_i.active_datapath == 0) ? ctrl_i.ctrl_double_infeat_buffer : '0; // second load here
-    assign ctrl_double_infeat_buffer_copy[1] = (ctrl_i.resilience_mode == 1) ? ctrl_i.ctrl_double_infeat_buffer : (ctrl_i.active_datapath == 1) ? ctrl_i.ctrl_double_infeat_buffer : '0 ;
-
-    assign flags_o.active_datapath = ctrl_i.active_datapath; // second load here
+    assign flags_o.active_datapath = ctrl_i.active_datapath; // TODO Remove, useless now --> In the ctrl I need to check what to use!
 
     // duplicate load_in_blocks, load_weight_rows_conv, load_streamin_cols, norm stream
 

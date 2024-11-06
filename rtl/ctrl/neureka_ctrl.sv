@@ -1189,6 +1189,8 @@ module neureka_ctrl #(
 
   assign ctrl_engine.active_datapath  = config_.resilience_mode ? '0 : active_datapath;
 
+  assign ctrl_engine.broadcast = (state==UPDATEIDX) & state_change; // TODO This signal is useful when I want to broadcast control signals to both datapath in perf mode (check if there are other scenarios in which it could be used)
+
   assign ctrl_engine.enable_outputcheck  = (state==OUTCHECK) & state_change;
 
   // engine and streamer configuration is propagated with one cycle of delay
@@ -1221,32 +1223,6 @@ module neureka_ctrl #(
     end
   end
   assign ctrl_streamer_o = ctrl_streamer_q;
-
-  // always_ff @(posedge clk_i or negedge rst_ni)
-  // begin
-  //   if(~rst_ni) begin
-  //     active_datapath_q  <= 0;
-  //   end else begin
-  //     active_datapath_q <= active_datapath_d;
-  //   end
-  // end
-
-  // logic active_datapath_change;
-
-  // assign active_datapath_change = (state==UPDATEIDX && state_change==1'b1) ||
-  //                                 (state==STREAMOUT && flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_STREAMOUT_DONE) ||
-  //                                 (state==LOAD && flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT); // TODO not valid with prefetch
-
-  // always_comb begin
-  //   active_datapath_d = active_datapath_q;
-  //   if(clear_o) begin
-  //     active_datapath_d = 0;
-  //   end else if (state==STREAMOUT_DONE && state_change==1'b1) begin
-  //     active_datapath_d = 0;
-  //   end else if(active_datapath_change) begin
-  //     active_datapath_d  = (~active_datapath_q);
-  //   end
-  // end
 
   always_ff @(posedge clk_i or negedge rst_ni)
   begin
