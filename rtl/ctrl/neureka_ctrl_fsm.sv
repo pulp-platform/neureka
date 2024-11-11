@@ -82,6 +82,8 @@ module neureka_ctrl_fsm
   assign load_done                = (flags_engine_i.flags_double_infeat_buffer.flags_odd_infeat_buffer.state == IB_EXTRACT)|(flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT) & (config_i.resilience_mode == 1 | flags_uloop.next_done ? 1 : active_datapath_q == 1);
   assign prefetch_done            = ((flags_engine_i.flags_double_infeat_buffer.flags_odd_infeat_buffer.state == IB_EXTRACT)&(~flags_engine_i.flags_double_infeat_buffer.read)) || ((flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT) & (flags_engine_i.flags_double_infeat_buffer.read));
   assign prefetch_matrixvec_done  = (prefetch_done_d & accum_done_d)|(prefetch_done_d & accum_done_q)|(prefetch_done_q & accum_done_d)|(prefetch_done_q & accum_done_q);
+  assign streamout_done           = flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_STREAMOUT_DONE && (config_i.resilience_mode == 1 || flags_engine_i.active_datapath == 1 || (flags_uloop.next_done & ~active_datapath_change_sticky));
+
   
   state_aq_t accumulators_state;
   assign accumulators_state = flags_engine_i.flags_accumulator[config_i.last_pe].state;
@@ -220,16 +222,14 @@ module neureka_ctrl_fsm
       end
 
       STREAMOUT: begin
-        if(flags_engine_i.active_datapath == 1 || config_i.resilience_mode == 1 || (flags_uloop.next_done & ~active_datapath_change_sticky)) begin // TODO Create the streamout_done
-          if(accumulators_state == AQ_STREAMOUT_DONE) begin
-            if(flags_uloop.done) begin
-              state_d = DONE;
-              state_change_d = 1'b1;
-            end
-            else begin
-              state_d = STREAMOUT_DONE;
-              state_change_d = 1'b1;
-            end
+        if(streamout_done) begin
+          if(flags_uloop.done) begin
+            state_d = DONE;
+            state_change_d = 1'b1;
+          end
+          else begin
+            state_d = STREAMOUT_DONE;
+            state_change_d = 1'b1;
           end
         end
       end
