@@ -990,7 +990,7 @@ module neureka_ctrl #(
     ctrl_engine.ctrl_double_infeat_buffer.ctrl_even_infeat_buffer.goto_idle    = config_.prefetch ? ((infeat_buffer_read_sel_d) &
                                                                                                                                   ( config_.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? (state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN && state!=UPDATEIDX) & state_change :
                                                                                                                                                                                         (state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN) & state_change )):
-                                                                                                                                                                                        (state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN) & state_change ;
+                                                                                                                                                                                        (state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN && state!=UPDATEIDX) & state_change ; // TODO check if it's ok also in resilience_mode
   end
 
   logic [PE_H-1:0] enable_pe_h;
@@ -1226,6 +1226,8 @@ module neureka_ctrl #(
   always_comb begin
     active_datapath_d = active_datapath_q;
     if(clear_o) begin
+      active_datapath_d = 0;
+    end else if (state==STREAMOUT_DONE && state_change==1'b1) begin
       active_datapath_d = 0;
     end else if((state==UPDATEIDX && state_change==1'b1) || (state== STREAMOUT && flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_STREAMOUT_DONE)) begin
       active_datapath_d  = (~active_datapath_q);

@@ -227,7 +227,7 @@ module neureka_ctrl_fsm
       end
 
       STREAMOUT: begin
-        if(flags_engine_i.active_datapath == 1) begin
+        if(flags_engine_i.active_datapath == 1 || config_i.resilience_mode == 1) begin
           if(accumulators_state == AQ_STREAMOUT_DONE) begin
             if(flags_uloop.done) begin
               state_d = DONE;
@@ -242,7 +242,7 @@ module neureka_ctrl_fsm
       end
 
       STREAMOUT_DONE: begin
-        if(flags_streamer_i.tcdm_fifo_empty) begin
+        if(flags_streamer_i.tcdm_fifo_empty && flags_engine_i.active_datapath == 0) begin // workaround, wait for datapath switch
           if(config_i.prefetch)
             if(streamin_en)
               state_d = STREAMIN;
