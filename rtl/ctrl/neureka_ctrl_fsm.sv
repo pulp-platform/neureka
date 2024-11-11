@@ -190,15 +190,23 @@ module neureka_ctrl_fsm
           state_change_d = 1'b1;
         end
         else if(~config_i.norm_option_bias & accumulators_state == AQ_NORMQUANT_DONE) begin
-          state_d = OUTCHECK;
-          state_change_d = 1'b1;
+          if (config_i.resilience_mode) begin
+            state_d = OUTCHECK;
+            state_change_d = 1'b1;
+          end else
+            state_d = STREAMOUT;
+            state_change_d = 1'b1;
         end
       end
 
       NORMQUANT_BIAS: begin
         if(accumulators_state == AQ_NORMQUANT_DONE) begin
-          state_d = OUTCHECK;
-          state_change_d = 1'b1;
+          if (config_i.resilience_mode) begin
+            state_d = OUTCHECK;
+            state_change_d = 1'b1;
+          end else
+            state_d = STREAMOUT;
+            state_change_d = 1'b1;
         end
       end
 
@@ -219,14 +227,16 @@ module neureka_ctrl_fsm
       end
 
       STREAMOUT: begin
-        if(accumulators_state == AQ_STREAMOUT_DONE) begin
-          if(flags_uloop.done) begin
-            state_d = DONE;
-            state_change_d = 1'b1;
-          end
-          else begin
-            state_d = STREAMOUT_DONE;
-            state_change_d = 1'b1;
+        if(flags_engine_i.active_datapath == 1) begin
+          if(accumulators_state == AQ_STREAMOUT_DONE) begin
+            if(flags_uloop.done) begin
+              state_d = DONE;
+              state_change_d = 1'b1;
+            end
+            else begin
+              state_d = STREAMOUT_DONE;
+              state_change_d = 1'b1;
+            end
           end
         end
       end
@@ -253,7 +263,7 @@ module neureka_ctrl_fsm
 
       UPDATEIDX: begin
         if(flags_uloop.valid) begin
-          if (flags_engine_i.active_datapath == 0 && config_i.resilience_mode == 0) begin
+          if (flags_engine_i.active_datapath == 1 && config_i.resilience_mode == 0) begin
             state_d = LOAD;
             state_change_d = 1'b1;
           end else if((config_i.filter_mode != NEUREKA_FILTER_MODE_3X3_DW) && (flags_uloop.idx_update == 4'b0001) && (~flags_uloop.done)) begin
@@ -265,8 +275,12 @@ module neureka_ctrl_fsm
             state_change_d = 1'b1;
           end
           else if(~config_i.streamout_quant) begin
-            state_d = OUTCHECK;
-            state_change_d = 1'b1;
+            if (config_i.resilience_mode) begin
+              state_d = OUTCHECK;
+              state_change_d = 1'b1;
+            end else
+              state_d = STREAMOUT;
+              state_change_d = 1'b1;
           end
           else if(config_i.norm_option_shift) begin
             state_d = NORMQUANT_SHIFT;

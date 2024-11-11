@@ -337,6 +337,7 @@ package neureka_package;
     logic                               clear_ser;
     logic                               mode_linear;
     logic [$clog2(NEUREKA_NUM_PE_MAX)-1:0] last_pe;
+    logic                               resilience_mode;
     logic                               active_datapath;
     logic                               enable_outputcheck;
   } ctrl_engine_t;
