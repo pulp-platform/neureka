@@ -407,7 +407,7 @@ module tb_neureka;
     .data_wdata_o        ( data_wdata   ),
     .data_rdata_i        ( data_rdata   ),
     .data_err_i          ( data_err     ),
-    .irq_i               ( evt[0][0]    ),
+    .irq_i               ( |(evt[0])    ),
     .irq_id_i            ( '0           ),
     .irq_ack_o           (              ),
     .irq_id_o            (              ),

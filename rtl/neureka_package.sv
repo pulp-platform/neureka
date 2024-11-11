@@ -337,12 +337,14 @@ package neureka_package;
     logic                               clear_ser;
     logic                               mode_linear;
     logic [$clog2(NEUREKA_NUM_PE_MAX)-1:0] last_pe;
+    logic                               enable_outputcheck;
   } ctrl_engine_t;
 
   typedef struct packed {
     flags_double_infeat_buffer_t          flags_double_infeat_buffer;
     flags_aq_t   [NEUREKA_NUM_PE_MAX-1:0] flags_accumulator;
     flags_binconv_array_t                 flags_binconv_array;
+    logic                                 mismatch_detected;
   } flags_engine_t;
 
   // ========================================================================
@@ -395,8 +397,8 @@ package neureka_package;
   // ========================================================================
 
   typedef enum {
-    IDLE, STREAMIN, LOAD, WEIGHTOFFS, MATRIXVEC, NORMQUANT, NORMQUANT_BIAS, NORMQUANT_SHIFT, STREAMOUT, STREAMOUT_DONE, UPDATEIDX, UPDATEIDX_WAIT, DONE
-  } state_neureka_t; 
+    IDLE, STREAMIN, LOAD, WEIGHTOFFS, MATRIXVEC, NORMQUANT, NORMQUANT_BIAS, NORMQUANT_SHIFT, OUTCHECK, ERROR, STREAMOUT, STREAMOUT_DONE, UPDATEIDX, UPDATEIDX_WAIT, DONE
+  } state_neureka_t;
 
   typedef struct packed {
     logic [31:0] weights_kom_iter;

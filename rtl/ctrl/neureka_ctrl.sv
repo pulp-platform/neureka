@@ -132,6 +132,8 @@ module neureka_ctrl #(
   begin
     slave_ctrl = '0;
     slave_ctrl.done = (state==DONE) & state_change;
+    slave_ctrl.evt  = (state==ERROR) & state_change;
+    slave_ctrl.int_error  = (state==ERROR) & state_change;
   end
   assign busy_o = slave_flags.is_working;
 
@@ -1147,6 +1149,8 @@ module neureka_ctrl #(
   assign ctrl_engine.clear_ser                                   = (state==STREAMOUT_DONE || state==DONE) & state_change;
 
   assign ctrl_engine.mode_linear  = config_.mode_linear;
+
+  assign ctrl_engine.enable_outputcheck  = (state==OUTCHECK) & state_change;
 
   // engine and streamer configuration is propagated with one cycle of delay
   always_comb begin

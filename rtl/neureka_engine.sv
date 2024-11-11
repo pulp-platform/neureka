@@ -489,13 +489,37 @@ module neureka_engine #(
       end // accumulator_gen
     end // redundancy_gen
 
-    // PUT THE CHECKER HERE
+    // Output Checker
+    // It checks for mismatches at PE level
+    logic [NR_PE-1:0] mismatch_d, mismatch_q;
+    logic [NR_PE-1:0][N_COPIES-1:0][BLOCK_SIZE*NEUREKA_QA_IN-1:0] datatest;
+    for (genvar ii=0; ii<NR_PE; ii++) begin : check_out
+      for (genvar jj=0; jj<N_COPIES; jj++) begin
+        localparam ii_jj = jj*NR_PE+ii;
+        assign datatest[ii][jj] = store_out_cols_pre_check[ii_jj].data;
+      end
+      assign mismatch_d[ii] = |(datatest[ii][0]^datatest[ii][1]);
+    end
 
-    assign flags_o = flags[0];
     for (genvar ii=0; ii<NR_PE; ii++) begin : out_cols_assign
       hwpe_stream_assign i_to_store_out_cols (.push_i(store_out_cols_pre_check[ii]), .pop_o(store_out_cols[ii]));
       assign store_out_cols_pre_check[NR_PE+ii].ready = store_out_cols[ii].ready; // temporary solution
     end
+
+    always_ff @(posedge clk_i or negedge rst_ni)
+    begin
+      if(~rst_ni) begin
+        mismatch_q <= '0;
+      end
+      else begin
+        mismatch_q <= mismatch_d;
+      end
+    end
+    assign flags_o.mismatch_detected = |(mismatch_q) & ctrl_i.enable_outputcheck;
+
+    assign flags_o.flags_double_infeat_buffer = flags[0].flags_double_infeat_buffer;
+    assign flags_o.flags_accumulator = flags[0].flags_accumulator;
+    assign flags_o.flags_binconv_array = flags[0].flags_binconv_array;
 
   end else begin : datapath_gen
     /* Input Buffer */

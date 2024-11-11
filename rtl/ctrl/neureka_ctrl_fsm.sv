@@ -179,16 +179,32 @@ module neureka_ctrl_fsm
           state_change_d = 1'b1;
         end
         else if(~config_i.norm_option_bias & accumulators_state == AQ_NORMQUANT_DONE) begin
-          state_d = STREAMOUT;
+          state_d = OUTCHECK;
           state_change_d = 1'b1;
         end
       end
 
       NORMQUANT_BIAS: begin
         if(accumulators_state == AQ_NORMQUANT_DONE) begin
+          state_d = OUTCHECK;
+          state_change_d = 1'b1;
+        end
+      end
+
+      OUTCHECK: begin
+        if(flags_engine_i.mismatch_detected) begin
+          state_d = ERROR;
+          state_change_d = 1'b1;
+        end
+        else begin
           state_d = STREAMOUT;
           state_change_d = 1'b1;
         end
+      end
+
+      ERROR: begin
+        state_d = IDLE;
+        state_change_d = 1'b1;
       end
 
       STREAMOUT: begin
@@ -235,7 +251,7 @@ module neureka_ctrl_fsm
             state_change_d = 1'b1;
           end
           else if(~config_i.streamout_quant) begin
-            state_d = STREAMOUT;
+            state_d = OUTCHECK;
             state_change_d = 1'b1;
           end
           else if(config_i.norm_option_shift) begin
