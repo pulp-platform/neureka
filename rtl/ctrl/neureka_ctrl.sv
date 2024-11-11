@@ -619,7 +619,7 @@ module neureka_ctrl #(
     Stride for d2 is currently unused.
   */
 
-  assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.base_addr     = config_.infeat_ptr + (config_.prefetch ? ( state == LOAD ? base_addr.infeat : next_base_addr.infeat) : base_addr.infeat ); 
+  assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.base_addr     = config_.infeat_ptr + (config_.prefetch ? ( state == LOAD ? base_addr.infeat : next_base_addr.infeat) : (active_datapath_q == 0) ? base_addr.infeat : next_base_addr.infeat );
   assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.tot_len       = config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? NUM_PE : INFEAT_BUFFER_SIZE_HW;
   assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.d0_stride     = config_.infeat_d0_stride;
   assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.d0_len        = config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? PE_W : INFEAT_BUFFER_SIZE_W;
@@ -993,14 +993,17 @@ module neureka_ctrl #(
                                                                                                                                                                                         (state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN && state!=UPDATEIDX) & state_change ; // TODO check if it's ok also in resilience_mode
   end
 
-  logic [PE_H-1:0] enable_pe_h;
-  logic [PE_W-1:0] enable_pe_w;
+  logic [PE_H-1:0] enable_pe_h, next_enable_pe_h;
+  logic [PE_W-1:0] enable_pe_w, next_enable_pe_w;
   logic [PE_H*PE_W-1:0] enable_pe_strided, pe_col_strided;
-  logic [PE_H*PE_W-1:0] enable_pe, enable_pe_temp;
+  logic [PE_H*PE_W-1:0] enable_pe, enable_pe_temp, next_enable_pe, next_enable_pe_temp;
 
   // enable pe_cols depending on the subtile size considering residuals in the horizontal & vertical directions
   assign enable_pe_h = (1 << h_size_out) - 1;
   assign enable_pe_w = (1 << w_size_out) - 1;
+
+  assign next_enable_pe_h = (1 << next_h_size_out) - 1;
+  assign next_enable_pe_w = (1 << next_w_size_out) - 1;
 
   for(genvar h=0; h<PE_H; h++) begin : strided_output_height
     for(genvar w=0; w<PE_W; w++) begin : strided_output_width
@@ -1027,8 +1030,11 @@ module neureka_ctrl #(
 
   for(genvar ii=0; ii<PE_H; ii++) begin
     assign enable_pe_temp[(ii+1)*PE_W-1:ii*PE_W] = {PE_W{enable_pe_h[ii]}};
+    assign next_enable_pe_temp[(ii+1)*PE_W-1:ii*PE_W] = {PE_W{next_enable_pe_h[ii]}};
   end
   assign enable_pe = {PE_H{enable_pe_w}} & enable_pe_temp & enable_pe_strided;
+  assign next_enable_pe = {PE_H{next_enable_pe_w}} & next_enable_pe_temp; // TODO Adjust for the stride also
++
 
   // compute last enabled PE
   logic [$clog2(NEUREKA_NUM_PE_MAX)-1:0] last_pe_d, last_pe_q;
@@ -1065,9 +1071,9 @@ module neureka_ctrl #(
   assign ctrl_engine.ctrl_binconv_array.ctrl_pe.ctrl_col.qw             = config_.weight_bits;
   assign ctrl_engine.ctrl_binconv_array.ctrl_pe.ctrl_col.filter_mode    = config_.filter_mode;
   assign ctrl_engine.ctrl_binconv_array.ctrl_pe.ctrl_col.weight_offset  = state==LOAD | state==WEIGHTOFFS;
-  
-  
-  assign ctrl_engine.ctrl_binconv_array.enable_pe = enable_pe;
+
+  // Very workaround solution
+  assign ctrl_engine.ctrl_binconv_array.enable_pe = (config_.resilience_mode) ? enable_pe : {next_enable_pe, enable_pe};
 
   // block-level enables depend on the operating mode -- during WEIGHTOFFS, only 1; in 1x1 mode, as many as the weight_bits are; and in 3x3, all 9 according to the filter_mask_map
   assign ctrl_engine.ctrl_binconv_array.ctrl_pe.ctrl_col.enable_block  = ((state==LOAD || state==WEIGHTOFFS) && config_.filter_mode == NEUREKA_FILTER_MODE_1X1) ? '1 :
@@ -1106,7 +1112,7 @@ module neureka_ctrl #(
                                                                   '1;
 
   // enable accumulator ICG cells
-  assign ctrl_engine.enable_accumulator = enable_pe;
+  assign ctrl_engine.enable_accumulator = (config_.resilience_mode) ? enable_pe : {next_enable_pe, enable_pe};
   assign ctrl_engine.last_pe = config_.last_pe;
 
   // control the accumulator's state or the norm/quant unit's state
@@ -1156,7 +1162,7 @@ module neureka_ctrl #(
   assign ctrl_engine.ctrl_accumulator.weight_offset       = (state==WEIGHTOFFS) ? 1'b1 : 1'b0;
   assign ctrl_engine.ctrl_accumulator.qw                  = config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? '0 : 
                                                               config_.weight_bits;
-  assign ctrl_engine.ctrl_accumulator.enable_streamout    = enable_pe;
+  assign ctrl_engine.ctrl_accumulator.enable_streamout    = (config_.resilience_mode) ? enable_pe : {next_enable_pe, enable_pe};
   assign ctrl_engine.ctrl_accumulator.weight_offset_scale = config_.weight_offset_scale;
   assign ctrl_engine.ctrl_accumulator.norm_option_bias    = config_.norm_option_bias;
   assign ctrl_engine.ctrl_accumulator.norm_option_shift   = config_.norm_option_shift;

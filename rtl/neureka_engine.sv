@@ -612,6 +612,13 @@ module neureka_engine #(
         .feat_o      ( in_from_buf[jj*INPUT_BUF_SIZE+:INPUT_BUF_SIZE] )
       );
 
+      ctrl_binconv_array_t ctrl_binconv_array;
+      always_comb
+      begin
+        ctrl_binconv_array = ctrl_i.ctrl_binconv_array;
+        ctrl_binconv_array.enable_pe = (ctrl_i.resilience_mode == 1) ? ctrl_i.enable_accumulator : ctrl_i.enable_accumulator[jj*NR_PE+:NR_PE];
+      end
+
       /* BinConv Array */
       neureka_binconv_array #(
         .COLUMN_SIZE         ( COLUMN_SIZE          ),
@@ -632,7 +639,7 @@ module neureka_engine #(
         .weight_conv_i     ( load_weight_rows_conv_datapath[jj*COLUMN_SIZE+:COLUMN_SIZE]          ),
         .pres_o            ( pres[jj*NR_PE+:NR_PE]          ),
         .pres_depthwise_o  ( pres_depthwise[jj*BLOCK_SIZE*NR_PE+:BLOCK_SIZE*NR_PE] ), // check this
-        .ctrl_i            ( ctrl_i.ctrl_binconv_array      ),
+        .ctrl_i            ( ctrl_binconv_array      ),
         .flags_o           ( flags[jj].flags_binconv_array  )
       );
 
@@ -643,7 +650,7 @@ module neureka_engine #(
         always_comb
         begin
           ctrl_accumulator = ctrl_i.ctrl_accumulator;
-          ctrl_accumulator.enable_streamout = ctrl_i.enable_accumulator[ii];
+          ctrl_accumulator.enable_streamout = (ctrl_i.resilience_mode == 1) ? ctrl_i.enable_accumulator[ii] : ctrl_i.enable_accumulator[jj*NR_PE+ii];
         end
 
         neureka_accumulator_normquant #(

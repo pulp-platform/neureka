@@ -363,12 +363,29 @@ module neureka_ctrl_fsm
   assign ro_reg[NEUREKA_ULOOP_RO_SCALE_KOM_ITER]         = config_i.uloop_iter.scale_kom_iter;
   assign ro_reg[NEUREKA_ULOOP_RO_ZERO]                   = '0;
 
-  /* index registers */
-  logic index_sample_en;
-  assign index_sample_en = ((state_d == WEIGHTOFFS & config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW) || state_d == LOAD || (config_i.prefetch & (state_d == WEIGHTOFFS)) ||state_d == STREAMOUT_DONE) & state_change_d;
-  
-  always_comb begin 
-    index_d = index_q; 
+  /* index and base_addr registers */
+  logic index_sample_en, next_index_sample_en;
+  logic base_addr_sample_en, next_base_addr_sample_en;
+  assign index_sample_en = ((state_d == WEIGHTOFFS & config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW) ||
+                            (state_d == LOAD & flags_engine_i.active_datapath == 0) ||
+                            (config_i.prefetch & (state_d == WEIGHTOFFS)) ||
+                            (state_d == STREAMOUT_DONE))
+                            & state_change_d;
+
+  assign base_addr_sample_en = config_i.resilience_mode ? index_sample_en : ((state_d == WEIGHTOFFS & config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW) ||
+                                                                             (state_d == LOAD) ||
+                                                                             (config_i.prefetch & (state_d == WEIGHTOFFS)) ||
+                                                                             (state_d == STREAMOUT_DONE))
+                                                                             & state_change_d;
+
+  assign next_index_sample_en = config_i.prefetch ? flags_uloop.next_valid : index_sample_en; // TODO this will crash everything when prefetch is enabled
+
+  assign next_base_addr_sample_en = config_i.prefetch ? flags_uloop.next_valid : base_addr_sample_en; // TODO this will crash everything when prefetch is enabled
+
+  // I need to divide the assingments of base_addr and index
+  // In resilience mode they have to be sampled in different situations
+  always_comb begin
+    index_d = index_q;
     next_index_d = next_index_q;
     base_addr_d = base_addr_q;
     next_base_addr_d = next_base_addr_q;
@@ -382,15 +399,19 @@ module neureka_ctrl_fsm
     end else begin 
       if(index_sample_en) begin 
         index_d = index;
-        base_addr_d = base_addr; 
       end
-      if(flags_uloop.next_valid) begin 
+      if (base_addr_sample_en) begin
+        base_addr_d = base_addr;
+      end
+      if(next_index_sample_en) begin
         next_index_d = next_index;
-        next_base_addr_d = next_base_addr; 
         index_update_d = index_update;
-      end 
-    end  
-  end 
+      end
+      if (next_base_addr_sample_en) begin
+        next_base_addr_d = next_base_addr;
+      end
+    end
+  end
 
   always_ff @(posedge clk_i or negedge rst_ni)
   begin
@@ -440,10 +461,10 @@ module neureka_ctrl_fsm
   assign next_base_addr.scale   = flags_uloop.next_offs[NEUREKA_ULOOP_BASE_ADDR_S];
 
   assign index_o     = index_sample_en ? index_d     : index_q;
-  assign base_addr_o = index_sample_en ? base_addr : base_addr_q;
+  assign base_addr_o = base_addr_sample_en ? base_addr : base_addr_q;
 
-  assign next_index_o     = prefetch_pulse_o ? next_index_d     : next_index_q;
-  assign next_base_addr_o = index_sample_en ? next_base_addr : next_base_addr_q;
+  assign next_index_o     = next_index_sample_en ? next_index_d     : next_index_q;
+  assign next_base_addr_o = next_base_addr_sample_en ? next_base_addr : next_base_addr_q;
 
   assign prefetch_pulse_o = flags_uloop.next_valid;
 
