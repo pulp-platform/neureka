@@ -41,6 +41,8 @@ module neureka_ctrl_fsm
   input  config_neureka_t     config_i,
   output state_neureka_t      state_o,
   output logic             state_change_o,
+  output logic             active_datapath_o,
+  output logic             active_datapath_change_o,
   input  logic             uloop_ready_i,
   output logic             prefetch_o,
   output logic             prefetch_pulse_o,
@@ -49,10 +51,12 @@ module neureka_ctrl_fsm
   output index_neureka_t      next_index_o,
   output base_addr_neureka_t  next_base_addr_o
 );
-  
+
   /* signal declarations */
   state_neureka_t state_d, state_q;
   logic state_change_d, state_change_q;
+
+  logic active_datapath_change, active_datapath_d, active_datapath_q;
 
   ctrl_uloop_t       ctrl_uloop;
   flags_uloop_t      flags_uloop;
@@ -75,7 +79,7 @@ module neureka_ctrl_fsm
   logic load_done;
   
   assign prefetch_o               = prefetch_valid_q;
-  assign load_done                = (flags_engine_i.flags_double_infeat_buffer.flags_odd_infeat_buffer.state == IB_EXTRACT)|(flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT);
+  assign load_done                = (flags_engine_i.flags_double_infeat_buffer.flags_odd_infeat_buffer.state == IB_EXTRACT)|(flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT) & (config_i.resilience_mode == 1 ? 1 : active_datapath_q == 1);
   assign prefetch_done            = ((flags_engine_i.flags_double_infeat_buffer.flags_odd_infeat_buffer.state == IB_EXTRACT)&(~flags_engine_i.flags_double_infeat_buffer.read)) || ((flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT) & (flags_engine_i.flags_double_infeat_buffer.read));
   assign prefetch_matrixvec_done  = (prefetch_done_d & accum_done_d)|(prefetch_done_d & accum_done_q)|(prefetch_done_q & accum_done_d)|(prefetch_done_q & accum_done_q);
   
@@ -130,23 +134,12 @@ module neureka_ctrl_fsm
       end
 
       LOAD: begin
-        if (flags_engine_i.active_datapath == 0 && config_i.resilience_mode == 0 && load_done) begin // performance mode, consequent load
-          if(streamin_en)
-            state_d = STREAMIN; // TODO
-          else if(~uloop_ready_i) begin
-            state_d = UPDATEIDX_WAIT;
-            state_change_d = 1'b1;
-          end
-          else begin
-            state_d = UPDATEIDX;
-            state_change_d = 1'b1;
-          end
-        end else if(load_done) begin
+        if(load_done) begin
           if(streamin_en)
             state_d = STREAMIN;
-          else 
+          else
             state_d = WEIGHTOFFS;
-            state_change_d = 1'b1; 
+            state_change_d = 1'b1;
         end
       end
 
@@ -263,10 +256,7 @@ module neureka_ctrl_fsm
 
       UPDATEIDX: begin
         if(flags_uloop.valid) begin
-          if (flags_engine_i.active_datapath == 1 && config_i.resilience_mode == 0) begin
-            state_d = LOAD;
-            state_change_d = 1'b1;
-          end else if((config_i.filter_mode != NEUREKA_FILTER_MODE_3X3_DW) && (flags_uloop.idx_update == 4'b0001) && (~flags_uloop.done)) begin
+          if((config_i.filter_mode != NEUREKA_FILTER_MODE_3X3_DW) && (flags_uloop.idx_update == 4'b0001) && (~flags_uloop.done)) begin
             if(config_i.prefetch) begin
               state_d = WEIGHTOFFS;
             end else begin
@@ -317,7 +307,7 @@ module neureka_ctrl_fsm
     code_uloop.range[3] = config_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? 1                      : config_i.subtile_nb_ko;
   end
 
-  assign ctrl_uloop.enable = (state_q == UPDATEIDX) & ~flags_uloop.valid;
+  assign ctrl_uloop.enable = ((state_q == UPDATEIDX) || (config_i.resilience_mode == 0 && state_d == MATRIXVEC && state_change_d)) & ~flags_uloop.valid;
   assign ctrl_uloop.clear  = (state_q == IDLE);
   assign ctrl_uloop.ready  = config_i.filter_mode == NEUREKA_FILTER_MODE_1X1 ? 1'b1 : uloop_ready_i;
 
@@ -372,11 +362,12 @@ module neureka_ctrl_fsm
                             (state_d == STREAMOUT_DONE))
                             & state_change_d;
 
-  assign base_addr_sample_en = config_i.resilience_mode ? index_sample_en : ((state_d == WEIGHTOFFS & config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW) ||
+  assign base_addr_sample_en = config_i.resilience_mode ? index_sample_en : (((state_d == WEIGHTOFFS & config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW) ||
                                                                              (state_d == LOAD) ||
                                                                              (config_i.prefetch & (state_d == WEIGHTOFFS)) ||
                                                                              (state_d == STREAMOUT_DONE))
-                                                                             & state_change_d;
+                                                                             & state_change_d) ||
+                                                                             (state_d == LOAD && active_datapath_change);
 
   assign next_index_sample_en = config_i.prefetch ? flags_uloop.next_valid : index_sample_en; // TODO this will crash everything when prefetch is enabled
 
@@ -428,12 +419,42 @@ module neureka_ctrl_fsm
       next_index_q   <= next_index_d;
       index_q        <= index_d;     
       base_addr_q    <= base_addr_d;
-    end 
+    end
+  end
+
+  assign active_datapath_change = config_i.resilience_mode ? '0 :
+                                  (state_d==MATRIXVEC && state_change_d) ||
+                                  (state_d==STREAMOUT && flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_STREAMOUT_DONE) ||
+                                  (state_d==LOAD && flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT); // TODO not valid with prefetch
+
+  always_comb begin
+    active_datapath_d = active_datapath_q;
+    if(clear_i) begin
+      active_datapath_d = 0;
+    end else if (config_i.resilience_mode) begin
+      active_datapath_d = 0;
+    end else if (state_d==STREAMOUT_DONE && state_change_d==1'b1) begin // TODO check this, maybe can be replaced by simply switching datapath
+      active_datapath_d = 0;
+    end else if(active_datapath_change) begin
+      active_datapath_d  = (~active_datapath_q); // TODO check if it's needed to create a separate active_datapath signal --> so far it's okay
+    end
+  end
+
+  always_ff @(posedge clk_i or negedge rst_ni)
+  begin
+    if(~rst_ni) begin
+      active_datapath_q  <= 0;
+    end else begin
+      active_datapath_q <= active_datapath_d;
+    end
   end
 
   /* FSM output binding */
   assign state_o        = state_d;
   assign state_change_o = state_change_d;
+
+  assign active_datapath_o = active_datapath_change ? active_datapath_d : active_datapath_q;
+  assign active_datapath_change_o = active_datapath_change;
 
   assign index.k_out_major = config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW ? flags_uloop.idx[2] : flags_uloop.idx[3];
   assign index.i_major     = config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW ? flags_uloop.idx[1] : flags_uloop.idx[2];

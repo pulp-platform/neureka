@@ -60,6 +60,7 @@ module neureka_ctrl #(
   config_neureka_t config_;
   state_neureka_t  state;
   logic         state_change;
+  logic active_datapath, active_datapath_change;
   logic uloop_ready_d, uloop_ready_q;
   index_neureka_t  index, next_index;
   base_addr_neureka_t base_addr, next_base_addr, prev_base_addr_d, prev_base_addr_q;
@@ -196,6 +197,8 @@ module neureka_ctrl #(
     .config_i         ( config_          ),
     .state_o          ( state            ),
     .state_change_o   ( state_change     ),
+    .active_datapath_o( active_datapath  ),
+    .active_datapath_change_o ( active_datapath_change ),
     .uloop_ready_i    ( uloop_ready_q    ),
     .index_o          ( index            ),
     .prefetch_o       ( uloop_prefetch   ),
@@ -292,7 +295,7 @@ module neureka_ctrl #(
   logic infeat_buffer_write_sel_d, infeat_buffer_write_sel_q;
   logic infeat_buffer_read_sel_d, infeat_buffer_read_sel_q;
 
-  logic active_datapath_d, active_datapath_q;
+  // logic active_datapath_d, active_datapath_q;
 
   /*
     These assignments are used to calculate online runtime parameters.
@@ -619,7 +622,7 @@ module neureka_ctrl #(
     Stride for d2 is currently unused.
   */
 
-  assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.base_addr     = config_.infeat_ptr + (config_.prefetch ? ( state == LOAD ? base_addr.infeat : next_base_addr.infeat) : (active_datapath_q == 0) ? base_addr.infeat : next_base_addr.infeat );
+  assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.base_addr     = config_.infeat_ptr + (config_.prefetch ? ( state == LOAD ? base_addr.infeat : next_base_addr.infeat) : (active_datapath == 0) ? base_addr.infeat : next_base_addr.infeat );
   assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.tot_len       = config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? NUM_PE : INFEAT_BUFFER_SIZE_HW;
   assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.d0_stride     = config_.infeat_d0_stride;
   assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.d0_len        = config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? PE_W : INFEAT_BUFFER_SIZE_W;
@@ -712,7 +715,7 @@ module neureka_ctrl #(
   assign ctrl_streamer.streamin_source_ctrl.addressgen_ctrl.d1_len        = PE_W;
   assign ctrl_streamer.streamin_source_ctrl.addressgen_ctrl.dim_enable_1h = '1;
 
-  assign ctrl_streamer.outfeat_sink_ctrl.addressgen_ctrl.base_addr     = config_.outfeat_ptr + ((config_.resilience_mode == 0 && active_datapath_q == 0) ? prev_base_addr_q.outfeat : base_addr.outfeat); // TODO probably it's unnecessary to duplicate the whole structure
+  assign ctrl_streamer.outfeat_sink_ctrl.addressgen_ctrl.base_addr     = config_.outfeat_ptr + ((active_datapath == 0) ? base_addr.outfeat : next_base_addr.outfeat);
   assign ctrl_streamer.outfeat_sink_ctrl.addressgen_ctrl.tot_len       = h_size_out_X_w_size_out_with_strb;
   assign ctrl_streamer.outfeat_sink_ctrl.addressgen_ctrl.d0_stride     = config_.outfeat_d0_stride;
   assign ctrl_streamer.outfeat_sink_ctrl.addressgen_ctrl.d0_len        = (config_.quant_mode == NEUREKA_MODE_32B) ? (k_out_lim/8 > 0 ? k_out_lim/8 + (k_out_lim%8==0 ? 0 : 1) : 1) : 1;
@@ -818,11 +821,10 @@ module neureka_ctrl #(
     a state transition (like in a Mealy FSM).
   */
 
-  assign ctrl_streamer.infeat_source_ctrl.req_start   = config_.prefetch ? prefetch_pulse | ((state==LOAD) & state_change) 
-                                                          :(state==LOAD) & state_change;
+  assign ctrl_streamer.infeat_source_ctrl.req_start   = config_.prefetch ? prefetch_pulse | ((state==LOAD) & state_change) :(state==LOAD) & (state_change | active_datapath_change);
   assign ctrl_streamer.weight_source_ctrl.req_start   = config_.streamin ? (state==MATRIXVEC & state_change) : (state==WEIGHTOFFS & state_change);
   assign ctrl_streamer.norm_source_ctrl.req_start     = (state==NORMQUANT || state==NORMQUANT_BIAS || state==NORMQUANT_SHIFT)  & state_change;
-  assign ctrl_streamer.outfeat_sink_ctrl.req_start    = (state==STREAMOUT) & (state_change || flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_STREAMOUT_DONE); // TODO temp solution
+  assign ctrl_streamer.outfeat_sink_ctrl.req_start    = (state==STREAMOUT) & (state_change || flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_STREAMOUT_DONE); // TODO temp solution to allow second store without changing state --> Not a temp solution, is the only one viable --> Maybe change with active_datapath_change
   assign ctrl_streamer.streamin_source_ctrl.req_start = (state==STREAMIN)  & state_change;
 
   /*
@@ -985,8 +987,8 @@ module neureka_ctrl #(
 
   always_comb begin 
     ctrl_engine.ctrl_double_infeat_buffer.ctrl_even_infeat_buffer              = ctrl_engine.ctrl_double_infeat_buffer.ctrl_odd_infeat_buffer;
-    ctrl_engine.ctrl_double_infeat_buffer.ctrl_even_infeat_buffer.goto_load    = (!infeat_buffer_write_sel_q) & ( config_.prefetch ? ((state==LOAD) & state_change | (uloop_prefetch & (state!=LOAD))): (state==LOAD) & state_change);
-    ctrl_engine.ctrl_double_infeat_buffer.ctrl_even_infeat_buffer.goto_extract = (config_.resilience_mode == 0 && ctrl_engine.active_datapath == 0 && state==UPDATEIDX) ? '1 : '0;
+    ctrl_engine.ctrl_double_infeat_buffer.ctrl_even_infeat_buffer.goto_load    = (!infeat_buffer_write_sel_q) & ( config_.prefetch ? ((state==LOAD) & state_change | (uloop_prefetch & (state!=LOAD))): (state==LOAD) & (state_change | active_datapath_change));
+    ctrl_engine.ctrl_double_infeat_buffer.ctrl_even_infeat_buffer.goto_extract = '0;
     ctrl_engine.ctrl_double_infeat_buffer.ctrl_even_infeat_buffer.goto_idle    = config_.prefetch ? ((infeat_buffer_read_sel_d) &
                                                                                                                                   ( config_.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? (state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN && state!=UPDATEIDX) & state_change :
                                                                                                                                                                                         (state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN) & state_change )):
@@ -1185,7 +1187,7 @@ module neureka_ctrl #(
 
   assign ctrl_engine.resilience_mode  = config_.resilience_mode;
 
-  assign ctrl_engine.active_datapath  = config_.resilience_mode ? '0 : active_datapath_q;
+  assign ctrl_engine.active_datapath  = config_.resilience_mode ? '0 : active_datapath;
 
   assign ctrl_engine.enable_outputcheck  = (state==OUTCHECK) & state_change;
 
@@ -1220,25 +1222,31 @@ module neureka_ctrl #(
   end
   assign ctrl_streamer_o = ctrl_streamer_q;
 
-  always_ff @(posedge clk_i or negedge rst_ni)
-  begin
-    if(~rst_ni) begin
-      active_datapath_q  <= 0;
-    end else begin
-      active_datapath_q <= active_datapath_d;
-    end
-  end
+  // always_ff @(posedge clk_i or negedge rst_ni)
+  // begin
+  //   if(~rst_ni) begin
+  //     active_datapath_q  <= 0;
+  //   end else begin
+  //     active_datapath_q <= active_datapath_d;
+  //   end
+  // end
 
-  always_comb begin
-    active_datapath_d = active_datapath_q;
-    if(clear_o) begin
-      active_datapath_d = 0;
-    end else if (state==STREAMOUT_DONE && state_change==1'b1) begin
-      active_datapath_d = 0;
-    end else if((state==UPDATEIDX && state_change==1'b1) || (state== STREAMOUT && flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_STREAMOUT_DONE)) begin
-      active_datapath_d  = (~active_datapath_q);
-    end
-  end
+  // logic active_datapath_change;
+
+  // assign active_datapath_change = (state==UPDATEIDX && state_change==1'b1) ||
+  //                                 (state==STREAMOUT && flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_STREAMOUT_DONE) ||
+  //                                 (state==LOAD && flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT); // TODO not valid with prefetch
+
+  // always_comb begin
+  //   active_datapath_d = active_datapath_q;
+  //   if(clear_o) begin
+  //     active_datapath_d = 0;
+  //   end else if (state==STREAMOUT_DONE && state_change==1'b1) begin
+  //     active_datapath_d = 0;
+  //   end else if(active_datapath_change) begin
+  //     active_datapath_d  = (~active_datapath_q);
+  //   end
+  // end
 
   always_ff @(posedge clk_i or negedge rst_ni)
   begin
