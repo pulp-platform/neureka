@@ -337,6 +337,7 @@ package neureka_package;
     logic                               clear_ser;
     logic                               mode_linear;
     logic [$clog2(NEUREKA_NUM_PE_MAX)-1:0] last_pe;
+    logic                               active_datapath;
     logic                               enable_outputcheck;
   } ctrl_engine_t;
 
@@ -344,6 +345,7 @@ package neureka_package;
     flags_double_infeat_buffer_t          flags_double_infeat_buffer;
     flags_aq_t   [NEUREKA_NUM_PE_MAX-1:0] flags_accumulator;
     flags_binconv_array_t                 flags_binconv_array;
+    logic                                 active_datapath;
     logic                                 mismatch_detected;
   } flags_engine_t;
 
@@ -474,6 +476,7 @@ package neureka_package;
     logic [3:0]  weight_bits;
     logic        use_rounding;
     logic [4:0]  shift_reqnt;
+    logic        resilience_mode;
     uloop_iter_neureka_t uloop_iter;
     logic [$clog2(NEUREKA_NUM_PE_MAX)-1:0] last_pe;
   } config_neureka_t;

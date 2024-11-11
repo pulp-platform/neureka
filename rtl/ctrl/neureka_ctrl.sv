@@ -259,6 +259,7 @@ module neureka_ctrl #(
   assign config_.filter_mode         = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][6:5];
   assign config_.streamout_quant     = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][4];
   assign config_.weight_bits         = {1'b0, reg_file.hwpe_params[NEUREKA_REG_CONFIG0][2:0]} + 1;
+  assign config_.resilience_mode     = '1; // TODO Set the register for performance/resilience mode
   assign start = slave_flags.start;
 
   /* norm variables */
@@ -291,7 +292,9 @@ module neureka_ctrl #(
   logic infeat_buffer_write_sel_d, infeat_buffer_write_sel_q;
   logic infeat_buffer_read_sel_d, infeat_buffer_read_sel_q;
 
-  /* 
+  logic active_datapath_d, active_datapath_q;
+
+  /*
     These assignments are used to calculate online runtime parameters.
     Some simplification can / should be performed here.
    */
@@ -1150,6 +1153,8 @@ module neureka_ctrl #(
 
   assign ctrl_engine.mode_linear  = config_.mode_linear;
 
+  assign ctrl_engine.active_datapath  = config_.resilience_mode ? '0 : active_datapath_q;
+
   assign ctrl_engine.enable_outputcheck  = (state==OUTCHECK) & state_change;
 
   // engine and streamer configuration is propagated with one cycle of delay
@@ -1186,23 +1191,42 @@ module neureka_ctrl #(
   always_ff @(posedge clk_i or negedge rst_ni)
   begin
     if(~rst_ni) begin
-      infeat_buffer_write_sel_q <= 0; 
-      infeat_buffer_read_sel_q  <= 0; 
-    end else begin 
-      infeat_buffer_write_sel_q <= infeat_buffer_write_sel_d; 
-      infeat_buffer_read_sel_q  <= infeat_buffer_read_sel_d; 
-    end  
-  end 
+      active_datapath_q  <= 0;
+    end else begin
+      active_datapath_q <= active_datapath_d;
+    end
+  end
 
-  always_comb begin 
+  always_comb begin
+    active_datapath_d = active_datapath_q;
+    if(clear_o) begin
+      active_datapath_d = 0;
+    end else if(state==UPDATEIDX && state_change==1'b1) begin
+      active_datapath_d  = (~active_datapath_q);
+    end
+  end
+
+  always_ff @(posedge clk_i or negedge rst_ni)
+  begin
+    if(~rst_ni) begin
+      infeat_buffer_write_sel_q <= 0;
+      infeat_buffer_read_sel_q  <= 0;
+    end else begin
+      infeat_buffer_write_sel_q <= infeat_buffer_write_sel_d;
+      infeat_buffer_read_sel_q  <= infeat_buffer_read_sel_d;
+    end
+  end
+
+  always_comb begin
     infeat_buffer_write_sel_d = infeat_buffer_write_sel_q;
     infeat_buffer_read_sel_d  = infeat_buffer_read_sel_q;
     if(clear_o) begin
       infeat_buffer_write_sel_d = 0;
       infeat_buffer_read_sel_d  = 0;
-    end else if(state==UPDATEIDX && state_change==1'b1) begin 
-      if(config_.prefetch) infeat_buffer_read_sel_d  = (~infeat_buffer_read_sel_q);
-    end 
+    end else if(state==UPDATEIDX && state_change==1'b1) begin
+      if(config_.prefetch)
+        infeat_buffer_read_sel_d  = (~infeat_buffer_read_sel_q);
+    end
     if(config_.prefetch & ((state == WEIGHTOFFS)|(state == MATRIXVEC)))
       infeat_buffer_write_sel_d = infeat_buffer_write_sel_q ^ prefetch_pulse;
   end 

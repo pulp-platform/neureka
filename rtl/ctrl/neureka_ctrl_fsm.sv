@@ -130,7 +130,18 @@ module neureka_ctrl_fsm
       end
 
       LOAD: begin
-        if(load_done) begin
+        if (flags_engine_i.active_datapath == 0 && config_i.resilience_mode == 0 && load_done) begin // performance mode, consequent load
+          if(streamin_en)
+            state_d = STREAMIN; // TODO
+          else if(~uloop_ready_i) begin
+            state_d = UPDATEIDX_WAIT;
+            state_change_d = 1'b1;
+          end
+          else begin
+            state_d = UPDATEIDX;
+            state_change_d = 1'b1;
+          end
+        end else if(load_done) begin
           if(streamin_en)
             state_d = STREAMIN;
           else 
@@ -242,7 +253,10 @@ module neureka_ctrl_fsm
 
       UPDATEIDX: begin
         if(flags_uloop.valid) begin
-          if((config_i.filter_mode != NEUREKA_FILTER_MODE_3X3_DW) && (flags_uloop.idx_update == 4'b0001) && (~flags_uloop.done)) begin
+          if (flags_engine_i.active_datapath == 0 && config_i.resilience_mode == 0) begin
+            state_d = LOAD;
+            state_change_d = 1'b1;
+          end else if((config_i.filter_mode != NEUREKA_FILTER_MODE_3X3_DW) && (flags_uloop.idx_update == 4'b0001) && (~flags_uloop.done)) begin
             if(config_i.prefetch) begin
               state_d = WEIGHTOFFS;
             end else begin
