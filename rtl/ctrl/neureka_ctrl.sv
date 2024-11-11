@@ -60,8 +60,8 @@ module neureka_ctrl #(
   config_neureka_t config_;
   state_neureka_t  state;
   logic         state_change;
-  logic active_datapath, active_datapath_change;
-  logic uloop_ready_d, uloop_ready_q;
+  logic active_datapath, active_datapath_change, double_active_datapath;
+  logic [1:0] uloop_ready_d, uloop_ready_q;
   index_neureka_t  index, next_index;
   base_addr_neureka_t base_addr, next_base_addr, prev_base_addr_d, prev_base_addr_q;
   logic uloop_prefetch, uloop_prefetch_pulse;
@@ -199,7 +199,8 @@ module neureka_ctrl #(
     .state_change_o   ( state_change     ),
     .active_datapath_o( active_datapath  ),
     .active_datapath_change_o ( active_datapath_change ),
-    .uloop_ready_i    ( uloop_ready_q    ),
+    .double_active_datapath_o ( double_active_datapath ),
+    .uloop_ready_i    ( uloop_ready_q[1]    ),
     .index_o          ( index            ),
     .prefetch_o       ( uloop_prefetch   ),
     .prefetch_pulse_o ( uloop_prefetch_pulse),
@@ -570,11 +571,13 @@ module neureka_ctrl #(
 
   assign config_.uloop_iter.scale_kom_iter = 1;
 
-  /* 
+  /*
     uloop_ready_q is set whenever the uloop parameters have been calculated.
    */
-  assign uloop_ready_d = infeat_wom_reset_valid & infeat_hom_reset_valid & infeat_kim_reset_valid & outfeat_wom_reset_valid & outfeat_hom_reset_valid & outfeat_kom_reset_valid; // the others are always computed earlier
-  
+   // TODO Understand if this is dangerous --> Probably, if it needs to only loop over the channel and to over the other dimensions
+  assign uloop_ready_d[0] = infeat_wom_valid & outfeat_wom_valid;
+  assign uloop_ready_d[1] = infeat_wom_reset_valid & infeat_hom_reset_valid & infeat_kim_reset_valid & outfeat_wom_reset_valid & outfeat_hom_reset_valid & outfeat_kom_reset_valid; // the others are always computed earlier
+
   always_ff @(posedge clk_i or negedge rst_ni)
   begin
     if(~rst_ni)
@@ -1036,7 +1039,7 @@ module neureka_ctrl #(
     assign next_enable_pe_temp[(ii+1)*PE_W-1:ii*PE_W] = {PE_W{next_enable_pe_h[ii]}};
   end
   assign enable_pe = {PE_H{enable_pe_w}} & enable_pe_temp & enable_pe_strided;
-  assign next_enable_pe = {PE_H{next_enable_pe_w}} & next_enable_pe_temp; // TODO Adjust for the stride also
+  assign next_enable_pe = double_active_datapath ? ({PE_H{next_enable_pe_w}} & next_enable_pe_temp) : '0; // TODO Adjust for the stride also
 
   // compute last enabled PE
   logic [$clog2(NEUREKA_NUM_PE_MAX)-1:0] last_pe_d, last_pe_q;
