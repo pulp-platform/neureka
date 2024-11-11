@@ -56,7 +56,7 @@ module neureka_ctrl_fsm
   state_neureka_t state_d, state_q;
   logic state_change_d, state_change_q;
 
-  logic active_datapath_change, active_datapath_d, active_datapath_q;
+  logic active_datapath_change, active_datapath_change_sticky, active_datapath_d, active_datapath_q;
 
   ctrl_uloop_t       ctrl_uloop;
   flags_uloop_t      flags_uloop;
@@ -79,7 +79,7 @@ module neureka_ctrl_fsm
   logic load_done;
   
   assign prefetch_o               = prefetch_valid_q;
-  assign load_done                = (flags_engine_i.flags_double_infeat_buffer.flags_odd_infeat_buffer.state == IB_EXTRACT)|(flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT) & (config_i.resilience_mode == 1 ? 1 : active_datapath_q == 1);
+  assign load_done                = (flags_engine_i.flags_double_infeat_buffer.flags_odd_infeat_buffer.state == IB_EXTRACT)|(flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT) & (config_i.resilience_mode == 1 | flags_uloop.next_done ? 1 : active_datapath_q == 1);
   assign prefetch_done            = ((flags_engine_i.flags_double_infeat_buffer.flags_odd_infeat_buffer.state == IB_EXTRACT)&(~flags_engine_i.flags_double_infeat_buffer.read)) || ((flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT) & (flags_engine_i.flags_double_infeat_buffer.read));
   assign prefetch_matrixvec_done  = (prefetch_done_d & accum_done_d)|(prefetch_done_d & accum_done_q)|(prefetch_done_q & accum_done_d)|(prefetch_done_q & accum_done_q);
   
@@ -220,7 +220,7 @@ module neureka_ctrl_fsm
       end
 
       STREAMOUT: begin
-        if(flags_engine_i.active_datapath == 1 || config_i.resilience_mode == 1) begin
+        if(flags_engine_i.active_datapath == 1 || config_i.resilience_mode == 1 || (flags_uloop.next_done & ~active_datapath_change_sticky)) begin // TODO Create the streamout_done
           if(accumulators_state == AQ_STREAMOUT_DONE) begin
             if(flags_uloop.done) begin
               state_d = DONE;
@@ -422,10 +422,10 @@ module neureka_ctrl_fsm
     end
   end
 
-  assign active_datapath_change = config_i.resilience_mode ? '0 :
-                                  (state_d==MATRIXVEC && state_change_d) ||
-                                  (state_d==STREAMOUT && flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_STREAMOUT_DONE) ||
-                                  (state_d==LOAD && flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT); // TODO not valid with prefetch
+  assign active_datapath_change = (config_i.resilience_mode) ? '0 :
+                                  (state_d==MATRIXVEC && state_change_d && ~flags_uloop.next_done) ||
+                                  (state_d==STREAMOUT && flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_STREAMOUT_DONE && active_datapath_change_sticky) ||
+                                  (state_d==LOAD && flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT && ~flags_uloop.next_done); // TODO not valid with prefetch
 
   always_comb begin
     active_datapath_d = active_datapath_q;
@@ -447,6 +447,16 @@ module neureka_ctrl_fsm
     end else begin
       active_datapath_q <= active_datapath_d;
     end
+  end
+
+  always_ff @(posedge clk_i or negedge rst_ni)
+  begin
+    if(~rst_ni)
+      active_datapath_change_sticky  <= 1'b0;
+    else if (state_d==STREAMOUT_DONE && state_change_d==1'b1) // TODO check this
+      active_datapath_change_sticky  <= 1'b0;
+    else if(active_datapath_change)
+      active_datapath_change_sticky <= 1'b1;
   end
 
   /* FSM output binding */
