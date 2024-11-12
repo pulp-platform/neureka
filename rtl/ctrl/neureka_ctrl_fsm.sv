@@ -80,6 +80,7 @@ module neureka_ctrl_fsm
   logic accum_done_d, accum_done_q;
   logic prefetch_matrixvec_done;
   logic load_done;
+  logic streamout_done;
   logic done;
 
   assign prefetch_o               = prefetch_valid_q;
@@ -87,9 +88,9 @@ module neureka_ctrl_fsm
   assign load_done                = (flags_engine_i.flags_double_infeat_buffer.flags_odd_infeat_buffer.state == IB_EXTRACT)|(flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT) & (config_i.resilience_mode == 1 | (flags_uloop_1.next_done | flags_uloop.done)  ? 1 : active_datapath_q == 1);
   assign prefetch_done            = ((flags_engine_i.flags_double_infeat_buffer.flags_odd_infeat_buffer.state == IB_EXTRACT)&(~flags_engine_i.flags_double_infeat_buffer.read)) || ((flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT) & (flags_engine_i.flags_double_infeat_buffer.read));
   assign prefetch_matrixvec_done  = (prefetch_done_d & accum_done_d)|(prefetch_done_d & accum_done_q)|(prefetch_done_q & accum_done_d)|(prefetch_done_q & accum_done_q);
-  assign streamout_done           = flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_STREAMOUT_DONE && (config_i.resilience_mode == 1 || flags_engine_i.active_datapath == 1 || ( ~active_datapath_change_sticky)); // flags_uloop_1.next_done &
+  assign streamout_done           = flags_engine_i.flags_accumulator[config_i.last_pe].state == AQ_STREAMOUT_DONE && (config_i.resilience_mode == 1 || flags_engine_i.active_datapath == 1 || ( ~active_datapath_change_sticky)); // flags_uloop_1.next_done &
   assign done                     = (config_i.subtile_nb_wo[0] == 1 && config_i.subtile_nb_ho[0] == 1  && config_i.subtile_nb_ko == 2) ? flags_uloop.done && flags_uloop_1.done : flags_uloop.done; // TODO Check this for nb_ko > 2
-  
+
   state_aq_t accumulators_state;
   assign accumulators_state = flags_engine_i.flags_accumulator[config_i.last_pe].state;
 
@@ -502,7 +503,7 @@ end
 
   assign active_datapath_change = (config_i.resilience_mode) ? '0 : // (| flags_uloop.next_done) disable datapath swap if next is done; TODO improve the sitcky version
                                 // (state_d==MATRIXVEC && state_change_d && ~flags_uloop_1.next_done) || // Temporaly remove ~flags_uloop.next_done --> Maybe this can be removed and simply put to 0 the datapath (like in STREAMOUT_DONE)
-                                (state_d==STREAMOUT && flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_STREAMOUT_DONE && active_datapath_change_sticky) ||
+                                (state_d==STREAMOUT && accumulators_state == AQ_STREAMOUT_DONE && active_datapath_change_sticky) ||
                                 (state_d==LOAD && flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT && active_second_load); // TODO not valid with prefetch
 
   // assign active_datapath_change = (config_i.resilience_mode) ? '0 : // (| flags_uloop.next_done) disable datapath swap if next is done; TODO improve the sitcky version

@@ -827,7 +827,7 @@ module neureka_ctrl #(
   assign ctrl_streamer.infeat_source_ctrl.req_start   = config_.prefetch ? prefetch_pulse | ((state==LOAD) & state_change) :(state==LOAD) & (state_change | active_datapath_change);
   assign ctrl_streamer.weight_source_ctrl.req_start   = config_.streamin ? (state==MATRIXVEC & state_change) : (state==WEIGHTOFFS & state_change);
   assign ctrl_streamer.norm_source_ctrl.req_start     = (state==NORMQUANT || state==NORMQUANT_BIAS || state==NORMQUANT_SHIFT)  & state_change;
-  assign ctrl_streamer.outfeat_sink_ctrl.req_start    = (state==STREAMOUT) & (state_change || flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_STREAMOUT_DONE); // TODO temp solution to allow second store without changing state --> Not a temp solution, is the only one viable --> Maybe change with active_datapath_change
+  assign ctrl_streamer.outfeat_sink_ctrl.req_start    = (state==STREAMOUT) & (state_change || active_datapath_change);
   assign ctrl_streamer.streamin_source_ctrl.req_start = (state==STREAMIN)  & state_change;
 
   /*
@@ -1043,29 +1043,40 @@ module neureka_ctrl #(
 
   // compute last enabled PE
   logic [$clog2(NEUREKA_NUM_PE_MAX)-1:0] last_pe_d, last_pe_q;
+  logic [$clog2(NEUREKA_NUM_PE_MAX)-1:0] next_last_pe_d, next_last_pe_q;
   always_comb
   begin : last_pe_comb
     last_pe_d = 0;
+    next_last_pe_d = 0;
     for(int i=0; i<PE_H*PE_W; i++) begin
-      if(enable_pe[i]) begin
-        last_pe_d = i;
+      if (config_.resilience_mode) begin
+        if(enable_pe[i])
+          last_pe_d = i;
+      end else begin
+        if(enable_pe[i] | next_enable_pe[i])
+          last_pe_d = i;
       end
     end
   end
   always_ff @(posedge clk_i or negedge rst_ni)
   begin
+
     if(~rst_ni) begin
       last_pe_q <= '0;
+      next_last_pe_q <= '0;
     end
     else if(clear_o) begin
       last_pe_q <= '0;
+      next_last_pe_q <= '0;
     end
     else begin
       last_pe_q <= last_pe_d;
+      next_last_pe_q <= next_last_pe_d;
     end
   end
-  assign config_.last_pe = last_pe_q;
- 
+  assign config_.last_pe = last_pe_q ; // TODO Improve, workaround solution
+  // assign config_.last_pe = (config_.resilience_mode) ? last_pe_q : {next_last_pe_q, last_pe_q}; // TODO Improve, workaround solution
+
   // propagate config to NEUREKA binconv array
   assign ctrl_engine.ctrl_binconv_array.weight_offset                   = state==LOAD | state==WEIGHTOFFS;
   assign ctrl_engine.ctrl_binconv_array.filter_mode                     = config_.filter_mode;
@@ -1082,8 +1093,8 @@ module neureka_ctrl #(
 
   // block-level enables depend on the operating mode -- during WEIGHTOFFS, only 1; in 1x1 mode, as many as the weight_bits are; and in 3x3, all 9 according to the filter_mask_map
   assign ctrl_engine.ctrl_binconv_array.ctrl_pe.ctrl_col.enable_block  = ((state==LOAD || state==WEIGHTOFFS) && config_.filter_mode == NEUREKA_FILTER_MODE_1X1) ? '1 :
-                                                                          (config_.filter_mode == NEUREKA_FILTER_MODE_1X1)                                      ? 9'h0ffffffff :
-                                                                                                                                                                  ~filter_mask_map;
+                                                                            (config_.filter_mode == NEUREKA_FILTER_MODE_1X1)                                      ? '1:
+                                                                            ~filter_mask_map;
 
 
   // clear array state when entering LOAD or MATRIXVEC
@@ -1118,7 +1129,7 @@ module neureka_ctrl #(
 
   // enable accumulator ICG cells
   assign ctrl_engine.enable_accumulator = (config_.resilience_mode) ? enable_pe : {next_enable_pe, enable_pe};
-  assign ctrl_engine.last_pe = config_.last_pe;
+  assign ctrl_engine.last_pe = last_pe_q;
 
   // control the accumulator's state or the norm/quant unit's state
   assign ctrl_engine.ctrl_accumulator.clear          = (state==IDLE && state_change==1'b1) | (state==STREAMOUT_DONE && state_change==1'b1);
@@ -1184,7 +1195,7 @@ module neureka_ctrl #(
   assign ctrl_engine.ctrl_serialize_streamout.nb_contig_m1       = (config_.quant_mode == NEUREKA_MODE_32B) ? (k_out_lim/(NEUREKA_MEM_BANDWIDTH/NEUREKA_ACCUM_SIZE) + (k_out_lim%(NEUREKA_MEM_BANDWIDTH/NEUREKA_ACCUM_SIZE)==0 ? 0 : 1) )-1 : 
                                                                       0;
   assign ctrl_engine.clear_des                                   = (state == MATRIXVEC || state == STREAMOUT) & state_change;
-  assign ctrl_engine.clear_ser                                   = (state==STREAMOUT_DONE || state==DONE) & state_change;
+  assign ctrl_engine.clear_ser                                   = ((state==STREAMOUT_DONE || state==DONE) & state_change) || (state == STREAMOUT & active_datapath_change);
 
   assign ctrl_engine.mode_linear  = config_.mode_linear;
 

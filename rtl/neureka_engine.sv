@@ -590,7 +590,35 @@ module neureka_engine #(
         always_comb
         begin
           ctrl_accumulator = ctrl_i.ctrl_accumulator;
-          ctrl_accumulator.enable_streamout = (ctrl_i.resilience_mode == 1) ? ctrl_i.enable_accumulator[ii] : ctrl_i.enable_accumulator[jj*NR_PE+ii];
+          if (ctrl_i.resilience_mode) begin
+            ctrl_accumulator.enable_streamout = ctrl_i.enable_accumulator[ii] ;
+            if(ctrl_i.enable_accumulator[ii] == '0) begin
+              ctrl_accumulator.goto_normquant        = '0;
+              ctrl_accumulator.goto_accum            = '0;
+              ctrl_accumulator.goto_streamin         = '0;
+              ctrl_accumulator.goto_streamout        = '0;
+              ctrl_accumulator.goto_idle             = '0;
+              ctrl_accumulator.ctrl_normquant        = '0;
+              ctrl_accumulator.weight_offset         = '0;
+              ctrl_accumulator.sample_shift          = '0;
+            end
+            if(ctrl_i.last_pe == ii)
+              ctrl_accumulator.last_pe = 1'b1;
+          end else begin
+            ctrl_accumulator.enable_streamout = ctrl_i.enable_accumulator[jj*NR_PE+ii] ;
+            if(ctrl_i.enable_accumulator[ii] == '0 && ctrl_i.enable_accumulator[NR_PE+ii] == '0) begin
+              ctrl_accumulator.goto_normquant        = '0;
+              ctrl_accumulator.goto_accum            = '0;
+              ctrl_accumulator.goto_streamin         = '0;
+              ctrl_accumulator.goto_streamout        = '0;
+              ctrl_accumulator.goto_idle             = '0;
+              ctrl_accumulator.ctrl_normquant        = '0;
+              ctrl_accumulator.weight_offset         = '0;
+              ctrl_accumulator.sample_shift          = '0;
+            end
+            if(ctrl_i.last_pe == ii)
+                ctrl_accumulator.last_pe = 1'b1;
+            end
         end
 
         neureka_accumulator_normquant #(
