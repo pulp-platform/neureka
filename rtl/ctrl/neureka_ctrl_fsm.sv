@@ -58,7 +58,7 @@ module neureka_ctrl_fsm
   logic state_change_d, state_change_q;
 
   logic active_datapath_change, active_datapath_change_sticky, active_datapath_d, active_datapath_q;
-  logic active_second_load;
+  logic single_load;
 
   ctrl_uloop_t       ctrl_uloop, ctrl_uloop_1;
   flags_uloop_t      flags_uloop, flags_uloop_1;
@@ -84,8 +84,7 @@ module neureka_ctrl_fsm
   logic done;
 
   assign prefetch_o               = prefetch_valid_q;
-  // assign load_done                = (flags_engine_i.flags_double_infeat_buffer.flags_odd_infeat_buffer.state == IB_EXTRACT)|(flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT) & ((config_i.resilience_mode == 1 | flags_uloop_1.next_done | (~active_second_load && next_valid_sticky)) ? 1 : active_datapath_q == 1); // TODO Check if it need to be simplified
-  assign load_done                = (flags_engine_i.flags_double_infeat_buffer.flags_odd_infeat_buffer.state == IB_EXTRACT)|(flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT) & (config_i.resilience_mode == 1 | (flags_uloop_1.next_done | flags_uloop.done)  ? 1 : active_datapath_q == 1);
+  assign load_done                = (flags_engine_i.flags_double_infeat_buffer.flags_odd_infeat_buffer.state == IB_EXTRACT)|(flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT) & (config_i.resilience_mode == 1 || single_load  ? 1 : active_datapath_q == 1);
   assign prefetch_done            = ((flags_engine_i.flags_double_infeat_buffer.flags_odd_infeat_buffer.state == IB_EXTRACT)&(~flags_engine_i.flags_double_infeat_buffer.read)) || ((flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT) & (flags_engine_i.flags_double_infeat_buffer.read));
   assign prefetch_matrixvec_done  = (prefetch_done_d & accum_done_d)|(prefetch_done_d & accum_done_q)|(prefetch_done_q & accum_done_d)|(prefetch_done_q & accum_done_q);
   assign streamout_done           = flags_engine_i.flags_accumulator[config_i.last_pe].state == AQ_STREAMOUT_DONE && (config_i.resilience_mode == 1 || flags_engine_i.active_datapath == 1 || ( ~active_datapath_change_sticky)); // flags_uloop_1.next_done &
@@ -361,7 +360,7 @@ end
   always_comb
   begin
     ctrl_uloop_1 = ctrl_uloop;
-    ctrl_uloop_1.enable = (state_q == UPDATEIDX) & ~flags_uloop.valid && ((config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0]) ? (flags_uloop.next_idx[3] == flags_uloop_1.next_idx[4]) : 1) ;
+    ctrl_uloop_1.enable = (state_q == UPDATEIDX) & ~flags_uloop.valid && ((config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0]) ? (flags_uloop.next_idx[3] == flags_uloop_1.next_idx[4]) : 1) ; // When I need to iterate both over input and output channels, in some cases we need to realing the two loops by stalling the second one once. Maybe can be improved
   end
 
   hwpe_ctrl_uloop #(
@@ -498,13 +497,17 @@ end
     end
   end
 
-  assign active_second_load = ((config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? ~flags_uloop.done : ~flags_uloop_1.next_done)
-                              && (next_valid_sticky || (flags_uloop.idx[3] ^ flags_uloop_1.next_idx[4])); // && (flags_uloop.idx[3] == flags_uloop_1.next_idx[4]);
+  // I need to perform only a single load when the next is done depending on which datapath is the one that is concluding because
+  // we need to take into account the exchange that occurs when subtile_ko && subtile_j are odd.
+  // Originally I need to check the uloop1 to have finished because D0 is always the one to perform the last computation, but when we are processing another ko tile, since they are swapped, I need to check for the uloop0
+  // In addition the single load must be performed when the next operation is to switch to next ko tile but I need to iterate over the D0 first (so the subtile j is odd and also the subtile i is odd)
+  assign single_load = (config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1) && (flags_uloop.idx[3][0] == 1) ? flags_uloop.done : flags_uloop_1.next_done ||
+                       (config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1) && (flags_uloop.idx[3] ^ flags_uloop_1.next_idx[4]);
 
   assign active_datapath_change = (config_i.resilience_mode) ? '0 : // (| flags_uloop.next_done) disable datapath swap if next is done; TODO improve the sitcky version
                                 // (state_d==MATRIXVEC && state_change_d && ~flags_uloop_1.next_done) || // Temporaly remove ~flags_uloop.next_done --> Maybe this can be removed and simply put to 0 the datapath (like in STREAMOUT_DONE)
                                 (state_d==STREAMOUT && accumulators_state == AQ_STREAMOUT_DONE && active_datapath_change_sticky) ||
-                                (state_d==LOAD && flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT && active_second_load); // TODO not valid with prefetch
+                                (state_d==LOAD && flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT && next_valid_sticky && ~single_load); // TODO not valid with prefetch
 
   // assign active_datapath_change = (config_i.resilience_mode) ? '0 : // (| flags_uloop.next_done) disable datapath swap if next is done; TODO improve the sitcky version
   //                                 (state_d==UPDATEIDX && state_change_d && active_datapath_change_sticky) || // Temporaly remove ~flags_uloop.next_done
