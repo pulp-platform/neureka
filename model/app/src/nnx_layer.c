@@ -97,6 +97,10 @@ static void task_prepare(nnx_task_t *task) {
 #else
   neureka_task_set_input_unsigned(task);
 #endif
+#define RESILIENCE_MODE 1
+#if RESILIENCE_MODE == 1
+  neureka_task_set_resilience_mode(task);
+#endif
 
   const uint32_t w_in_stride = INPUT_CHANNEL * INPUT_BITS / 8;
   const uint32_t h_in_stride = INPUT_WIDTH * w_in_stride;

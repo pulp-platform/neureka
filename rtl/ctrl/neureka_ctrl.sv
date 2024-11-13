@@ -115,7 +115,7 @@ module neureka_ctrl #(
   hwpe_ctrl_slave #(
     .N_CORES        ( N_CORES                      ),
     .N_CONTEXT      ( 2                            ),
-    .N_IO_REGS      ( 25                           ),
+    .N_IO_REGS      ( 26                           ),
     .N_GENERIC_REGS ( 0                            ),
     .ID_WIDTH       ( ID                           ),
     .REGFILE_SCM    ( neureka_package::REGFILE_SCM )
@@ -246,6 +246,7 @@ module neureka_ctrl #(
   assign config_.filter_mask_right   = reg_file.hwpe_params[NEUREKA_REG_FILTER_MASK][23:16];
   assign config_.filter_mask_bottom  = reg_file.hwpe_params[NEUREKA_REG_FILTER_MASK][15: 8];
   assign config_.filter_mask_left    = reg_file.hwpe_params[NEUREKA_REG_FILTER_MASK][ 7: 0];
+  assign config_.resilience_mode     = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][27];
   assign config_.feat_broadcast      = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][26];
   assign config_.norm_option_bias    = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][25];
   assign config_.norm_option_shift   = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][24];
@@ -263,7 +264,6 @@ module neureka_ctrl #(
   assign config_.filter_mode         = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][6:5];
   assign config_.streamout_quant     = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][4];
   assign config_.weight_bits         = {1'b0, reg_file.hwpe_params[NEUREKA_REG_CONFIG0][2:0]} + 1;
-  assign config_.resilience_mode     = '0; // TODO Set the register for performance/resilience mode
   assign start = slave_flags.start;
 
   /* norm variables */
