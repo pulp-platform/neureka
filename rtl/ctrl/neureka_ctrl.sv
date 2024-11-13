@@ -296,8 +296,6 @@ module neureka_ctrl #(
   logic infeat_buffer_write_sel_d, infeat_buffer_write_sel_q;
   logic infeat_buffer_read_sel_d, infeat_buffer_read_sel_q;
 
-  // logic active_datapath_d, active_datapath_q;
-
   /*
     These assignments are used to calculate online runtime parameters.
     Some simplification can / should be performed here.
@@ -574,7 +572,7 @@ module neureka_ctrl #(
   /*
     uloop_ready_q is set whenever the uloop parameters have been calculated.
    */
-   // TODO Understand if this is dangerous --> Probably, if it needs to only loop over the channel and to over the other dimensions
+   // TODO Understand if this is dangerous --> Yes it is, but maybe we can isolate special case in which it's needed to avoid waiting for the first iteration of uloop1
   assign uloop_ready_d[0] = infeat_wom_valid & outfeat_wom_valid;
   assign uloop_ready_d[1] = infeat_wom_reset_valid & infeat_hom_reset_valid & infeat_kim_reset_valid & outfeat_wom_reset_valid & outfeat_hom_reset_valid & outfeat_kom_reset_valid; // the others are always computed earlier
 
@@ -1043,11 +1041,9 @@ module neureka_ctrl #(
 
   // compute last enabled PE
   logic [$clog2(NEUREKA_NUM_PE_MAX)-1:0] last_pe_d, last_pe_q;
-  logic [$clog2(NEUREKA_NUM_PE_MAX)-1:0] next_last_pe_d, next_last_pe_q;
   always_comb
   begin : last_pe_comb
     last_pe_d = 0;
-    next_last_pe_d = 0;
     for(int i=0; i<PE_H*PE_W; i++) begin
       if (config_.resilience_mode) begin
         if(enable_pe[i])
@@ -1063,19 +1059,15 @@ module neureka_ctrl #(
 
     if(~rst_ni) begin
       last_pe_q <= '0;
-      next_last_pe_q <= '0;
     end
     else if(clear_o) begin
       last_pe_q <= '0;
-      next_last_pe_q <= '0;
     end
     else begin
       last_pe_q <= last_pe_d;
-      next_last_pe_q <= next_last_pe_d;
     end
   end
-  assign config_.last_pe = last_pe_q ; // TODO Improve, workaround solution
-  // assign config_.last_pe = (config_.resilience_mode) ? last_pe_q : {next_last_pe_q, last_pe_q}; // TODO Improve, workaround solution
+  assign config_.last_pe = last_pe_q ; // TODO Look for improvement, workaround solution
 
   // propagate config to NEUREKA binconv array
   assign ctrl_engine.ctrl_binconv_array.weight_offset                   = state==LOAD | state==WEIGHTOFFS;

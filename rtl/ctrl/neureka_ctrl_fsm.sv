@@ -87,7 +87,7 @@ module neureka_ctrl_fsm
   assign load_done                = (flags_engine_i.flags_double_infeat_buffer.flags_odd_infeat_buffer.state == IB_EXTRACT)|(flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT) & (config_i.resilience_mode == 1 || single_load  ? 1 : active_datapath_q == 1);
   assign prefetch_done            = ((flags_engine_i.flags_double_infeat_buffer.flags_odd_infeat_buffer.state == IB_EXTRACT)&(~flags_engine_i.flags_double_infeat_buffer.read)) || ((flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT) & (flags_engine_i.flags_double_infeat_buffer.read));
   assign prefetch_matrixvec_done  = (prefetch_done_d & accum_done_d)|(prefetch_done_d & accum_done_q)|(prefetch_done_q & accum_done_d)|(prefetch_done_q & accum_done_q);
-  assign streamout_done           = flags_engine_i.flags_accumulator[config_i.last_pe].state == AQ_STREAMOUT_DONE && (config_i.resilience_mode == 1 || flags_engine_i.active_datapath == 1 || ( ~active_datapath_change_sticky)); // flags_uloop_1.next_done &
+  assign streamout_done           = flags_engine_i.flags_accumulator[config_i.last_pe].state == AQ_STREAMOUT_DONE && (config_i.resilience_mode == 1 || flags_engine_i.active_datapath == 1 || ( ~active_datapath_change_sticky));
   assign done                     = (config_i.subtile_nb_wo[0] == 1 && config_i.subtile_nb_ho[0] == 1  && config_i.subtile_nb_ko == 2) ? flags_uloop.done && flags_uloop_1.done : flags_uloop.done; // TODO Check this for nb_ko > 2
 
   state_aq_t accumulators_state;
@@ -228,7 +228,7 @@ module neureka_ctrl_fsm
 
       STREAMOUT: begin
         if(streamout_done) begin
-          if(done) begin // FIXME && flags_uloop_1.done this fix for some configurations
+          if(done) begin
             state_d = DONE;
             state_change_d = 1'b1;
           end
@@ -300,24 +300,17 @@ module neureka_ctrl_fsm
     end 
   end
 
-  // TODO Maybe add to the config_i struct
-  logic need_to_change_range;
-  logic init_loop_range, not_init_loop; // TODO Take another name
+  logic not_init_loop; // TODO Take another name
   logic [31:0] uloop_0_range_j_major, uloop_1_range_j_major;
-  logic row_change, is_even_row;
 
-  assign need_to_change_range = (config_i.subtile_nb_wo[0] == 1);
-  // assign first_loop_range = (flags_uloop.idx[1] == config_i.subtile_nb_wo-1) ? 1 : 2;
-  // assign init_loop_range = (flags_uloop_1.idx[0]==1) ? 1 : 2;
-
-always_comb
-begin
-  uloop_0_range_j_major = '0;
-  uloop_1_range_j_major = '0;
-  if (config_i.subtile_nb_wo[0] == 1)
-    uloop_0_range_j_major = (flags_uloop.idx[2][0] == 1 || ((flags_uloop.idx[3][0] == 1) && config_i.subtile_nb_ho[0] == 1)) ? (config_i.subtile_nb_wo >> 1) : (config_i.subtile_nb_wo >> 1) +1;
-    uloop_1_range_j_major = (flags_uloop.idx[2][0] == 1 || ((flags_uloop.idx[3][0] == 1) && config_i.subtile_nb_ho[0] == 1)) ? (config_i.subtile_nb_wo >> 1) +1 : (config_i.subtile_nb_wo >> 1);
-end
+  always_comb // this structure is needed to execute the swap between the ranges; this swap is needed when subtile is odd and while changing row tile or output channel tile
+  begin
+    uloop_0_range_j_major = '0;
+    uloop_1_range_j_major = '0;
+    if (config_i.subtile_nb_wo[0] == 1)
+      uloop_0_range_j_major = (flags_uloop.idx[2][0] == 1 || ((flags_uloop.idx[3][0] == 1) && config_i.subtile_nb_ho[0] == 1)) ? (config_i.subtile_nb_wo >> 1) : (config_i.subtile_nb_wo >> 1) +1;
+      uloop_1_range_j_major = (flags_uloop.idx[2][0] == 1 || ((flags_uloop.idx[3][0] == 1) && config_i.subtile_nb_ho[0] == 1)) ? (config_i.subtile_nb_wo >> 1) +1 : (config_i.subtile_nb_wo >> 1);
+  end
 
   /* uloop instantiation */
   always_comb
@@ -346,14 +339,14 @@ end
       code_uloop_1.range[2] =  code_uloop_0.range[1] ;
       code_uloop_1.range[3] =  code_uloop_0.range[2] ;
       code_uloop_1.range[4] =  code_uloop_0.range[3] ;
-      if (config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1)) begin // subtile number is odd
+      if (config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1)) begin
         code_uloop_0.range[1] = config_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? config_i.subtile_nb_ho : uloop_0_range_j_major;
         code_uloop_1.range[2] = config_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? config_i.subtile_nb_ho : uloop_1_range_j_major;
       end
     end
   end
 
-  assign ctrl_uloop.enable = (state_q == UPDATEIDX) & ~flags_uloop.valid; // || (config_i.resilience_mode == 0 && state_d == MATRIXVEC && state_change_d)) & ~flags_uloop.valid;
+  assign ctrl_uloop.enable = (state_q == UPDATEIDX) & ~flags_uloop.valid;
   assign ctrl_uloop.clear  = (state_q == IDLE);
   assign ctrl_uloop.ready  = uloop_ready_i;
 
@@ -504,22 +497,9 @@ end
   assign single_load = (config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1) && (flags_uloop.idx[3][0] == 1) ? flags_uloop.done : flags_uloop_1.next_done ||
                        (config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1) && (flags_uloop.idx[3] ^ flags_uloop_1.next_idx[4]);
 
-  assign active_datapath_change = (config_i.resilience_mode) ? '0 : // (| flags_uloop.next_done) disable datapath swap if next is done; TODO improve the sitcky version
-                                // (state_d==MATRIXVEC && state_change_d && ~flags_uloop_1.next_done) || // Temporaly remove ~flags_uloop.next_done --> Maybe this can be removed and simply put to 0 the datapath (like in STREAMOUT_DONE)
+  assign active_datapath_change = (config_i.resilience_mode) ? '0 :
                                 (state_d==STREAMOUT && accumulators_state == AQ_STREAMOUT_DONE && active_datapath_change_sticky) ||
                                 (state_d==LOAD && flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT && next_valid_sticky && ~single_load); // TODO not valid with prefetch
-
-  // assign active_datapath_change = (config_i.resilience_mode) ? '0 : // (| flags_uloop.next_done) disable datapath swap if next is done; TODO improve the sitcky version
-  //                                 (state_d==UPDATEIDX && state_change_d && active_datapath_change_sticky) || // Temporaly remove ~flags_uloop.next_done
-  //                                 (state_d==STREAMOUT && flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_STREAMOUT_DONE && active_datapath_change_sticky) ||
-  //                                 (state_d==LOAD && flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT && ~flags_uloop_1.next_done && next_valid_sticky); // TODO not valid with prefetch
-
-
-  // assign active_datapath_change = (config_i.resilience_mode) ? '0 : // (| flags_uloop.next_done) disable datapath swap if next is done; TODO improve the sitcky version
-  //                                 (state_d==UPDATEIDX && state_change_d) || // Temporaly remove ~flags_uloop.next_done
-  //                                 (state_d==STREAMOUT && flags_engine_i.flags_accumulator[NUM_PE-1].state == AQ_STREAMOUT_DONE && active_datapath_change_sticky) ||
-  //                                 (state_d==LOAD && flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT && ~flags_uloop.next_done && next_valid_sticky); // TODO not valid with prefetch
-
 
   always_comb begin
     active_datapath_d = active_datapath_q;
@@ -527,10 +507,10 @@ end
       active_datapath_d = 0;
     end else if (config_i.resilience_mode) begin
       active_datapath_d = 0;
-    end else if ((state_d==MATRIXVEC || state_d==STREAMOUT_DONE) && state_change_d==1'b1) begin // TODO check this, maybe can be replaced by simply switching datapath
+    end else if ((state_d==MATRIXVEC || state_d==STREAMOUT_DONE) && state_change_d==1'b1) begin // TODO check this, maybe can be replaced simply by active_datapath_change
       active_datapath_d = 0;
     end else if(active_datapath_change) begin
-      active_datapath_d  = (~active_datapath_q); // TODO check if it's needed to create a separate active_datapath signal --> so far it's okay
+      active_datapath_d  = (~active_datapath_q);
     end
   end
 
@@ -547,7 +527,7 @@ end
   begin
     if(~rst_ni)
       active_datapath_change_sticky  <= 1'b0;
-    else if(state_d==STREAMOUT_DONE && state_change_d==1'b1) // TODO check this, maybe can be replaced by simply switching datapath
+    else if(state_d==STREAMOUT_DONE && state_change_d==1'b1) // TODO check this, maybe can be replaced simply by active_datapath_change
       active_datapath_change_sticky  <= 1'b0;
     else if(active_datapath_change)
       active_datapath_change_sticky <= 1'b1;
@@ -570,25 +550,6 @@ end
     else if((flags_uloop_1.idx[0]==1) | (config_i.subtile_nb_wo == 1))
       not_init_loop <= 1'b1;
   end
-
-  // always_ff @(posedge clk_i or negedge rst_ni)
-  // begin
-  //   if(~rst_ni)
-  //     row_change  <= 1'b0;
-  //   else if(flags_uloop.idx[1] == uloop_0_range_j_major && ~row_change)
-  //     row_change <= 1'b1;
-  //   else
-  //     row_change <= 1'b0;
-  // end
-
-  // always_ff @(posedge clk_i or negedge rst_ni)
-  // begin
-  //   if(~rst_ni)
-  //     is_even_row  <= 1'b0;
-  //   else if(row_change)
-  //     is_even_row <= ~is_even_row;
-  // end
-
 
   /* FSM output binding */
   assign state_o        = state_d;
