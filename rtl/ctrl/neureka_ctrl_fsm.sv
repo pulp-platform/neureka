@@ -88,7 +88,7 @@ module neureka_ctrl_fsm
   assign prefetch_done            = ((flags_engine_i.flags_double_infeat_buffer.flags_odd_infeat_buffer.state == IB_EXTRACT)&(~flags_engine_i.flags_double_infeat_buffer.read)) || ((flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT) & (flags_engine_i.flags_double_infeat_buffer.read));
   assign prefetch_matrixvec_done  = (prefetch_done_d & accum_done_d)|(prefetch_done_d & accum_done_q)|(prefetch_done_q & accum_done_d)|(prefetch_done_q & accum_done_q);
   assign streamout_done           = flags_engine_i.flags_accumulator[config_i.last_pe].state == AQ_STREAMOUT_DONE && (config_i.resilience_mode == 1 || flags_engine_i.active_datapath == 1 || ( ~active_datapath_change_sticky));
-  assign done                     = (config_i.subtile_nb_wo[0] == 1 && config_i.subtile_nb_ho[0] == 1  && config_i.subtile_nb_ko == 2) ? flags_uloop.done && flags_uloop_1.done : flags_uloop.done; // TODO Check this for nb_ko > 2
+  assign done                     = (config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && config_i.subtile_nb_ho[0] == 1 && config_i.subtile_nb_ko == 2) ? (flags_uloop.done && flags_uloop_1.done) : flags_uloop.done; // TODO Check this for nb_ko > 2
 
   state_aq_t accumulators_state;
   assign accumulators_state = flags_engine_i.flags_accumulator[config_i.last_pe].state;
@@ -261,7 +261,7 @@ module neureka_ctrl_fsm
 
       UPDATEIDX: begin
         if(flags_uloop.valid) begin
-          if((config_i.filter_mode != NEUREKA_FILTER_MODE_3X3_DW) && ((config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? (flags_uloop_1.idx_update == 5'b00010) && (~flags_uloop_1.done) : (flags_uloop.idx_update == 4'b0001) && (~flags_uloop.done))) begin
+          if((config_i.filter_mode != NEUREKA_FILTER_MODE_3X3_DW) && ((config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? (flags_uloop_1.idx_update == 5'b00010) && (~flags_uloop_1.done) : (flags_uloop.idx_update == 4'b0001) && (~flags_uloop.done))) begin
             if(config_i.prefetch) begin
               state_d = WEIGHTOFFS;
             end else begin
@@ -348,12 +348,13 @@ module neureka_ctrl_fsm
 
   assign ctrl_uloop.enable = (state_q == UPDATEIDX) & ~flags_uloop.valid;
   assign ctrl_uloop.clear  = (state_q == IDLE);
-  assign ctrl_uloop.ready  = uloop_ready_i;
+  assign ctrl_uloop.ready  = (config_i.filter_mode == NEUREKA_FILTER_MODE_1X1 && config_i.resilience_mode) ? 1'b1 : uloop_ready_i;
 
   always_comb
   begin
     ctrl_uloop_1 = ctrl_uloop;
-    ctrl_uloop_1.enable = (state_q == UPDATEIDX) & ~flags_uloop.valid && ((config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0]) ? (flags_uloop.next_idx[3] == flags_uloop_1.next_idx[4]) : 1) ; // When I need to iterate both over input and output channels, in some cases we need to realing the two loops by stalling the second one once. Maybe can be improved
+    ctrl_uloop_1.enable = (state_q == UPDATEIDX) & ~flags_uloop.valid && ((config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0]) ? (flags_uloop.next_idx[3] == flags_uloop_1.next_idx[4]) : 1) ; // When I need to iterate both over inut and output channels, in some cases we need to realing the two loops by stalling the second one once
+    ctrl_uloop_1.ready  = (config_i.resilience_mode) ? 1'b0 : uloop_ready_i; // In resilience mode the uloop_1 is useless
   end
 
   hwpe_ctrl_uloop #(
@@ -575,15 +576,15 @@ module neureka_ctrl_fsm
   assign index_update.j_major     = config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW ? flags_uloop.idx_update[0] : flags_uloop.idx_update[1];
   assign index_update.k_in_major  = config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW ? flags_uloop.idx_update[2] : flags_uloop.idx_update[0];
 
-  assign base_addr.weights = (config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop_1.offs[NEUREKA_ULOOP_BASE_ADDR_W] : flags_uloop.offs[NEUREKA_ULOOP_BASE_ADDR_W];
-  assign base_addr.infeat  = (config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop_1.offs[NEUREKA_ULOOP_BASE_ADDR_X] : flags_uloop.offs[NEUREKA_ULOOP_BASE_ADDR_X];
-  assign base_addr.outfeat = (config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop_1.offs[NEUREKA_ULOOP_BASE_ADDR_Y] : flags_uloop.offs[NEUREKA_ULOOP_BASE_ADDR_Y];
-  assign base_addr.scale   = (config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop_1.offs[NEUREKA_ULOOP_BASE_ADDR_S] : flags_uloop.offs[NEUREKA_ULOOP_BASE_ADDR_S];
+  assign base_addr.weights = (config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop_1.offs[NEUREKA_ULOOP_BASE_ADDR_W] : flags_uloop.offs[NEUREKA_ULOOP_BASE_ADDR_W];
+  assign base_addr.infeat  = (config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop_1.offs[NEUREKA_ULOOP_BASE_ADDR_X] : flags_uloop.offs[NEUREKA_ULOOP_BASE_ADDR_X];
+  assign base_addr.outfeat = (config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop_1.offs[NEUREKA_ULOOP_BASE_ADDR_Y] : flags_uloop.offs[NEUREKA_ULOOP_BASE_ADDR_Y];
+  assign base_addr.scale   = (config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop_1.offs[NEUREKA_ULOOP_BASE_ADDR_S] : flags_uloop.offs[NEUREKA_ULOOP_BASE_ADDR_S];
 
-  assign next_base_addr.weights = (config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop.offs[NEUREKA_ULOOP_BASE_ADDR_W] : flags_uloop_1.next_offs[NEUREKA_ULOOP_BASE_ADDR_W];
-  assign next_base_addr.infeat  = (config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop.offs[NEUREKA_ULOOP_BASE_ADDR_X] : flags_uloop_1.next_offs[NEUREKA_ULOOP_BASE_ADDR_X];
-  assign next_base_addr.outfeat = (config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop.offs[NEUREKA_ULOOP_BASE_ADDR_Y] : flags_uloop_1.next_offs[NEUREKA_ULOOP_BASE_ADDR_Y];
-  assign next_base_addr.scale   = (config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop.offs[NEUREKA_ULOOP_BASE_ADDR_S] : flags_uloop_1.next_offs[NEUREKA_ULOOP_BASE_ADDR_S];
+  assign next_base_addr.weights = (config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop.offs[NEUREKA_ULOOP_BASE_ADDR_W] : flags_uloop_1.next_offs[NEUREKA_ULOOP_BASE_ADDR_W];
+  assign next_base_addr.infeat  = (config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop.offs[NEUREKA_ULOOP_BASE_ADDR_X] : flags_uloop_1.next_offs[NEUREKA_ULOOP_BASE_ADDR_X];
+  assign next_base_addr.outfeat = (config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop.offs[NEUREKA_ULOOP_BASE_ADDR_Y] : flags_uloop_1.next_offs[NEUREKA_ULOOP_BASE_ADDR_Y];
+  assign next_base_addr.scale   = (config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop.offs[NEUREKA_ULOOP_BASE_ADDR_S] : flags_uloop_1.next_offs[NEUREKA_ULOOP_BASE_ADDR_S];
 
   assign index_o     = index_sample_en ? index_d     : index_q;
   assign base_addr_o = base_addr_sample_en ? base_addr : base_addr_q;
