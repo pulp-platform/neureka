@@ -134,7 +134,6 @@ module neureka_ctrl #(
     slave_ctrl = '0;
     slave_ctrl.done = (state==DONE) & state_change;
     slave_ctrl.evt  = (state==ERROR) & state_change;
-    slave_ctrl.int_error  = (state==ERROR) & state_change;
   end
   assign busy_o = slave_flags.is_working;
 

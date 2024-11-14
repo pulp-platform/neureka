@@ -546,8 +546,8 @@ module neureka_engine #(
         .clear_i     ( clear_i                            ),
         .ctrl_i      ( ctrl_double_infeat_buffer_copy[jj]   ),
         .flags_o     ( flags[jj].flags_double_infeat_buffer ),
-        .feat_i      ( load_in_blocks_datapath[jj*BLOCK_SIZE+:BLOCK_SIZE] ),
-        .feat_o      ( in_from_buf[jj*INPUT_BUF_SIZE+:INPUT_BUF_SIZE] )
+        .feat_i      ( load_in_blocks_datapath[(jj+1)*BLOCK_SIZE-1:jj*BLOCK_SIZE] ),
+        .feat_o      ( in_from_buf[(jj+1)*INPUT_BUF_SIZE-1:jj*INPUT_BUF_SIZE] )
       );
 
       ctrl_binconv_array_t ctrl_binconv_array;
@@ -573,10 +573,10 @@ module neureka_engine #(
         .test_mode_i       ( test_mode_i                    ),
         .enable_i          ( enable_i                       ),
         .clear_i           ( clear_i                        ),
-        .activation_i      ( in_from_buf[jj*INPUT_BUF_SIZE+:INPUT_BUF_SIZE] ),
-        .weight_conv_i     ( load_weight_rows_conv_datapath[jj*COLUMN_SIZE+:COLUMN_SIZE]          ),
-        .pres_o            ( pres[jj*NR_PE+:NR_PE]          ),
-        .pres_depthwise_o  ( pres_depthwise[jj*BLOCK_SIZE*NR_PE+:BLOCK_SIZE*NR_PE] ), // check this
+        .activation_i      ( in_from_buf[(jj+1)*INPUT_BUF_SIZE-1:jj*INPUT_BUF_SIZE] ),
+        .weight_conv_i     ( load_weight_rows_conv_datapath[(jj+1)*COLUMN_SIZE-1:jj*COLUMN_SIZE]          ),
+        .pres_o            ( pres[(jj+1)*NR_PE-1:jj*NR_PE]          ),
+        .pres_depthwise_o  ( pres_depthwise[(jj+1)*BLOCK_SIZE*NR_PE-1:jj*BLOCK_SIZE*NR_PE] ), // check this
         .ctrl_i            ( ctrl_binconv_array      ),
         .flags_o           ( flags[jj].flags_binconv_array  )
       );
@@ -630,7 +630,7 @@ module neureka_engine #(
           .enable_i    ( enable_i                                           ),
           .clear_i     ( clear_i                                            ),
           .conv_i      ( pres             [jj*NR_PE+ii]                    ),
-          .conv_dw_i   ( pres_depthwise   [(jj*NR_PE+ii)*BLOCK_SIZE+:BLOCK_SIZE] ), // check this
+          .conv_dw_i   ( pres_depthwise   [(jj*NR_PE*BLOCK_SIZE)+(ii+1)*BLOCK_SIZE-1:(jj*NR_PE*BLOCK_SIZE)+ii*BLOCK_SIZE] ), // check this
           .norm_i      ( norm_copy_datapath                       [jj*NR_PE+ii]      ),
           .streamin_i  ( load_streamin_cols_datapath         [jj*NR_PE+ii]      ),
           .conv_o      ( out_cols                        [jj*NR_PE+ii]      ),
