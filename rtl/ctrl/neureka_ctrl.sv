@@ -850,13 +850,13 @@ module neureka_ctrl #(
     implicit_padding_map[INFEAT_BUFFER_SIZE_HW-1:0] &= implicit_padding_map_temp[INFEAT_BUFFER_SIZE_HW-1:0];
   end : padding_from_incomplete_infeat
 
-  for(genvar i=0; i<INFEAT_BUFFER_SIZE_W; i++)begin
-    assign implicit_padding_map_temp[(i+1)*INFEAT_BUFFER_SIZE_W-1:i*INFEAT_BUFFER_SIZE_W] = {INFEAT_BUFFER_SIZE_W{h_size_in_map[i]}}; 
+  for(genvar i=0; i<INFEAT_BUFFER_SIZE_H; i++)begin
+    assign implicit_padding_map_temp[(i+1)*INFEAT_BUFFER_SIZE_W-1:i*INFEAT_BUFFER_SIZE_W] = {INFEAT_BUFFER_SIZE_W{h_size_in_map[i]}};
   end
 
-  logic [INFEAT_BUFFER_SIZE_W-1:0] t_explicit_padding_map;
+  logic [INFEAT_BUFFER_SIZE_H-1:0] t_explicit_padding_map;
   logic [INFEAT_BUFFER_SIZE_W-1:0] r_explicit_padding_map_r, r_explicit_padding_map;
-  logic [INFEAT_BUFFER_SIZE_W-1:0] b_explicit_padding_map_r, b_explicit_padding_map;
+  logic [INFEAT_BUFFER_SIZE_H-1:0] b_explicit_padding_map_r, b_explicit_padding_map;
   logic [INFEAT_BUFFER_SIZE_W-1:0] l_explicit_padding_map;
 
   assign t_explicit_padding_map   = (1 << config_.padding_top) - 1;
@@ -870,9 +870,9 @@ module neureka_ctrl #(
     explicit_padding_map encodes which of the 8x8 elements in the array are padded (0) and which ones are not (1).
   */
 
-  for(genvar i=0; i<INFEAT_BUFFER_SIZE_W; i++)begin
+  for(genvar i=0; i<INFEAT_BUFFER_SIZE_H; i++)begin
     assign t_explicit_padding_map_temp[(i+1)*INFEAT_BUFFER_SIZE_W-1:i*INFEAT_BUFFER_SIZE_W] = {INFEAT_BUFFER_SIZE_W{t_explicit_padding_map[i]}};
-    assign b_explicit_padding_map_temp[(i+1)*INFEAT_BUFFER_SIZE_W-1:i*INFEAT_BUFFER_SIZE_W] = {INFEAT_BUFFER_SIZE_W{b_explicit_padding_map[i]}}; 
+    assign b_explicit_padding_map_temp[(i+1)*INFEAT_BUFFER_SIZE_W-1:i*INFEAT_BUFFER_SIZE_W] = {INFEAT_BUFFER_SIZE_W{b_explicit_padding_map[i]}};
   end
 
   always_comb
