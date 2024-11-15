@@ -992,8 +992,7 @@ module neureka_ctrl #(
     ctrl_engine.ctrl_double_infeat_buffer.ctrl_even_infeat_buffer.goto_idle    = config_.prefetch ? ((infeat_buffer_read_sel_d) &
                                                                                                                                   ( config_.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? (state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN && state!=UPDATEIDX) & state_change :
                                                                                                                                                                                         (state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN) & state_change )):
-                                                                                                                                                                                        (state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN) & state_change
-                                                                                                                                                                                         & !ctrl_engine.ctrl_double_infeat_buffer.ctrl_even_infeat_buffer.goto_extract;
+                                                                                                                                                                                        (state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN) & state_change;
   end
 
   logic [PE_H-1:0] enable_pe_h, next_enable_pe_h;
