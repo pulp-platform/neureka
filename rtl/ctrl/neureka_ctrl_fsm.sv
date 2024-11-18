@@ -301,6 +301,7 @@ module neureka_ctrl_fsm
   end
 
   logic not_init_loop; // TODO Take another name
+  logic switch_range_d, switch_range_q;
   logic [31:0] uloop_0_range_j_major, uloop_1_range_j_major;
 
   always_comb // this structure is needed to execute the swap between the ranges; this swap is needed when subtile is odd and while changing row tile or output channel tile
@@ -308,8 +309,26 @@ module neureka_ctrl_fsm
     uloop_0_range_j_major = '0;
     uloop_1_range_j_major = '0;
     if (config_i.subtile_nb_wo[0] == 1)
-      uloop_0_range_j_major = (flags_uloop.idx[2][0] == 1 || ((flags_uloop.idx[3][0] == 1) && config_i.subtile_nb_ho[0] == 1)) ? (config_i.subtile_nb_wo >> 1) : (config_i.subtile_nb_wo >> 1) +1;
-      uloop_1_range_j_major = (flags_uloop.idx[2][0] == 1 || ((flags_uloop.idx[3][0] == 1) && config_i.subtile_nb_ho[0] == 1)) ? (config_i.subtile_nb_wo >> 1) +1 : (config_i.subtile_nb_wo >> 1);
+      uloop_0_range_j_major = switch_range_q ? (config_i.subtile_nb_wo >> 1) : (config_i.subtile_nb_wo >> 1) +1; // input_channel index is odd OR output_channel index is odd AND row subtile is odd
+      uloop_1_range_j_major = switch_range_q ? (config_i.subtile_nb_wo >> 1) +1 : (config_i.subtile_nb_wo >> 1); // input_channel index is odd OR output_channel index is odd AND row subtile is odd
+  end
+
+  always_comb begin
+    switch_range_d = switch_range_q;
+    if(clear_i) begin
+      switch_range_d = '0;
+    end else if(~config_i.resilience_mode && (flags_uloop.idx_update[2] || flags_uloop.idx_update[3]) && flags_uloop.valid) begin
+      switch_range_d  = (~switch_range_q);
+    end
+  end
+
+  always_ff @(posedge clk_i or negedge rst_ni)
+  begin
+    if(~rst_ni) begin
+      switch_range_q <= '0;
+    end else begin
+      switch_range_q <= switch_range_d;
+    end
   end
 
   /* uloop instantiation */
@@ -518,7 +537,7 @@ module neureka_ctrl_fsm
   always_ff @(posedge clk_i or negedge rst_ni)
   begin
     if(~rst_ni) begin
-      active_datapath_q  <= 0;
+      active_datapath_q <= 0;
     end else begin
       active_datapath_q <= active_datapath_d;
     end
@@ -562,12 +581,12 @@ module neureka_ctrl_fsm
   assign double_active_datapath_o = active_datapath_change_sticky;
 
   assign index.k_out_major = config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW ? flags_uloop.idx[2] : flags_uloop.idx[3];
-  assign index.i_major     = config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW ? flags_uloop.idx[1] : flags_uloop.idx[2];
+  assign index.i_major     = config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW ? flags_uloop.idx[1] : (config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop_1.idx[3] : flags_uloop.idx[2];
   assign index.j_major     = config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW ? flags_uloop.idx[0] : config_i.resilience_mode ? flags_uloop.idx[1] : (config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? (flags_uloop_1.idx[2] << 1) +1 : flags_uloop.idx[1] << 1;
   assign index.k_in_major  = config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW ? flags_uloop.idx[2] : flags_uloop.idx[0];
 
   assign next_index.k_out_major = config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW ? flags_uloop.next_idx[2] : flags_uloop_1.next_idx[4];
-  assign next_index.i_major     = config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW ? flags_uloop.next_idx[1] : flags_uloop_1.next_idx[3];
+  assign next_index.i_major     = config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW ? flags_uloop.next_idx[1] : (config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop.idx[2] : flags_uloop_1.next_idx[3];
   assign next_index.j_major     = config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW ? flags_uloop.next_idx[0] : (config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? (flags_uloop.idx[1] << 1) : (flags_uloop_1.next_idx[2] << 1) +1;
   assign next_index.k_in_major  = config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW ? flags_uloop.next_idx[2] : flags_uloop_1.next_idx[1];
 
