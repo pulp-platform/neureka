@@ -199,7 +199,7 @@ module neureka_ctrl #(
     .active_datapath_o( active_datapath  ),
     .active_datapath_change_o ( active_datapath_change ),
     .double_active_datapath_o ( double_active_datapath ),
-    .uloop_ready_i    ( uloop_ready_q[1]    ),
+    .uloop_ready_i    ( uloop_ready_q    ),
     .index_o          ( index            ),
     .prefetch_o       ( uloop_prefetch   ),
     .prefetch_pulse_o ( uloop_prefetch_pulse),
@@ -571,9 +571,8 @@ module neureka_ctrl #(
   /*
     uloop_ready_q is set whenever the uloop parameters have been calculated.
    */
-   // TODO Understand if this is dangerous --> Yes it is, but maybe we can isolate special case in which it's needed to avoid waiting for the first iteration of uloop1
-  assign uloop_ready_d[0] = infeat_wom_valid & outfeat_wom_valid;
-  assign uloop_ready_d[1] = infeat_wom_reset_valid & infeat_hom_reset_valid & infeat_kim_reset_valid & outfeat_wom_reset_valid & outfeat_hom_reset_valid & outfeat_kom_reset_valid; // the others are always computed earlier
+  assign uloop_ready_d[0] = infeat_wom_reset_valid & infeat_hom_reset_valid & infeat_kim_reset_valid & outfeat_wom_reset_valid & outfeat_hom_reset_valid & outfeat_kom_reset_valid; // the others are always computed earlier
+  assign uloop_ready_d[1] = infeat_wom_valid & outfeat_wom_valid;
 
   always_ff @(posedge clk_i or negedge rst_ni)
   begin

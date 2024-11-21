@@ -44,7 +44,7 @@ module neureka_ctrl_fsm
   output logic             active_datapath_o,
   output logic             active_datapath_change_o,
   output logic             double_active_datapath_o, // TODO Find a more suitable name
-  input  logic             uloop_ready_i,
+  input  logic [1:0]       uloop_ready_i,
   output logic             prefetch_o,
   output logic             prefetch_pulse_o,
   output index_neureka_t      index_o,
@@ -166,7 +166,7 @@ module neureka_ctrl_fsm
 
       MATRIXVEC: begin
         if(prefetch_matrixvec_done) begin
-          if(~uloop_ready_i) begin
+          if(~uloop_ready_i[0]) begin
             state_d = UPDATEIDX_WAIT;
             state_change_d = 1'b1;
           end
@@ -253,7 +253,7 @@ module neureka_ctrl_fsm
       end
 
       UPDATEIDX_WAIT: begin
-        if(uloop_ready_i) begin
+        if(uloop_ready_i[0]) begin
           state_d = UPDATEIDX;
           state_change_d = 1'b1;
         end
@@ -370,7 +370,7 @@ module neureka_ctrl_fsm
 
   assign ctrl_uloop.enable = (state_q == UPDATEIDX) & ~flags_uloop.valid;
   assign ctrl_uloop.clear  = (state_q == IDLE);
-  assign ctrl_uloop.ready  = (config_i.filter_mode == NEUREKA_FILTER_MODE_1X1 && config_i.resilience_mode) ? 1'b1 : uloop_ready_i;
+  assign ctrl_uloop.ready  = (config_i.filter_mode == NEUREKA_FILTER_MODE_1X1 && config_i.resilience_mode) ? 1'b1 : uloop_ready_i[0];
 
   always_comb
   begin
@@ -378,7 +378,7 @@ module neureka_ctrl_fsm
     if (~(config_i.resilience_mode | degenerate_case)) begin
       ctrl_uloop_1 = ctrl_uloop;
       ctrl_uloop_1.enable = (state_q == UPDATEIDX) & ~flags_uloop.valid && ((config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0]) ? (flags_uloop.next_idx[3] == flags_uloop_1.next_idx[4]) : 1) ; // When I need to iterate both over inut and output channels, in some cases we need to realing the two loops by stalling the second one once
-      ctrl_uloop_1.ready  = (config_i.resilience_mode) ? 1'b0 : uloop_ready_i; // In resilience mode the uloop_1 is useless
+      ctrl_uloop_1.ready  = (config_i.resilience_mode) ? 1'b0 : uloop_ready_i[1]; // In resilience mode the uloop_1 is useless
     end
   end
 
