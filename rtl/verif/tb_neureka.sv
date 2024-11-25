@@ -511,6 +511,7 @@ module tb_neureka;
 
   end
 
+`ifndef TARGET_NETLIST
   integer f_log;
 
   initial
@@ -557,5 +558,6 @@ module tb_neureka;
       $sformat( str, ",\n  { \"instance\": \"tcdm_load\", \"type\": \"r_data\", \"value\": \"0x%072x\", \"job\": \"%1d\", \"time\": \"%t\" }", tb_neureka.i_dut.i_neureka_top.tcdm.r_data, tb_neureka.i_dut.i_neureka_top.i_ctrl.i_slave.i_regfile.running_job_id, $time); $fwrite(f_log, str);
     end
   end
+`endif
 
 endmodule // tb_neureka

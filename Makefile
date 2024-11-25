@@ -20,6 +20,8 @@
 # valid alternatives are: tb_neureka
 TESTBENCH ?= tb_neureka
 
+SYNTHESIS ?= 0
+
 # Paths to folders
 mkfile_path    := $(dir $(abspath $(firstword $(MAKEFILE_LIST))))
 HW_BUILD_DIR      ?= $(mkfile_path)/sim/build
@@ -40,17 +42,22 @@ RESERVOIR_SIZE = 1024
 # Useful Parameters
 gui      ?= 0
 P_STALL  ?= 0.0
-USE_ECC  ?= 0
+USE_ECC  ?= 1
 
 # Setup build object dirs
 VSIM_INI=$(HW_BUILD_DIR)/modelsim.ini
 VSIM_LIBS=$(HW_BUILD_DIR)/work
+
+GATE_LIB_NAME ?= sc7p5mcpp84_12lpplus_base_slvt_c14
+GATE_LIB_PATH ?= /usr/pack/gf-12-kgf/arm/gf/12lpplus/sc7p5mcpp84_base_slvt_c14/r5p0//questa.dz/2021.2/sc7p5mcpp84_12lpplus_base_slvt_c14
 
 # Build implicit rules
 $(HW_BUILD_DIR):
 	mkdir -p $(HW_BUILD_DIR)
 
 SHELL := /bin/bash
+
+gate_libs = -L sc7p5mcpp84_12lpplus_base_slvt_c14
 
 # Download bender
 sim:
@@ -73,17 +80,25 @@ update-ips: $(BENDER)
 
 .PHONY: generate-scripts
 generate-scripts: $(BENDER)
+ifeq ($(SYNTHESIS), 0)
 	$(BENDER) script vsim        \
 	--vlog-arg="$(compile_flag)" \
 	--vcom-arg="-pedanticerrors" \
 	-t rtl -t neureka_standalone \
 	> sim/${compile_script}
+else ifeq ($(SYNTHESIS), 1)
+	$(BENDER) script vsim        \
+	--vlog-arg="$(compile_flag)" \
+	--vcom-arg="-pedanticerrors" \
+	-t rtl -t neureka_standalone \
+	-t netlist -D TARGET_NETLIST \
+	> sim/${compile_script}
+endif
 
 # Hardware rules
 .PHONY: hw-clean-all hw-opt hw-compile hw-lib hw-clean hw-all
 hw-clean-all:
 	rm -rf $(HW_BUILD_DIR)
-	rm -rf .bender
 	rm -rf $(compile_script)
 	rm -rf sim/modelsim.ini
 	rm -rf sim/*.log
@@ -91,17 +106,33 @@ hw-clean-all:
 	rm -rf .cached_ipdb.json
 
 hw-opt:
+ifeq ($(SYNTHESIS), 0)
 	cd sim; $(QUESTA) vopt +acc=npr -o vopt_tb $(TESTBENCH) -floatparameters+$(TESTBENCH) -work $(HW_BUILD_DIR)/work
+else ifeq ($(SYNTHESIS), 1)
+	cd sim; $(QUESTA) vopt +acc=npr -o vopt_tb $(TESTBENCH) -floatparameters+$(TESTBENCH) -work $(HW_BUILD_DIR)/work $(gate_libs)
+endif
 
 hw-compile:
 	cd sim; $(QUESTA) vsim -c +incdir+$(UVM_HOME) -do 'quit -code [source $(compile_script)]'
+ifeq ($(SYNTHESIS), 1)
+	cd sim; $(QUESTA) vlog -work $(VSIM_LIBS) ../netlists/neureka_top.v
+endif
 
 hw-lib:
+ifeq ($(SYNTHESIS), 0)
 	@touch sim/modelsim.ini
 	@mkdir -p $(HW_BUILD_DIR)
 	@cd sim; $(QUESTA) vlib $(HW_BUILD_DIR)/work
 	@cd sim; $(QUESTA) vmap work $(HW_BUILD_DIR)/work
 	@chmod +w sim/modelsim.ini
+else ifeq ($(SYNTHESIS), 1)
+	@touch sim/modelsim.ini
+	@mkdir -p $(HW_BUILD_DIR)
+	@cd sim; $(QUESTA) vlib $(HW_BUILD_DIR)/work
+	@cd sim; $(QUESTA) vmap work $(HW_BUILD_DIR)/work
+	@cd sim; $(QUESTA) vmap $(GATE_LIB_NAME) $(GATE_LIB_PATH)
+	@chmod +w sim/modelsim.ini
+endif
 
 hw-clean:
 	rm -rf sim/transcript
@@ -295,3 +326,10 @@ else
 	-do "add log -r sim:/$(TESTBENCH)/*"    \
 	$(VSIM_PARAMS)
 endif
+
+NETLIST_DIR ?= netlists
+SYN_DIR     ?= ../astral_last/tech/synopsys/out/pulp_cluster_ft_neureka
+
+link-netlists:
+	mkdir -p $(NETLIST_DIR)
+	ln -sf $(abspath $(SYN_DIR))/*.*v $(NETLIST_DIR)/

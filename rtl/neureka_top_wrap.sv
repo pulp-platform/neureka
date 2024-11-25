@@ -22,6 +22,12 @@
 
 `include "hci_helpers.svh"
 
+`ifdef TARGET_NETLIST
+    `define TOP_MODULE neureka_top_svsim
+`else
+    `define TOP_MODULE neureka_top
+`endif
+
 module neureka_top_wrap
   import neureka_package::*;
   import hwpe_ctrl_package::*;
@@ -87,15 +93,15 @@ module neureka_top_wrap
     AW:  DEFAULT_AW,
     BW:  DEFAULT_BW,
     UW:  DEFAULT_UW,
-    IW:  0,
+    IW:  8,
     EW:  EW,
-    EHW: 0
+    EHW: 1
   };
   hci_core_intf #(
     .DW ( BW ),
-    .IW ( 0  ),
+    .IW ( 8  ),
     .EW ( EW ),
-    .EHW ( 0 )
+    .EHW ( 1 )
 `ifndef SYNTHESIS
     ,
     .WAIVE_RSP3_ASSERT ( 1'b1 ), // waive RSP-3 on memory-side of HCI FIFO
@@ -111,7 +117,11 @@ module neureka_top_wrap
   generate
     for(genvar ii=0; ii<MP; ii++) begin: tcdm_binding
       assign tcdm_req  [ii] = tcdm.req;
+`ifndef TARGET_NETLIST
       assign tcdm_add  [ii] = tcdm.add + ii*4;
+`else
+      assign tcdm_add  [ii] = {tcdm.add[31:2], 2'b0} + ii*4;
+`endif
       assign tcdm_wen  [ii] = tcdm.wen;
       assign tcdm_be   [ii] = tcdm.be[(ii+1)*4-1:ii*4];
       assign tcdm_data [ii] = tcdm.data[(ii+1)*32-1:ii*32];
@@ -142,13 +152,28 @@ module neureka_top_wrap
       periph.be      = periph_be;
       periph.data    = periph_data;
       periph.id      = periph_id;
+`ifdef TARGET_NETLIST
+      periph_gnt     = '1;
+`else
       periph_gnt     = periph.gnt;
+`endif
       periph_r_data  = periph.r_data;
       periph_r_valid = periph.r_valid;
       periph_r_id    = periph.r_id;
     end
 
-  neureka_top #(
+`ifdef TARGET_NETLIST
+  always_comb
+  begin
+    tcdm.id = '0;
+    tcdm.r_id = '0;
+    tcdm.egnt = '0;
+    tcdm.r_evalid = '0;
+    tcdm.r_user = '0;
+  end
+`endif
+
+  `TOP_MODULE #(
     .TP_IN                 ( TP_IN                 ),
     .TP_OUT                ( TP_OUT                ),
     .CNT                   ( CNT                   ),
