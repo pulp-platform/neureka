@@ -48,6 +48,7 @@ module tb_neureka;
 
   // global signals
   logic                         clk_i  = '0;
+  logic                         done   = '0;
   logic                         rst_ni = '1;
   logic                         test_mode_i = '0;
   // local enable
@@ -77,6 +78,13 @@ module tb_neureka;
 
   logic [NC-1:0][1:0] evt;
   logic neureka_busy;
+
+  // Signals for Vulnerabilty Analysis
+  logic correct_termination;
+  logic incorrect_termination;
+  logic exception_termination;
+  logic correct_retry_termination;
+  logic incorrect_retry_termination;
 
   logic [MP-1:0]       tcdm_req;
   logic [MP-1:0]       tcdm_gnt;
@@ -440,7 +448,7 @@ module tb_neureka;
       cycle();
     rst_ni <= #TA 1'b1;
 
-    while(1) begin
+    while(~done) begin
       cycle();
     end
 
@@ -471,13 +479,30 @@ module tb_neureka;
     end
   end
 
+  int error_detected;
+  always_ff @(posedge clk_i or negedge rst_ni)
+  begin
+    if(~rst_ni)
+      error_detected <= 0;
+    else if(tb_neureka.i_dut.i_neureka_top.i_ctrl.i_slave.i_regfile.regfile_mem_mandatory[3] == 2) begin
+      error_detected <= 1;
+    end
+  end
+
   initial begin
 
     integer id;
     int cnt_rd, cnt_wr;
 
-    f_t0 = $fopen("time_start.txt");
-    f_t1 = $fopen("time_stop.txt");
+    // Set signals for InjectaFault
+    correct_termination = '0;
+    incorrect_termination = '0;
+    exception_termination = '0;
+    correct_retry_termination = '0;
+    incorrect_retry_termination = '0;
+
+    // f_t0 = $fopen("time_start.txt");
+    // f_t1 = $fopen("time_stop.txt");
     start = 1'b1;
 
     periph.req  <= #TA '0;
@@ -505,13 +530,34 @@ module tb_neureka;
     $writememh(STIM_OUTPUT_DATA, tb_neureka.i_dummy_memory.memory);
     $display("hwpe cycles = %d\n", cnt_cycles);
 
+    // Parse Error Types
+    if (error_detected) begin
+      if (errors == 0) begin
+        correct_retry_termination = '1;
+        $info("Neureka Terminated Correctly after Restart due to Internal Error!");
+      end else begin
+        incorrect_retry_termination = '1;
+        $info("Neureka Terminated Incorrectly after Restart due to Internal Error!");
+      end
+    end else if (errors == 0) begin
+      correct_termination = '1;
+      $info("Neureka Terminated Correctly!");
+    end else begin
+      incorrect_termination = '1;
+      $error("Oh no! Errors happened");
+    end
+
+    done = 1'b1;
+
+`ifndef VULNERABILITY_ANALYSIS
     assert (errors == '0) else $fatal(1, "errors happened");
 
     $finish(0);
+`endif
 
   end
 
-`ifndef TARGET_NETLIST
+`ifdef NEUREKA_TRACE
   integer f_log;
 
   initial

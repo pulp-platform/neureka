@@ -43,6 +43,12 @@ RESERVOIR_SIZE = 1024
 gui      ?= 0
 P_STALL  ?= 0.0
 USE_ECC  ?= 1
+fault_inject ?= 0
+vulnerability ?= 0
+
+ifeq ($(vulnerability),1)
+compile_flag  += +define+VULNERABILITY_ANALYSIS
+endif
 
 # Setup build object dirs
 VSIM_INI=$(HW_BUILD_DIR)/modelsim.ini
@@ -259,6 +265,9 @@ APP_CFLAGS += -DNNX_ACCELERATOR=\"$(ACCELERATOR)\" -DNNX_$(ACCELERATOR_UPPERCASE
 APP_CFLAGS += $(INC_FLAGS)
 APP_CFLAGS += $(NOPRINT_FLAG)
 
+FAULT_INJECTION_SCRIPT ?= ./fault_injection_utils/neureka_inject_fault.tcl
+VULNERABILITY_ANALYSIS_SCRIPT ?= ./fault_injection_utils/neureka_vulnerability_analysis.tcl
+
 # RISC-V options
 RISCV_PREFIX ?= riscv32-unknown-elf-
 RISCV_OBJDUMP ?= $(RISCV_PREFIX)objdump
@@ -316,15 +325,40 @@ VSIM_PARAMS=-gPROB_STALL=$(P_STALL)   \
 
 # Run the simulation
 run:
-ifeq ($(gui), 0)
-	cd $(BUILD_DIR);                       \
+ifeq ($(gui),0)
+ifeq ($(fault_inject),0)
+ifeq ($(vulnerability),0)
+	cd $(BUILD_DIR); \
 	$(QUESTA) vsim -c vopt_tb -do "run -a" \
 	$(VSIM_PARAMS);                        \
 	if grep -q 'errors happened' transcript; then exit 1; fi
 else
+	cd $(BUILD_DIR); \
+	$(QUESTA) vsim -c vopt_tb \
+	-do "source ../../$(VULNERABILITY_ANALYSIS_SCRIPT)"  \
+	-do "run -a" \
+	$(VSIM_PARAMS)
+endif
+else
+	cd $(BUILD_DIR); $(QUESTA) vsim -c vopt_tb \
+	-do "source ../../$(FAULT_INJECTION_SCRIPT)"  \
+	-do "add log -r /$(TESTBENCH)/*"    \
+	-do "run -a" \
+	$(VSIM_PARAMS)
+endif
+else
+ifeq ($(fault_inject), 1)
+	cd $(BUILD_DIR); $(QUESTA) vsim vopt_tb \
+	-do "source ../../$(FAULT_INJECTION_SCRIPT)"  \
+	-do "add log -r /$(TESTBENCH)/*"    \
+	-do "run -a" \
+	$(VSIM_PARAMS)
+else
 	cd $(BUILD_DIR); $(QUESTA) vsim vopt_tb \
 	-do "add log -r sim:/$(TESTBENCH)/*"    \
+	-do "run -a" \
 	$(VSIM_PARAMS)
+endif
 endif
 
 NETLIST_DIR ?= netlists
