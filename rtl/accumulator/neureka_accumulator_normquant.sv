@@ -153,7 +153,7 @@ module neureka_accumulator_normquant #(
   always_comb
   begin
     ctrl_normquant = ctrl_i.ctrl_normquant;
-    ctrl_normquant.start = (fsm_state_q == AQ_NORMQUANT) ? 1'b1 : (fsm_state_q == AQ_ACCUM & ctrl_i.weight_offset == 1) ? 1'b1 : 1'b0;
+    ctrl_normquant.start = (fsm_state_q == AQ_NORMQUANT | (OUTREG_NORMQUANT & fsm_state_q == AQ_ACCUM & ctrl_i.weight_offset == 1)) ? 1'b1 : 1'b0;
   end
  
   assign streamin_i.ready = ~ctrl_i.enable_streamout ? 1'b1 : 
@@ -205,6 +205,7 @@ module neureka_accumulator_normquant #(
       addr_cnt_stage2_q    <= '0;
       addr_cnt_stage2_2q   <= '0;
       addr_cnt_en_stage1_q <= '0;
+      addr_cnt_en_stage1_2q <= '0;
       addr_cnt_en_stage2_q <= '0;
 
     end
@@ -472,8 +473,10 @@ module neureka_accumulator_normquant #(
       we_all      = ctrl_i.weight_offset ? OUTREG_NORMQUANT ? conv_handshake_2q : conv_handshake_q : conv_handshake_d; // during weight offset the normalization takes 1 cycle thus handshaking with conv_handshake_q (2 cycles if normquant is pipelined, so conv_handshake_2q)
       we          = 1'b0;
       adder_enable= ctrl_i.weight_offset & (!ctrl_i.depthwise) ? '1 :
-                    depthwise_accumulator_active  ? '1 : 
-                    ctrl_i.weight_offset & (ctrl_i.depthwise)  ? 32'h01<<addr_cnt_stage2_q : 32'h01<<addr_cnt_stage1_q;
+                    depthwise_accumulator_active  ? '1 :
+                    ctrl_i.weight_offset & (ctrl_i.depthwise)  ?
+                    OUTREG_NORMQUANT ? 32'h01<<addr_cnt_stage2_2q : 32'h01<<addr_cnt_stage2_q :
+                    32'h01<<addr_cnt_stage1_q;
       we_all_mask = adder_enable;
      
     end
