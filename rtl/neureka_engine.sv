@@ -345,6 +345,9 @@ module neureka_engine #(
   localparam int INFEAT_BUFFER_SIZE_HW = INFEAT_BUFFER_SIZE_H*INFEAT_BUFFER_SIZE_W; // Input Feature buffer size 
   if (FAULT_TOLERANCE) begin : ft_datapath_gen
 
+    logic data_gating_en;
+    assign data_gating_en  = ctrl_i.resilience_mode & ctrl_i.enable_outputcheck;
+
     hwpe_stream_intf_stream #(
       .DATA_WIDTH ( NEUREKA_MEM_BANDWIDTH )
   `ifndef SYNTHESIS
@@ -680,26 +683,28 @@ module neureka_engine #(
 
       // Output Checker
       // It checks for mismatches at PE level
-      always_comb
-      begin
-        if (ctrl_i.resilience_mode)
-          data_fault_d[ii] = out_cols_0[ii].data != out_cols_1[ii].data;
-        else
-          data_fault_d[ii] = '0;
+      logic [NEUREKA_MEM_BANDWIDTH-1:0] gated_outdata_0, gated_outdata_1;
+
+      always_comb begin : checker_gen
+        gated_outdata_0 = data_gating_en ? out_cols_0[ii].data : '0;
+        gated_outdata_1 = data_gating_en ? out_cols_1[ii].data : '0;
+        data_fault_d[ii] = data_gating_en ? (gated_outdata_0 != gated_outdata_1) : '0;
       end
     end
 
-    always_ff @(posedge clk_i or negedge rst_ni)
-    begin
-      if(~rst_ni) begin
-        data_fault_q <= '0;
-      end
-      else begin
-        data_fault_q <= data_fault_d;
-      end
+    always_ff @(posedge clk_i or negedge rst_ni) begin
+        if (~rst_ni) begin
+            data_fault_q <= '0;
+            flags_o.outputcheck_valid <= 1'b0;
+        end else if (data_gating_en) begin
+            data_fault_q <= data_fault_d;
+            flags_o.outputcheck_valid <= 1'b1;
+        end else begin
+            flags_o.outputcheck_valid <= 1'b0;
+        end
     end
 
-    assign flags_o.mismatch_detected = |(data_fault_q) & ctrl_i.enable_outputcheck;
+    assign flags_o.mismatch_detected = |(data_fault_q);
     always_comb
     begin
     if (flags_o.mismatch_detected)

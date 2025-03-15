@@ -232,13 +232,15 @@ module neureka_ctrl_fsm
       end
 
       OUTCHECK: begin
-        if(flags_engine_i.mismatch_detected) begin
-          state_d = ERROR;
-          state_change_d = 1'b1;
-        end
-        else begin
-          state_d = STREAMOUT;
-          state_change_d = 1'b1;
+        if(flags_engine_i.outputcheck_valid) begin
+          if(flags_engine_i.mismatch_detected) begin
+            state_d = ERROR;
+            state_change_d = 1'b1;
+          end
+          else begin
+            state_d = STREAMOUT;
+            state_change_d = 1'b1;
+          end
         end
       end
 

@@ -347,6 +347,7 @@ package neureka_package;
     flags_double_infeat_buffer_t          flags_double_infeat_buffer;
     flags_aq_t   [NEUREKA_NUM_PE_MAX-1:0] flags_accumulator;
     flags_binconv_array_t                 flags_binconv_array;
+    logic                                 outputcheck_valid;
     logic                                 mismatch_detected;
   } flags_engine_t;
 
