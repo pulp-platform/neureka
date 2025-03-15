@@ -618,7 +618,7 @@ module neureka_accumulator_normquant #(
 
     endcase
     if(enable_i) begin
-      if(clear_i)
+      if(clear_i | ctrl_i.clear)
         fsm_state_d = AQ_IDLE;
     end else begin 
       fsm_state_d = fsm_state_q;
