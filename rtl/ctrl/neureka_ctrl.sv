@@ -133,7 +133,7 @@ module neureka_ctrl #(
   begin
     slave_ctrl = '0;
     slave_ctrl.done = (state==DONE) & state_change;
-    slave_ctrl.evt  = (state==ERROR) & state_change;
+    // slave_ctrl.evt  = (state==ERROR) & state_change;
     slave_ctrl.int_error  = (state==ERROR) & state_change;
   end
   assign busy_o = slave_flags.is_working;
@@ -1122,7 +1122,7 @@ module neureka_ctrl #(
   assign ctrl_engine.last_pe = last_pe_q;
 
   // control the accumulator's state or the norm/quant unit's state
-  assign ctrl_engine.ctrl_accumulator.clear          = (state==IDLE && state_change==1'b1) | (state==STREAMOUT_DONE && state_change==1'b1);
+  assign ctrl_engine.ctrl_accumulator.clear          = (state==IDLE && state_change==1'b1) | (state==STREAMOUT_DONE && state_change==1'b1) | (state==ERROR && state_change==1'b1);
   assign ctrl_engine.ctrl_accumulator.clock_gating   = ~(state==LOAD | state==IDLE);
   assign ctrl_engine.ctrl_accumulator.clear_offset   = (state==IDLE) | (state==WEIGHTOFFS && state_change==1'b1);
   assign ctrl_engine.ctrl_accumulator.goto_normquant = ((state==NORMQUANT & ~config_.norm_option_shift) | (state==NORMQUANT_SHIFT)) & state_change;

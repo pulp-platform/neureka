@@ -65,6 +65,12 @@ module neureka_ctrl_fsm
   uloop_code_t       code_uloop_0, code_uloop_1;
   logic [17:0][31:0] ro_reg;
 
+  ctrl_uloop_t       ctrl_uloop_aux;
+  flags_uloop_t      flags_uloop_aux;
+  uloop_code_t       code_uloop_aux;
+  logic [3:0][31:0] ro_reg_aux;
+  logic [1:0][31:0] uloop_aux_set;
+
   logic prefetch_done;
 
   index_neureka_t     index, index_d, index_q;
@@ -72,6 +78,21 @@ module neureka_ctrl_fsm
   index_update_neureka_t index_update, index_update_d, index_update_q;
   base_addr_neureka_t base_addr, base_addr_d, base_addr_q;
   base_addr_neureka_t next_base_addr, next_base_addr_d, next_base_addr_q;
+
+  index_neureka_t        index_lcs;
+  // index_neureka_t     next_index_lcs;
+  // index_update_neureka_t index_update_lcs;
+  base_addr_neureka_t    base_addr_lcs;
+  // base_addr_neureka_t next_base_addr_lcs;
+
+  index_neureka_t     index_aux;
+  // index_neureka_t     next_index_aux;
+  // index_update_neureka_t index_update_aux;
+  base_addr_neureka_t base_addr_aux;
+  // base_addr_neureka_t next_base_addr_aux;
+
+  logic sticky_error;
+
   logic streamin_en;
   logic next_valid_sticky;
 
@@ -222,7 +243,7 @@ module neureka_ctrl_fsm
       end
 
       ERROR: begin
-        state_d = IDLE;
+        state_d = LOAD;
         state_change_d = 1'b1;
       end
 
@@ -260,8 +281,8 @@ module neureka_ctrl_fsm
       end
 
       UPDATEIDX: begin
-        if(flags_uloop.valid) begin
-          if((config_i.filter_mode != NEUREKA_FILTER_MODE_3X3_DW) && ((config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? (flags_uloop_1.idx_update == 5'b00010) && (~flags_uloop_1.done) : (flags_uloop.idx_update == 4'b0001) && (~flags_uloop.done))) begin
+        if(flags_uloop.valid & ~sticky_error | flags_uloop_aux.valid & sticky_error ) begin
+          if((config_i.filter_mode != NEUREKA_FILTER_MODE_3X3_DW) && ((config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? (flags_uloop_1.idx_update == 5'b00010) && (~flags_uloop_1.done) : (flags_uloop.idx_update == 4'b0001 & ~sticky_error | ~flags_uloop_aux.done & sticky_error) && (~flags_uloop.done))) begin
             if(config_i.prefetch) begin
               state_d = WEIGHTOFFS;
             end else begin
@@ -338,7 +359,8 @@ module neureka_ctrl_fsm
   always_comb
   begin
     code_uloop_0 = '0;
-    code_uloop_1 = '0;
+    // code_uloop_1 = '0;
+    code_uloop_1 = code_uloop_0;
     if (config_i.resilience_mode | degenerate_case) begin
       code_uloop_0.code     = config_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? ULOOP_CODE_DEPTHWISE   : ULOOP_CODE_NORMAL;
       code_uloop_0.loops    = config_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? ULOOP_LOOPS_DEPTHWISE  : ULOOP_LOOPS_NORMAL;
@@ -346,6 +368,9 @@ module neureka_ctrl_fsm
       code_uloop_0.range[1] = config_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? config_i.subtile_nb_ho : config_i.subtile_nb_wo;
       code_uloop_0.range[2] = config_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? config_i.subtile_nb_ko : config_i.subtile_nb_ho;
       code_uloop_0.range[3] = config_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? 1                      : config_i.subtile_nb_ko;
+      code_uloop_1.code     = config_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? ULOOP_CODE_DEPTHWISE   : ULOOP_CODE_NORMAL_LCS;
+      code_uloop_1.loops    = config_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? ULOOP_LOOPS_DEPTHWISE  : ULOOP_LOOPS_NORMAL_LCS;
+      code_uloop_1.range    = code_uloop_0.range;
     end else begin
       code_uloop_0.code     = config_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? ULOOP_CODE_DEPTHWISE   : ULOOP_CODE_NORMAL_PERF_D0;
       code_uloop_0.loops    = config_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? ULOOP_LOOPS_DEPTHWISE  : ULOOP_LOOPS_NORMAL_PERF_D0;
@@ -368,17 +393,40 @@ module neureka_ctrl_fsm
     end
   end
 
-  assign ctrl_uloop.enable = (state_q == UPDATEIDX) & ~flags_uloop.valid;
+  assign ctrl_uloop.enable = ((state_q == UPDATEIDX) & ~flags_uloop.valid) & (config_i.resilience_mode ? ~sticky_error : 1'b1);
   assign ctrl_uloop.clear  = (state_q == IDLE);
   assign ctrl_uloop.ready  = (config_i.filter_mode == NEUREKA_FILTER_MODE_1X1 && config_i.resilience_mode) ? 1'b1 : uloop_ready_i[0];
 
   always_comb
   begin
     ctrl_uloop_1 = '0;
-    if (~(config_i.resilience_mode | degenerate_case)) begin
+    if (~degenerate_case) begin
       ctrl_uloop_1 = ctrl_uloop;
-      ctrl_uloop_1.enable = (state_q == UPDATEIDX) & ~flags_uloop.valid && ((config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0]) ? (flags_uloop.next_idx[3] == flags_uloop_1.next_idx[4]) : 1) ; // When I need to iterate both over inut and output channels, in some cases we need to realing the two loops by stalling the second one once
-      ctrl_uloop_1.ready  = (config_i.resilience_mode) ? 1'b0 : uloop_ready_i[1]; // In resilience mode the uloop_1 is useless
+      ctrl_uloop_1.enable = (config_i.resilience_mode) ? (flags_uloop.valid & ~(flags_uloop.idx_update[1] == 1)) | (state_d == STREAMOUT) & (state_change_d==1'b1) & (~flags_uloop_1.valid) : (state_q == UPDATEIDX) & ~flags_uloop.valid && ((config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0]) ? (flags_uloop.next_idx[3] == flags_uloop_1.next_idx[4]) : 1) ; // When I need to iterate both over inut and output channels, in some cases we need to realing the two loops by stalling the second one once
+      ctrl_uloop_1.ready  = (config_i.resilience_mode) ? 1'b1 : uloop_ready_i[1]; // In resilience mode the uloop_1 is useless
+    end
+  end
+
+  always_comb
+  begin
+    code_uloop_aux = '0;
+    if (config_i.resilience_mode) begin
+      code_uloop_aux.code     = ULOOP_CODE_AUX;
+      code_uloop_aux.loops    = ULOOP_LOOPS_AUX;
+      code_uloop_aux.range[0] = config_i.subtile_nb_ki;
+      code_uloop_aux.range[1] = 1;
+    end
+  end
+
+  always_comb
+  begin
+    ctrl_uloop_aux = '0;
+    if (config_i.resilience_mode) begin
+      ctrl_uloop_aux = ctrl_uloop;
+      ctrl_uloop_aux.ready  = 1'b1;
+      ctrl_uloop_aux.enable = (config_i.resilience_mode & sticky_error) ? (state_q == UPDATEIDX & ~flags_uloop_aux.valid) : 0;
+      ctrl_uloop_aux.clear  = (state_q == STREAMOUT_DONE); // sticky_error;
+      ctrl_uloop_aux.set    = (state_d == ERROR) & (state_change_d==1'b1); // |(flags_uloop_1.idx_update) & flags_uloop_1.valid;
     end
   end
 
@@ -428,6 +476,50 @@ module neureka_ctrl_fsm
     .registers_read_i ( ro_reg                     )
   );
 
+    hwpe_ctrl_uloop #(
+    .LENGTH    ( 32 ),
+    .NB_LOOPS  ( 2  ),
+    .NB_RO_REG ( 4 ),
+    .NB_REG    ( 2  ),
+    .REG_WIDTH ( 32 ),
+    .CNT_WIDTH ( 16 ),
+    .SHADOWED  ( 0  )
+`ifndef SYNTHESIS
+    ,
+    .DEBUG_DISPLAY ( 0 )
+`endif
+  ) i_uloop_aux (
+    .clk_i            ( clk_i                      ),
+    .rst_ni           ( rst_ni                     ),
+    .test_mode_i      ( test_mode_i                ),
+    .clear_i          ( clear_i | ctrl_uloop.clear ),
+    .ctrl_i           ( ctrl_uloop_aux           ),
+    .flags_o          ( flags_uloop_aux          ),
+    .uloop_code_i     ( code_uloop_aux           ),
+    .registers_read_i ( ro_reg_aux                 ),
+    .registers_set_i  ( uloop_aux_set              )
+  );
+
+  assign index_lcs.k_out_major = flags_uloop_1.idx[3];
+  assign index_lcs.i_major     = flags_uloop_1.idx[2];
+  assign index_lcs.j_major     = flags_uloop_1.idx[1];
+  assign index_lcs.k_in_major  = flags_uloop_1.idx[0];
+
+  assign base_addr_lcs.weights = flags_uloop_1.offs[NEUREKA_ULOOP_BASE_ADDR_W];
+  assign base_addr_lcs.infeat  = flags_uloop_1.offs[NEUREKA_ULOOP_BASE_ADDR_X];
+  assign base_addr_lcs.outfeat = flags_uloop_1.offs[NEUREKA_ULOOP_BASE_ADDR_Y];
+  assign base_addr_lcs.scale   = flags_uloop_1.offs[NEUREKA_ULOOP_BASE_ADDR_S];
+
+  assign base_addr_aux.weights = flags_uloop_aux.offs[0];
+  assign base_addr_aux.infeat  = flags_uloop_aux.offs[1];
+  assign base_addr_aux.outfeat = '0;
+  assign base_addr_aux.scale   = '0;
+
+  assign index_aux.k_out_major = '0;
+  assign index_aux.i_major     = '0;
+  assign index_aux.j_major     = '0;
+  assign index_aux.k_in_major  = flags_uloop_aux.idx[0];
+
   assign ro_reg[NEUREKA_ULOOP_RO_WEIGHTS_KOM_ITER]       = config_i.uloop_iter.weights_kom_iter;
   assign ro_reg[NEUREKA_ULOOP_RO_WEIGHTS_KIM_ITER]       = config_i.uloop_iter.weights_kim_iter;
   assign ro_reg[NEUREKA_ULOOP_RO_WEIGHTS_KOM_RESET_ITER] = config_i.uloop_iter.weights_kom_reset_iter;
@@ -446,6 +538,14 @@ module neureka_ctrl_fsm
   assign ro_reg[NEUREKA_ULOOP_RO_OUTFEAT_KOM_RESET_ITER] = config_i.uloop_iter.outfeat_kom_reset_iter;
   assign ro_reg[NEUREKA_ULOOP_RO_SCALE_KOM_ITER]         = config_i.uloop_iter.scale_kom_iter;
   assign ro_reg[NEUREKA_ULOOP_RO_ZERO]                   = '0;
+
+  assign ro_reg_aux[0] = (config_i.resilience_mode) ? config_i.uloop_iter.weights_kim_iter : '0;
+  assign ro_reg_aux[1] = (config_i.resilience_mode) ? flags_uloop_1.offs[NEUREKA_ULOOP_BASE_ADDR_W] : '0;
+  assign ro_reg_aux[2] = (config_i.resilience_mode) ? config_i.uloop_iter.infeat_kim_iter : '0;
+  assign ro_reg_aux[3] = (config_i.resilience_mode) ? flags_uloop_1.offs[NEUREKA_ULOOP_BASE_ADDR_X] : '0;
+
+  assign uloop_aux_set[0] = (config_i.resilience_mode) ? flags_uloop_1.offs[NEUREKA_ULOOP_BASE_ADDR_W] : '0;
+  assign uloop_aux_set[1] = (config_i.resilience_mode) ? flags_uloop_1.offs[NEUREKA_ULOOP_BASE_ADDR_X] : '0;
 
   /* index and base_addr registers */
   logic index_sample_en, next_index_sample_en;
@@ -572,6 +672,16 @@ module neureka_ctrl_fsm
   always_ff @(posedge clk_i or negedge rst_ni)
   begin
     if(~rst_ni)
+      sticky_error  <= 1'b0;
+    else if(state_d==STREAMOUT)
+      sticky_error  <= 1'b0;
+    else if(state_d==ERROR)
+      sticky_error <= 1'b1;
+  end
+
+  always_ff @(posedge clk_i or negedge rst_ni)
+  begin
+    if(~rst_ni)
       not_init_loop  <= 1'b0;
     else if((flags_uloop_1.idx[0]==1))
       not_init_loop <= 1'b1;
@@ -586,10 +696,10 @@ module neureka_ctrl_fsm
 
   assign double_active_datapath_o = active_datapath_change_sticky;
 
-  assign index.k_out_major = config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW ? flags_uloop.idx[2] : flags_uloop.idx[3];
-  assign index.i_major     = config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW ? flags_uloop.idx[1] : (config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop_1.idx[3] : flags_uloop.idx[2];
-  assign index.j_major     = config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW ? flags_uloop.idx[0] : config_i.resilience_mode ? flags_uloop.idx[1] : (config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? (flags_uloop_1.idx[2] << 1) +1 : flags_uloop.idx[1] << 1;
-  assign index.k_in_major  = config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW ? flags_uloop.idx[2] : flags_uloop.idx[0];
+  assign index.k_out_major = config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW ? flags_uloop.idx[2] : (sticky_error) ? index_lcs.k_out_major : flags_uloop.idx[3];
+  assign index.i_major     = config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW ? flags_uloop.idx[1] : (config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop_1.idx[3] : (sticky_error) ? index_lcs.i_major : flags_uloop.idx[2];
+  assign index.j_major     = config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW ? flags_uloop.idx[0] : config_i.resilience_mode ? (sticky_error) ? index_lcs.j_major : flags_uloop.idx[1] : (config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? (flags_uloop_1.idx[2] << 1) +1 : flags_uloop.idx[1] << 1;
+  assign index.k_in_major  = config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW ? flags_uloop.idx[2] : (sticky_error) ? index_aux.k_in_major : flags_uloop.idx[0];
 
   assign next_index.k_out_major = config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW ? flags_uloop.next_idx[2] : flags_uloop_1.next_idx[4];
   assign next_index.i_major     = config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW ? flags_uloop.next_idx[1] : (config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop.idx[2] : flags_uloop_1.next_idx[3];
@@ -601,10 +711,10 @@ module neureka_ctrl_fsm
   assign index_update.j_major     = config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW ? flags_uloop.idx_update[0] : flags_uloop.idx_update[1];
   assign index_update.k_in_major  = config_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW ? flags_uloop.idx_update[2] : flags_uloop.idx_update[0];
 
-  assign base_addr.weights = (config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop_1.offs[NEUREKA_ULOOP_BASE_ADDR_W] : flags_uloop.offs[NEUREKA_ULOOP_BASE_ADDR_W];
-  assign base_addr.infeat  = (config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop_1.offs[NEUREKA_ULOOP_BASE_ADDR_X] : flags_uloop.offs[NEUREKA_ULOOP_BASE_ADDR_X];
-  assign base_addr.outfeat = (config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop_1.offs[NEUREKA_ULOOP_BASE_ADDR_Y] : flags_uloop.offs[NEUREKA_ULOOP_BASE_ADDR_Y];
-  assign base_addr.scale   = (config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop_1.offs[NEUREKA_ULOOP_BASE_ADDR_S] : flags_uloop.offs[NEUREKA_ULOOP_BASE_ADDR_S];
+  assign base_addr.weights = (config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop_1.offs[NEUREKA_ULOOP_BASE_ADDR_W] : (sticky_error) ? base_addr_aux.weights : flags_uloop.offs[NEUREKA_ULOOP_BASE_ADDR_W];
+  assign base_addr.infeat  = (config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop_1.offs[NEUREKA_ULOOP_BASE_ADDR_X] : (sticky_error) ? base_addr_aux.infeat : flags_uloop.offs[NEUREKA_ULOOP_BASE_ADDR_X];
+  assign base_addr.outfeat = (config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop_1.offs[NEUREKA_ULOOP_BASE_ADDR_Y] : (sticky_error) ? base_addr_lcs.outfeat : flags_uloop.offs[NEUREKA_ULOOP_BASE_ADDR_Y];
+  assign base_addr.scale   = (config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop_1.offs[NEUREKA_ULOOP_BASE_ADDR_S] : (sticky_error) ? base_addr_lcs.scale : flags_uloop.offs[NEUREKA_ULOOP_BASE_ADDR_S];
 
   assign next_base_addr.weights = (config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop.offs[NEUREKA_ULOOP_BASE_ADDR_W] : flags_uloop_1.next_offs[NEUREKA_ULOOP_BASE_ADDR_W];
   assign next_base_addr.infeat  = (config_i.resilience_mode == 0 && config_i.subtile_nb_wo[0] == 1 && ~(config_i.subtile_nb_wo == 1) && config_i.subtile_nb_ho[0] == 1 && flags_uloop.idx[3][0] == 1) ? flags_uloop.offs[NEUREKA_ULOOP_BASE_ADDR_X] : flags_uloop_1.next_offs[NEUREKA_ULOOP_BASE_ADDR_X];

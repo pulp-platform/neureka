@@ -40,6 +40,8 @@ module tb_neureka;
   parameter HWPE_ADDR_BASE_BIT = 20;
   parameter STIM_INSTR = "./stim_instr.txt";
   parameter STIM_DATA  = "./stim_data.txt";
+  parameter int unsigned GOLD_ADDR  = 32'h0;
+  parameter int unsigned OUT_ADDR  = 32'h0;
   parameter STIM_OUTPUT_DATA = "./stim_output_data.txt";
   parameter DATA_BASE_ADDRESS = 32'h1c01_0000;
   parameter VLEN_CNT_SIZE = 32;
@@ -133,6 +135,24 @@ module tb_neureka;
   logic [31:0]   data_wdata;
   logic [31:0]   data_rdata;
   logic          data_err;
+
+  function automatic int check_results(
+    input logic [31:0] golden_start_addr,
+    input logic [31:0] output_start_addr,
+    input int num_entries
+);
+    int error_count = 0;
+
+    for (int i = 0; i < num_entries; i++) begin
+        if (tb_neureka.i_dummy_memory.memory[golden_start_addr + i] !== tb_neureka.i_dummy_memory.memory[output_start_addr + i]) begin
+            // $display("Mismatch at index %0d: Golden=0x%0h, Output=0x%0h",
+                  //  i, tb_neureka.i_dummy_memory.memory[golden_start_addr + i], tb_neureka.i_dummy_memory.memory[output_start_addr + i]);
+            error_count++;
+        end
+    end
+
+    return error_count;
+endfunction
 
   // ATI timing parameters.
   localparam TCP = 1.0ns; // clock period, 1 GHz clock
@@ -458,11 +478,11 @@ module tb_neureka;
   integer f_x, f_W, f_y, f_tau;
   logic start;
 
-  int errors = -1;
+  int eoc = -1;
   always_ff @(posedge clk_i)
   begin
     if((data_addr == 32'h80000000 ) && (data_we & data_req == 1'b1)) begin
-      errors = data_wdata;
+      eoc = data_wdata;
     end
     if((data_addr == 32'h80000004 ) && (data_we & data_req == 1'b1)) begin
       $write("%c", data_wdata);
@@ -521,14 +541,19 @@ module tb_neureka;
     #TA;
 
     #(400*TCP);
-    // end WFI + errors != -1 signals end-of-computation
-    while(tb_neureka.i_zeroriscy.sleeping || errors==-1)
+    // end WFI + eoc != -1 signals end-of-computation
+    while(tb_neureka.i_zeroriscy.sleeping || eoc==-1)
       #(TCP);
     cnt_rd = tb_neureka.i_dummy_memory.cnt_rd[0] + tb_neureka.i_dummy_memory.cnt_rd[1] + tb_neureka.i_dummy_memory.cnt_rd[2] + tb_neureka.i_dummy_memory.cnt_rd[3];
     cnt_wr = tb_neureka.i_dummy_memory.cnt_wr[0] + tb_neureka.i_dummy_memory.cnt_wr[1] + tb_neureka.i_dummy_memory.cnt_wr[2] + tb_neureka.i_dummy_memory.cnt_wr[3];
-    
-    $writememh(STIM_OUTPUT_DATA, tb_neureka.i_dummy_memory.memory);
+
+    // $writememh(STIM_OUTPUT_DATA, tb_neureka.i_dummy_memory.memory);
     $display("hwpe cycles = %d\n", cnt_cycles);
+
+    // $display("golden addr = %d, output addr = %d\n", (GOLD_ADDR-DATA_BASE_ADDRESS)/4, (OUT_ADDR-DATA_BASE_ADDRESS)/4);
+
+    out_byte = (GOLD_ADDR > OUT_ADDR) ? (GOLD_ADDR-OUT_ADDR)/4 : (OUT_ADDR-GOLD_ADDR)/4;
+    errors = check_results((GOLD_ADDR-DATA_BASE_ADDRESS)/4, (OUT_ADDR-DATA_BASE_ADDRESS)/4, out_byte); // (output byte / 4)
 
     // Parse Error Types
     if (error_detected) begin
