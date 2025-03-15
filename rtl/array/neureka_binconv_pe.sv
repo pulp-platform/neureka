@@ -190,28 +190,28 @@ module neureka_binconv_pe #(
       binconv_core_pres_q <= '0;
       binconv_core_pres_valid_q <= '0;
       binconv_core_pres_strb_q  <= '0;
-    end else begin  
+    end else begin
       binconv_core_pres_q <= binconv_core_pres_d;
       binconv_core_pres_valid_q <= binconv_core_pres_valid_d;
       binconv_core_pres_strb_q  <= binconv_core_pres_strb_d;
-    end 
+    end
   end
 
   always_comb begin
     binconv_core_pres_valid_d = binconv_core_pres_valid_q;
     binconv_core_pres_strb_d  = binconv_core_pres_strb_q;
     binconv_core_pres_d = binconv_core_pres_q;
-    if(clear_i) begin 
+    if(clear_i | ctrl_i.ctrl_col.clear) begin
       binconv_core_pres_valid_d = '0;
       binconv_core_pres_strb_d  = '0;
       binconv_core_pres_d = '0;
-    end else if(col_pres[0].ready) begin 
+    end else if(col_pres[0].ready) begin
       binconv_core_pres_valid_d = binconv_core_pres_valid;
       binconv_core_pres_strb_d  = binconv_core_pres_strb;
-      if(enable_i & col_pres[0].valid ) begin 
+      if(enable_i & col_pres[0].valid ) begin
         binconv_core_pres_d = binconv_core_pres;
-      end 
-    end  
-  end 
+      end
+    end
+  end
 
 endmodule // neureka_binconv_pe
