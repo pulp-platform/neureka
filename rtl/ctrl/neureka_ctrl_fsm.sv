@@ -426,7 +426,7 @@ module neureka_ctrl_fsm
       ctrl_uloop_aux = ctrl_uloop;
       ctrl_uloop_aux.ready  = 1'b1;
       ctrl_uloop_aux.enable = (config_i.resilience_mode & sticky_error) ? (state_q == UPDATEIDX & ~flags_uloop_aux.valid) : 0;
-      ctrl_uloop_aux.clear  = (state_q == STREAMOUT_DONE); // sticky_error;
+      ctrl_uloop_aux.clear  = (state_q == IDLE) | (((state_d == OUTCHECK) & (state_change_d==1'b1)) & sticky_error);
       ctrl_uloop_aux.set    = (state_d == ERROR) & (state_change_d==1'b1); // |(flags_uloop_1.idx_update) & flags_uloop_1.valid;
     end
   end
