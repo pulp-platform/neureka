@@ -951,6 +951,7 @@ module neureka_ctrl #(
   
   
   assign ctrl_engine.ctrl_binconv_array.enable_pe = enable_pe;
+  assign ctrl_engine.ctrl_binconv_array.clock_gating = (state==WEIGHTOFFS | state==MATRIXVEC);
 
   // block-level enables depend on the operating mode -- during WEIGHTOFFS, only 1; in 1x1 mode, as many as the weight_bits are; and in 3x3, all 9 according to the filter_mask_map
   assign ctrl_engine.ctrl_binconv_array.ctrl_pe.ctrl_col.enable_block  = ((state==LOAD || state==WEIGHTOFFS) && config_.filter_mode == NEUREKA_FILTER_MODE_1X1) ? '1 :
