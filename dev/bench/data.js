@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1745339771747,
+  "lastUpdate": 1745339778783,
   "repoUrl": "https://github.com/pulp-platform/neureka",
   "entries": {
     "Execution cycles": [
@@ -6763,6 +6763,100 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/pulp-platform/neureka/pull/32/commits/20177d473b6a470c984fe6fe6fb592ee108d2e7d"
         },
         "date": 1745339770853,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "neureka_basic_tests:t13",
+            "value": 333,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t5",
+            "value": 538,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t4",
+            "value": 550,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t8",
+            "value": 494,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t3",
+            "value": 124,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t0",
+            "value": 141,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t7",
+            "value": 376,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t10",
+            "value": 431,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t1",
+            "value": 137,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t12",
+            "value": 167,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t2",
+            "value": 126,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t11",
+            "value": 375,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t6",
+            "value": 441,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t9",
+            "value": 542,
+            "unit": "cycles"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "luigi.ghionda2@unibo.it",
+            "name": "Luigi Ghionda",
+            "username": "LuigiGhionda"
+          },
+          "committer": {
+            "email": "luigi.ghionda2@unibo.it",
+            "name": "Luigi Ghionda",
+            "username": "LuigiGhionda"
+          },
+          "distinct": true,
+          "id": "20177d473b6a470c984fe6fe6fb592ee108d2e7d",
+          "message": "Improve binconv clock gating",
+          "timestamp": "2025-04-22T18:26:21+02:00",
+          "tree_id": "94218bb7b002901adc72cb16faeec54e58d123c1",
+          "url": "https://github.com/pulp-platform/neureka/commit/20177d473b6a470c984fe6fe6fb592ee108d2e7d"
+        },
+        "date": 1745339778404,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
