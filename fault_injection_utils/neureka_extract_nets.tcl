@@ -279,7 +279,11 @@ proc get_memory_slice {bank_range word_range} {
 lappend core_netlist_ignore *regfile_mem*
 
 proc get_neureka_registers {} {
-  set all_registers [get_state_netlist_recursive_filtered "tb_neureka/i_dut/i_neureka_top/" $::core_netlist_ignore]
+  if {$::use_netlist} {
+    set all_registers [get_state_netlist_recursive_filtered "/tb_neureka/i_dut/i_neureka_top/pulp_cluster_neureka_top_00000009_00000008_4_2_I_tcdm_hci_core_intf__DW_32_h00000120_AW_32_h00000020_EW_32_h00000048_EHW_32_h00000001I_periph_hwpe_ctrl_intf_periph__ID_WIDTH_32_h00000009_0/" $::core_netlist_ignore]
+  } else {
+    set all_registers [get_state_netlist_recursive_filtered "tb_neureka/i_dut/i_neureka_top/" $::core_netlist_ignore]
+  }
   return $all_registers
 }
 
@@ -291,6 +295,34 @@ lappend netlist_ignore *_q
 proc get_neureka_signals {} {
   set all_signals [extract_all_nets_recursive_filtered "tb_neureka/i_dut/i_neureka_top/" $::netlist_ignore]
   return $all_signals
+}
+
+proc generate_neureka_netlist_signals {filename} {
+  get_all_nets_to_file "/tb_neureka/i_dut/i_neureka_top/pulp_cluster_neureka_top_00000009_00000008_4_2_I_tcdm_hci_core_intf__DW_32_h00000120_AW_32_h00000020_EW_32_h00000048_EHW_32_h00000001I_periph_hwpe_ctrl_intf_periph__ID_WIDTH_32_h00000009_0/" $filename
+  if {[file exists $filename]} {
+    set file_id [open $filename r]
+    set line_count 0
+    while {[gets $file_id line] >= 0} {
+      incr line_count
+    }
+    close $file_id
+    echo "Signal file $filename parsed correctly with $line_count lines"
+  } else {
+    error "Signal file not found at $filename"
+  }
+
+  set full_path [exec realpath $filename]
+
+  return [list $full_path $line_count]
+}
+
+proc get_neureka_netlist_signals {filename} {
+   set all_nets [get_all_nets "/tb_neureka/i_dut/i_neureka_top/pulp_cluster_neureka_top_00000009_00000008_4_2_I_tcdm_hci_core_intf__DW_32_h00000120_AW_32_h00000020_EW_32_h00000048_EHW_32_h00000001I_periph_hwpe_ctrl_intf_periph__ID_WIDTH_32_h00000009_0/"]
+
+    set file_id [open $filename "r"]
+    set all_signals [split [read $file_id] "\n"]
+    close $file_id
+    return all_signals
 }
 
 proc fault_injection_test_signals {} {

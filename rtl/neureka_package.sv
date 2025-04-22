@@ -33,7 +33,7 @@ package neureka_package;
 
   // general PULP environment parameters including clusters etc
   // default number of cores
-  parameter int NR_CORES = 9;
+  parameter int NR_CORES = 8;
 
   parameter int NEUREKA_PE_H_DEFAULT = -1; // 4; // Number of PEs across height
   parameter int NEUREKA_PE_W_DEFAULT = -1; // 4; // Number of PEs across width

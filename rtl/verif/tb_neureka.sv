@@ -18,6 +18,10 @@
  *                    Arpan Suravi Prasad <prasadar@iis.ee.ethz.ch>
  */
 
+`ifndef NEUREKA_TOP
+  `define NEUREKA_TOP pulp_cluster_neureka_top_00000009_00000008_4_2_I_tcdm_hci_core_intf__DW_32_h00000120_AW_32_h00000020_EW_32_h00000048_EHW_32_h00000001I_periph_hwpe_ctrl_intf_periph__ID_WIDTH_32_h00000009_0
+`endif
+
 timeunit 1ps;
 timeprecision 1ps;
 import neureka_package::*;
@@ -35,7 +39,7 @@ module tb_neureka;
   parameter MEMORY_SIZE = 2*8192*3;
   parameter STACK_MEMORY_SIZE = 4*MEMORY_SIZE;
   parameter BASE_ADDR = 0;
-  parameter ID = 16;
+  parameter ID = 9; // Originally 16, 9 for synthesis
   parameter NC = 8;
   parameter HWPE_ADDR_BASE_BIT = 20;
   parameter STIM_INSTR = "./stim_instr.txt";
@@ -499,20 +503,30 @@ endfunction
     end
   end
 
-  int error_detected;
-  always_ff @(posedge clk_i or negedge rst_ni)
-  begin
-    if(~rst_ni)
-      error_detected <= 0;
-    else if(tb_neureka.i_dut.i_neureka_top.i_ctrl.i_slave.i_regfile.regfile_mem_mandatory[3] == 2) begin
-      error_detected <= 1;
-    end
+  logic error_status;
+  logic detected_q;
+  `ifdef TARGET_NETLIST
+  assign error_status = ({tb_neureka.i_dut.i_neureka_top.`NEUREKA_TOP.i_ctrl.i_slave.i_regfile.regfile_mem_mandatory_reg_3__1_.Q, tb_neureka.i_dut.i_neureka_top.`NEUREKA_TOP.i_ctrl.i_slave.i_regfile.regfile_mem_mandatory_reg_3__0_.Q} == 2'b10);
+  `else
+  assign error_status = (tb_neureka.i_dut.i_neureka_top.i_ctrl.i_slave.i_regfile.regfile_mem_mandatory[3] == 2);
+  `endif
+
+  always_ff @(posedge error_status or negedge rst_ni) begin
+      if (!rst_ni)
+          detected_q <= 1'b0;
+      else if (error_status)
+          detected_q <= 1'b1;
   end
+
+  int out_byte;
+  logic [31:0] errors;
 
   initial begin
 
     integer id;
     int cnt_rd, cnt_wr;
+
+    errors = 'x;
 
     // Set signals for InjectaFault
     correct_termination = '0;
@@ -556,7 +570,7 @@ endfunction
     errors = check_results((GOLD_ADDR-DATA_BASE_ADDRESS)/4, (OUT_ADDR-DATA_BASE_ADDRESS)/4, out_byte); // (output byte / 4)
 
     // Parse Error Types
-    if (error_detected) begin
+    if (detected_q) begin
       if (errors == 0) begin
         correct_retry_termination = '1;
         $info("Neureka Terminated Correctly after Restart due to Internal Error!");
