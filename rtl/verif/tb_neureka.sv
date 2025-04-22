@@ -29,6 +29,8 @@ module tb_neureka;
   parameter int unsigned TP_OUT = NEUREKA_TP_OUT;
   parameter int unsigned BP = 9*NEUREKA_TP_OUT;
   parameter int unsigned MP = BP/NEUREKA_TP_OUT;
+  parameter int unsigned PE_H = 4;
+  parameter int unsigned PE_W = 4;
   parameter MEMORY_SIZE = 2*8192*3;
   parameter STACK_MEMORY_SIZE = 4*MEMORY_SIZE;
   parameter BASE_ADDR = 0;
@@ -222,14 +224,12 @@ module tb_neureka;
   endgenerate
 
   neureka_top_wrap #(
-    .TP_IN        ( TP_IN               ),
-    .TP_OUT       ( TP_OUT            ),
-    .CNT          ( TP_IN            ),
-    // .BW           (9*32),
-    // .MP           ( MP               ),
-    .ID           ( ID               ),
-    .PE_H         ( 4 ),
-    .PE_W         ( 4 )
+    .TP_IN          ( TP_IN          ),
+    .TP_OUT         ( TP_OUT         ),
+    .CNT            ( TP_IN          ),
+    .ID             ( ID             ),
+    .PE_H           ( PE_H           ),
+    .PE_W           ( PE_W           )
   ) i_dut (
     .clk_i          ( clk_i          ),
     .rst_ni         ( rst_ni         ),
