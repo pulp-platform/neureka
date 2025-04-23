@@ -77,7 +77,6 @@ static void task_prepare(nnx_task_t *task) {
 
   nnx_task_set_weight_offset(task, weightOffsetModeLayerWise, WEIGHT_OFFSET);
 
-#define NEUREKA_WEIGHT_SOURCE_WMEM
 #ifdef NEUREKA_WEIGHT_SOURCE_WMEM
   // activate prefetching via Wmem source only for 1x1 layers
   if(WEIGHT_HEIGHT == 1) {
@@ -97,7 +96,6 @@ static void task_prepare(nnx_task_t *task) {
 #else
   neureka_task_set_input_unsigned(task);
 #endif
-#define RESILIENCE_MODE 1
 #if RESILIENCE_MODE == 1
   neureka_task_set_resilience_mode(task);
 #endif
