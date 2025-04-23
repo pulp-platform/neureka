@@ -1,5 +1,5 @@
 #
-# code.yml
+# code_D0P.yml
 #
 # Copyright (C) 2019-2021 ETH Zurich, University of Bologna and GreenWaves Technologies
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-# Author: Francesco Conti <f.conti@unibo.it>
+# Author: Luigi Ghionda <luigi.ghionda2@unibo.it>
 
 # mnemonics to simplify microcode writing
 mnemonics:
@@ -42,7 +42,7 @@ mnemonics:
     scale_kom_iter:         20
     zero:                   21
 
-# NE16 code
+# D0 PERFORMANCE code
 code:
   k_in_major:
     - { op : add,  a: base_addr_W, b: weights_kim_iter  }
@@ -51,12 +51,16 @@ code:
     - { op : add,  a: base_addr_W, b: weights_kim_reset_iter } # weights_kim_reset_iter = - subtile_nb_ki * weights_kim_iter
     - { op : add,  a: base_addr_x, b: infeat_kim_reset_iter  } # infeat_kim_reset_iter  = - subtile_nb_ki * infeat_kim_iter
     - { op : add,  a: base_addr_x, b: infeat_wom_iter   }
+    - { op : add,  a: base_addr_x, b: infeat_wom_iter   }
+    - { op : add,  a: base_addr_y, b: outfeat_wom_iter  }
     - { op : add,  a: base_addr_y, b: outfeat_wom_iter  }
   i_major:
     - { op : add,  a: base_addr_x, b: infeat_wom_reset_iter  } # infeat_wom_reset_iter  = - subtile_nb_wo * infeat_wom_iter
     - { op : add,  a: base_addr_y, b: outfeat_wom_reset_iter } # outfeat_wom_reset_iter = - subtile_nb_wo * outfeat_wom_iter
     - { op : add,  a: base_addr_W, b: weights_kim_reset_iter } # weights_kim_reset_iter = - subtile_nb_ki * weights_kim_iter
     - { op : add,  a: base_addr_x, b: infeat_kim_reset_iter  } # infeat_kim_reset_iter  = - subtile_nb_ki * infeat_kim_iter
+    - { op : add,  a: base_addr_x, b: infeat_wom_iter   } # this is added to restore the correct x (it's always one less. To avoid modifying the reset value)
+    - { op : add,  a: base_addr_y, b: outfeat_wom_iter  } # this is added to restore the correct y (it's always one less. To avoid modifying the reset value)
     - { op : add,  a: base_addr_x, b: infeat_hom_iter   }
     - { op : add,  a: base_addr_y, b: outfeat_hom_iter  }
   k_out_major:
@@ -66,6 +70,8 @@ code:
     - { op : add,  a: base_addr_y, b: outfeat_wom_reset_iter } # outfeat_wom_reset_iter = - subtile_nb_wo * outfeat_wom_iter
     - { op : add,  a: base_addr_W, b: weights_kim_reset_iter } # weights_kim_reset_iter = - subtile_nb_ki * weights_kim_iter
     - { op : add,  a: base_addr_x, b: infeat_kim_reset_iter  } # infeat_kim_reset_iter  = - subtile_nb_ki * infeat_kim_iter
+    - { op : add,  a: base_addr_x, b: infeat_wom_iter   } # this is added to restore the correct x (it's always one less. To avoid modifying the reset value)
+    - { op : add,  a: base_addr_y, b: outfeat_wom_iter  } # this is added to restore the correct y (it's always one less. To avoid modifying the reset value)
     - { op : add,  a: base_addr_W, b: weights_kom_iter  }
     - { op : add,  a: base_addr_y, b: outfeat_kom_iter  }
     - { op : add,  a: base_addr_s, b: scale_kom_iter    }
