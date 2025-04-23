@@ -283,7 +283,7 @@ RISCV_OBJDUMP ?= $(RISCV_PREFIX)objdump
 CC=$(RISCV_PREFIX)gcc
 LD=$(RISCV_PREFIX)gcc
 CC_OPTS=-march=rv32imc -D__riscv__ -O2 -g -Wextra -Wall -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function -Wundef -fdata-sections -ffunction-sections
-LD_OPTS=-march=rv32imc -D__riscv__ -MMD -MP -nostartfiles -nostdlib -Wl,--gc-sections
+LD_OPTS=-march=rv32imc -D__riscv__ -MMD -MP -nostartfiles -nostdlib -Wl,--gc-sections -Wl,-Map=$(MAP)
 DEPDIR := $(BUILD_DIR)/.deps
 DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$(notdir $*.d)
 
@@ -291,8 +291,11 @@ DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$(notdir $*.d)
 CRT=$(BUILD_DIR)/crt0.o
 OBJ=$(patsubst %, $(BUILD_DIR)/%, $(notdir $(APP_SRCS:%.c=%.o)))
 BIN=$(BUILD_DIR)/main.bin
+MAP=$(BUILD_DIR)/main.map
 STIM_INSTR=$(BUILD_DIR)/stim_instr.txt
 STIM_DATA=$(BUILD_DIR)/stim_data.txt
+GOLD_ADDR = $(shell awk '/\<golden_output\>$$/ {print substr($$1, length($$1)-7, 8)}' $(MAP))
+OUT_ADDR  = $(shell awk '/\<output\>$$/ {print substr($$1, length($$1)-7, 8)}' $(MAP))
 
 # Build implicit rules
 $(DEPDIR):
@@ -327,6 +330,8 @@ VSIM_DEPS=$(CRT)
 VSIM_PARAMS=-gPROB_STALL=$(P_STALL)   \
 	-gSTIM_INSTR=stim_instr.txt \
 	-gSTIM_DATA=stim_data.txt \
+	-gGOLD_ADDR=32\'h$(GOLD_ADDR) \
+	-gOUT_ADDR=32\'h$(OUT_ADDR) \
 	-gPE_H=$(PE_H) \
 	-gPE_W=$(PE_W) \
 	-gUSE_ECC=$(USE_ECC) \
