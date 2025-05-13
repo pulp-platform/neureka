@@ -165,10 +165,8 @@ import hci_package::*;
 
   hci_ecc_manager #(
     .N_CHUNK       ( ECC_N_CHUNK   ),
-    .ParData       ( 2             ),
-    .ParMeta       ( 2             ),
-    .hci_ecc_req_t ( hci_ecc_req_t ),
-    .hci_ecc_rsp_t ( hci_ecc_rsp_t )
+    .PAR_DATA      ( 2             ),
+    .PAR_META      ( 2             )
   ) i_hci_ecc_manager (
     .clk_i                    ( clk_i                             ),
     .rst_ni                   ( rst_ni                            ),
