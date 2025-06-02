@@ -24,7 +24,8 @@ module neureka_infeat_buffer_scm
 #(
   parameter int unsigned ADDR_WIDTH   = 6,
   parameter int unsigned DATA_WIDTH   = 128,
-  parameter int unsigned NUM_WORDS    = 64
+  parameter int unsigned NUM_WORDS    = 64,
+  parameter int unsigned USE_LATCHES  = 0
 )
 (
   input  logic                                 clk_i,
@@ -48,31 +49,33 @@ module neureka_infeat_buffer_scm
 
   // Read address register, located at the input of the address decoder
   logic [NUM_WORDS-1:0][DATA_WIDTH-1:0] buffer;
-  logic [NUM_WORDS-1:0]  waddr_onehot;
-  logic [NUM_WORDS-1:0]  clk_we;
 
-  logic [DATA_WIDTH-1:0] wdata_q;
+  if(USE_LATCHES) begin : gen_latches
 
-  // ========================================================================
-  // WDATA SAMPLING
-  // ========================================================================
-  always_ff @(posedge clk_i or negedge rst_ni)
-  begin
-    if(~rst_ni)
-      wdata_q <= '0;
-    else if(clear_i)
-      wdata_q <= '0;
-    else if(we_i)
-      wdata_q <= wdata_i;
-  end
+    logic [NUM_WORDS-1:0]  waddr_onehot;
+    logic [NUM_WORDS-1:0]  clk_we;
 
-  // ========================================================================
-  // SCM (LATCHES)
-  // ========================================================================
+    logic [DATA_WIDTH-1:0] wdata_q;
 
-  // use the sampled address to select the correct rdata_o
-  // decode
-  generate
+    // ========================================================================
+    // WDATA SAMPLING
+    // ========================================================================
+    always_ff @(posedge clk_i or negedge rst_ni)
+    begin
+      if(~rst_ni)
+        wdata_q <= '0;
+      else if(clear_i)
+        wdata_q <= '0;
+      else if(we_i)
+        wdata_q <= wdata_i;
+    end
+
+    // ========================================================================
+    // SCM (LATCHES)
+    // ========================================================================
+
+    // use the sampled address to select the correct rdata_o
+    // decode
     for(genvar ii=0; ii<NUM_WORDS; ii++) begin : WADDR_DECODE
 
       always_comb
@@ -86,10 +89,8 @@ module neureka_infeat_buffer_scm
       end
 
     end
-  endgenerate
 
-  // generate one clock-gating cell for each register element
-  generate
+    // generate one clock-gating cell for each register element
     for(genvar ii=0; ii<NUM_WORDS; ii++) begin : CG_CELL_WORD_ITER
 
       cluster_clock_gating i_cg
@@ -101,9 +102,7 @@ module neureka_infeat_buffer_scm
       );
 
     end
-  endgenerate
 
-  generate
 
     for(genvar ii=0; ii<NUM_WORDS; ii++) begin : LATCH
 
@@ -116,7 +115,21 @@ module neureka_infeat_buffer_scm
 
     end
 
-  endgenerate
+  end else begin : gen_ff
+
+    always_ff @(posedge clk_i or negedge rst_ni)
+    begin
+      if(~rst_ni)
+        for (int i = 0; i < NUM_WORDS; i++)
+          buffer[i] <= '0;
+      else if(clear_i)
+        for (int i = 0; i < NUM_WORDS; i++)
+          buffer[i] <= '0;
+      else if(we_i)
+        buffer[waddr_i] <= wdata_i;
+    end
+
+  end
 
   assign infeat_buffer_o = buffer;
 

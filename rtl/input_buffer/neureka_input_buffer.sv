@@ -54,6 +54,12 @@ module neureka_infeat_buffer #(
   localparam AW = $clog2(NW);
   localparam DS = DW*BLOCK_SIZE;
 
+`ifdef TARGET_FPGA
+  localparam NEUREKA_BUFFER = neureka_package::BUFFER_FF;
+`else
+  localparam NEUREKA_BUFFER = neureka_package::BUFFER_LATCHES;
+`endif
+
   // Standard-cell memory based feature register
   logic                  scm_re;
   logic [AW-1:0]         scm_raddr;
@@ -71,9 +77,10 @@ module neureka_infeat_buffer #(
   logic [AW-1:0] vlen_cnt_fast_d, vlen_cnt_fast_q;
 
   neureka_infeat_buffer_scm_test_wrap #(
-    .ADDR_WIDTH ( AW ),
-    .DATA_WIDTH ( DS ),
-    .NUM_WORDS  ( NW )
+    .ADDR_WIDTH  ( AW             ),
+    .DATA_WIDTH  ( DS             ),
+    .NUM_WORDS   ( NW             ),
+    .USE_LATCHES ( NEUREKA_BUFFER )
   ) i_infeat_buffer_scm (
     .clk_i          ( clk_i            ),
     .rst_ni         ( rst_ni           ),
