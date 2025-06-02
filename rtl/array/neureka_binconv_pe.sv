@@ -20,9 +20,8 @@
  * Authors (NEUREKA): Arpan Suravi Prasad <prasadar@iis.ee.ethz.ch>
  */
 
-import neureka_package::*;
 
-module neureka_binconv_pe #(
+module neureka_binconv_pe import neureka_package::*; #(
   parameter int unsigned COLUMN_SIZE      = NEUREKA_COLUMN_SIZE,         // number of BinConv blocks per column (default 9)
   parameter int unsigned BLOCK_SIZE       = NEUREKA_BLOCK_SIZE,          // number of Binconv per block
   parameter int unsigned BC_COLBLOCK_SIZE = COLUMN_SIZE*BLOCK_SIZE,      // total number of binconv per PE

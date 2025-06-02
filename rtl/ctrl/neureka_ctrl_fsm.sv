@@ -20,11 +20,10 @@
  * Authors (NEUREKA): Arpan Suravi Prasad <prasadar@iis.ee.ethz.ch>
  */
 
+module neureka_ctrl_fsm
 import neureka_package::*;
 import hwpe_ctrl_package::*;
 import hci_package::*;
-
-module neureka_ctrl_fsm
 #(
   parameter int unsigned NUM_PE = NEUREKA_NUM_PE_MAX
 )

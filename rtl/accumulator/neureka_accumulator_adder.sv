@@ -20,9 +20,8 @@
  * Authors (NEUREKA): Arpan Suravi Prasad <prasadar@iis.ee.ethz.ch>
  */
 
-import neureka_package::*;
 
-module neureka_accumulator_adder #(
+module neureka_accumulator_adder import neureka_package::*; #(
   parameter int unsigned NADD = neureka_package::NEUREKA_TP_OUT,
   parameter int unsigned ACC = neureka_package::NEUREKA_ACCUM_SIZE,
   parameter int unsigned QNT = 32,

@@ -20,10 +20,8 @@
  * Authors (NEUREKA): Arpan Suravi Prasad <prasadar@iis.ee.ethz.ch>
  */
 
-import neureka_package::*;
 
-
-module neureka_normquant_bias #(
+module neureka_normquant_bias import neureka_package::*; #(
   parameter int unsigned NADD = 8,
   parameter int unsigned ACC = neureka_package::NEUREKA_ACCUM_SIZE,
   parameter int unsigned QNT = 32,

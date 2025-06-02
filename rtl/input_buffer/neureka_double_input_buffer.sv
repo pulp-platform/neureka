@@ -20,9 +20,8 @@
  * Authors (NEUREKA): Arpan Suravi Prasad <prasadar@iis.ee.ethz.ch>
  */
 
-import neureka_package::*;
 
-module neureka_double_infeat_buffer #(
+module neureka_double_infeat_buffer import neureka_package::*; #(
   parameter int unsigned INPUT_BUF_SIZE = 2048,
   parameter int unsigned BLOCK_SIZE     = NEUREKA_BLOCK_SIZE,
   parameter int unsigned DW             = NEUREKA_QA_IN,
