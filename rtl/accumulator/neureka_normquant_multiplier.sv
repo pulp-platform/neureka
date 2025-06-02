@@ -20,9 +20,8 @@
  * Authors (NEUREKA): Arpan Suravi Prasad <prasadar@iis.ee.ethz.ch>
  */
 
-import neureka_package::*;
 
-module neureka_normquant_multiplier #(
+module neureka_normquant_multiplier import neureka_package::*; #(
   parameter int unsigned NMS = neureka_package::NORM_MULT_SIZE,
   parameter int unsigned ACC = neureka_package::NEUREKA_ACCUM_SIZE,
   parameter int unsigned PIPE = 0
