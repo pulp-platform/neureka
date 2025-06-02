@@ -21,9 +21,7 @@
  *                    Francesco Conti <f.conti@unibo.it>
  */
 
-import neureka_package::*;
-
-module neureka_engine #(
+module neureka_engine import neureka_package::*; #(
   parameter int unsigned COLUMN_SIZE    = NEUREKA_COLUMN_SIZE, // number of BinConv blocks per column (default 9)
   parameter int unsigned BLOCK_SIZE     = NEUREKA_BLOCK_SIZE,  // number of SoP's per BinConv block (default 4),
   parameter int unsigned TP_IN          = NEUREKA_TP_IN,       // number of input elements processed per cycle
