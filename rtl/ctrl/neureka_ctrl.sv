@@ -20,11 +20,13 @@
  * Authors (NEUREKA): Arpan Suravi Prasad <prasadar@iis.ee.ethz.ch>
  */
 
+`include "register_interface/typedef.svh"
+
+module neureka_ctrl
 import neureka_package::*;
 import hwpe_ctrl_package::*;
 import hci_package::*;
-
-module neureka_ctrl #(
+#(
   parameter int unsigned N_CORES = NR_CORES,
   parameter int unsigned ID      = ID_WIDTH,
   parameter int unsigned PE_H    = NEUREKA_PE_H_DEFAULT,

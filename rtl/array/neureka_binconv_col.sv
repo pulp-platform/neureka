@@ -19,9 +19,8 @@
  * Authors (NE16): Francesco Conti <francesco.conti@greenwaves-technologies.com>
  * Authors (NEUREKA): Arpan Suravi Prasad <prasadar@iis.ee.ethz.ch>
  */
-import neureka_package::*;
 
-module neureka_binconv_column #(
+module neureka_binconv_column import neureka_package::*; #(
   parameter int unsigned BLOCK_SIZE = NEUREKA_BLOCK_SIZE,           
   parameter int unsigned COLUMN_SIZE= NEUREKA_COLUMN_SIZE,
   parameter int unsigned TP_IN      = NEUREKA_TP_IN,                
