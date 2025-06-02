@@ -145,6 +145,11 @@ package neureka_package;
     flags_infeat_buffer_t flags_even_infeat_buffer;
   } flags_double_infeat_buffer_t;
 
+  typedef enum integer {
+    BUFFER_FF       = 0,
+    BUFFER_LATCHES  = 1
+  } regfile_e;
+
 
   // ========================================================================
   // SIGN_BUFFER related types
