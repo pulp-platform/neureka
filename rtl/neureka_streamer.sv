@@ -59,6 +59,7 @@ module neureka_streamer
   localparam int unsigned IW  = `HCI_SIZE_GET_IW(tcdm);
   localparam int unsigned EW  = `HCI_SIZE_GET_EW(tcdm);
   localparam int unsigned EHW = `HCI_SIZE_GET_EHW(tcdm);
+  localparam int unsigned FD  = `HCI_SIZE_GET_FD(tcdm);
 
   hci_streamer_ctrl_t  all_source_ctrl, wmem_source_ctrl;
   hci_streamer_flags_t all_source_flags, wmem_source_flags;
@@ -114,7 +115,8 @@ module neureka_streamer
     .UW  ( UW                        ),
     .IW  ( IW                        ),
     .EW  ( EW                        ),
-    .EHW ( EHW                       )
+    .EHW ( EHW                       ),
+    .FD  ( FD                        )
   ) virt_tcdm [0:2] (
     .clk ( clk_i )
   );
@@ -124,7 +126,8 @@ module neureka_streamer
     .UW  ( UW                        ),
     .IW  ( IW                        ),
     .EW  ( EW                        ),
-    .EHW ( EHW                       )
+    .EHW ( EHW                       ),
+    .FD  ( FD                        )
 `ifndef SYNTHESIS
     ,
     .WAIVE_RSP3_ASSERT ( 1'b1 ), // waive RSP-3 on memory-side of HCI FIFO
@@ -139,7 +142,8 @@ module neureka_streamer
     .UW  ( UW                        ),
     .IW  ( IW                        ),
     .EW  ( EW                        ),
-    .EHW ( EHW                       )
+    .EHW ( EHW                       ),
+    .FD  ( FD                        )
   ) tcdm_prefifo (
     .clk ( clk_i )
   );
@@ -149,7 +153,8 @@ module neureka_streamer
     .UW  ( UW                        ),
     .IW  ( IW                        ),
     .EW  ( EW                        ),
-    .EHW ( EHW                       )
+    .EHW ( EHW                       ),
+    .FD  ( FD                        )
 `ifndef SYNTHESIS
     ,
     .WAIVE_RSP3_ASSERT ( 1'b1 ), // waive RSP-3 on memory-side of HCI FIFO
@@ -166,14 +171,16 @@ module neureka_streamer
     UW:  UW,
     IW:  1,
     EW:  EW,
-    EHW: EHW
+    EHW: EHW,
+    FD:  FD
   };
   hci_core_intf #(
     .DW  ( NEUREKA_MEM_BANDWIDTH_EXT ),
     .UW  ( UW                        ),
     .IW  ( 1                         ),
     .EW  ( EW                        ),
-    .EHW ( EHW                       )
+    .EHW ( EHW                       ),
+    .FD  ( FD                        )
 `ifndef SYNTHESIS
     ,
     .WAIVE_RSP3_ASSERT ( 1'b1 ), // waive RSP-3 on memory-side of HCI FIFO
@@ -188,7 +195,8 @@ module neureka_streamer
     .UW  ( UW                        ),
     .IW  ( IW                        ),
     .EW  ( EW                        ),
-    .EHW ( EHW                       )
+    .EHW ( EHW                       ),
+    .FD  ( FD                        )
 `ifndef SYNTHESIS
     ,
     .WAIVE_RSP3_ASSERT ( 1'b1 ), // waive RSP-3 on memory-side of HCI FIFO
