@@ -22,7 +22,7 @@
 
 `include "hci_helpers.svh"
 
-module neureka_streamer 
+module neureka_streamer
   import neureka_package::*;
   import hwpe_stream_package::*;
   import hci_package::*;
@@ -198,7 +198,7 @@ module neureka_streamer
     .clk ( clk_i )
   );
 
-  logic wmem_enable, all_source_enable; 
+  logic wmem_enable, all_source_enable;
 
   assign wmem_enable = (~ctrl_i.ld_st_mux_sel & ctrl_i.wmem_sel & (ctrl_i.ld_which_mux_sel == LD_WEIGHT_SEL)) | (ctrl_i.ld_which_mux_sel == LD_FEAT_WEIGHT_SEL);
   assign all_source_enable = (~ctrl_i.ld_st_mux_sel & (~wmem_enable)) | (ctrl_i.ld_which_mux_sel == LD_FEAT_WEIGHT_SEL);
@@ -242,7 +242,7 @@ module neureka_streamer
     .clear_i     ( clear_i | ctrl_i.clear_sink ),
     .enable_i    ( ctrl_i.ld_st_mux_sel        ),
     .tcdm        ( virt_tcdm[1].initiator      ),
-    .stream      ( conv_i.sink                 ),
+    .stream      ( conv_i                      ),
     .ctrl_i      ( ctrl_i.outfeat_sink_ctrl    ),
     .flags_o     ( flags_o.conv_sink_flags     )
   );
@@ -350,7 +350,7 @@ module neureka_streamer
     .clear_i        ( clear_i     ),
     .enable_i       ( 1'b1        ),
     .tcdm_target    ( tcdm_preout.target ),
-    .tcdm_initiator ( tcdm.initiator        )
+    .tcdm_initiator ( tcdm        )
   );
 
   always_comb
@@ -370,10 +370,10 @@ module neureka_streamer
   end
 
   always_comb begin : weight_source_ctrl_mux
-    wmem_source_ctrl = '0; 
+    wmem_source_ctrl = '0;
     if(((ctrl_i.ld_which_mux_sel == LD_WEIGHT_SEL) & ctrl_i.wmem_sel) | (ctrl_i.ld_which_mux_sel == LD_FEAT_WEIGHT_SEL) )
       wmem_source_ctrl = ctrl_i.wmem_source_ctrl;
-  end 
+  end
 
   assign flags_o.feat_source_flags = all_source_flags;
   assign flags_o.norm_source_flags = all_source_flags;
@@ -398,19 +398,19 @@ module neureka_streamer
     .pop_o   ( virt_source.source      )
   );
 
-  hwpe_stream_assign i_assign_feat     ( .push_i (virt_source[0].sink), .pop_o ( feat_o.source     ) );
+  hwpe_stream_assign i_assign_feat     ( .push_i (virt_source[0].sink), .pop_o ( feat_o            ) );
   hwpe_stream_assign i_assign_weight   ( .push_i (virt_source[1].sink), .pop_o ( weight[0].source  ) );
-  hwpe_stream_assign i_assign_norm     ( .push_i (virt_source[2].sink), .pop_o ( norm_o.source     ) );
-  hwpe_stream_assign i_assign_streamin ( .push_i (virt_source[3].sink), .pop_o ( streamin_o.source ) );
+  hwpe_stream_assign i_assign_norm     ( .push_i (virt_source[2].sink), .pop_o ( norm_o            ) );
+  hwpe_stream_assign i_assign_streamin ( .push_i (virt_source[3].sink), .pop_o ( streamin_o        ) );
 
   hwpe_stream_mux_static i_weight_source_mux (
     .clk_i   ( clk_i            ),
     .rst_ni  ( rst_ni           ),
     .clear_i ( clear_i          ),
     .sel_i   ( ctrl_i.wmem_sel  ),
-    .push_0_i( weight[0].sink        ),
-    .push_1_i( weight[1].sink        ),
-    .pop_o   ( weight_o.source         )
+    .push_0_i( weight[0].sink   ),
+    .push_1_i( weight[1].sink   ),
+    .pop_o   ( weight_o         )
   );
 
 
