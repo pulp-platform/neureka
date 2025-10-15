@@ -41,7 +41,7 @@ package neureka_package;
   parameter int NEUREKA_INFEAT_BUFFER_SIZE_H_DEFAULT = -1; // NEUREKA_PE_H_DEFAULT+2; // Input Feature buffer size across height. 
   parameter int NEUREKA_INFEAT_BUFFER_SIZE_W_DEFAULT = -1; // NEUREKA_PE_W_DEFAULT+2; // Input Feature buffer size across width
   parameter int NEUREKA_INFEAT_BUFFER_SIZE_HW_DEFAULT = -1; // NEUREKA_INFEAT_BUFFER_SIZE_H_DEFAULT*NEUREKA_INFEAT_BUFFER_SIZE_W_DEFAULT; // Input Feature buffer size 
-  parameter int NEUREKA_INFEAT_BUFFER_SIZE_HW_MAX = 36; // Max. input buffer size currently considered
+  parameter int NEUREKA_INFEAT_BUFFER_SIZE_HW_MAX = 64; // Max. input buffer size currently considered
 
   // number of contexts
   parameter int NR_CONTEXT = 1;

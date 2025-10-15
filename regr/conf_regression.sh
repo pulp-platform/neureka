@@ -14,16 +14,25 @@
 # limitations under the License.
 # SPDX-License-Identifier: Apache-2.0
 #
-# Author: Francesco Conti (f.conti@unibo.it)
-#
+# Author: Luigi Ghionda (luigi.ghionda2@unibo.it)
 
 export N_PROC=20
 export P_STALL=0.04
 TIMEOUT=200
 
-export PE_H=4
-export PE_W=4
-echo "Running with config (H, W)=($PE_H, $PE_W)"
+# (H, W)
+PARAMS=(
+    2 2
+    3 3
+    4 4
+    5 5
+    4 8
+    6 6
+    4 2
+    2 4
+    3 4
+    4 3
+)
 
 # Declare a string array with type
 declare -a test_list=(
@@ -31,13 +40,22 @@ declare -a test_list=(
 #    "regr/fs1.yml"
 )
 
-# Read the list values with space
-for val in "${test_list[@]}"; do
-    nice -n10 regr/bwruntests.py --report_junit -t ${TIMEOUT} --yaml -o regr/neureka_tests.xml -p${N_PROC} --perf regr/perf.json $val
-    if test $? -ne 0; then
-        echo "Error in test $val"
-        exit 1
-    fi
+i=0
+while [[ $i -lt ${#PARAMS[@]} ]]; do
+    export PE_H=${PARAMS[$i]}
+    export PE_W=${PARAMS[$((i + 1))]}
+    i=$((i + 2))
+
+    echo "Running with config (H, W)=($PE_H, $PE_W)"
+
+    # Read the list values with space
+    for val in "${test_list[@]}"; do
+        nice -n10 regr/bwruntests.py --report_junit -t ${TIMEOUT} --yaml -o regr/neureka_tests.xml -p${N_PROC} --perf regr/perf.json $val
+        if test $? -ne 0; then
+            echo "Error in test $val with config (H, W)=($PE_H, $PE_W)"
+            exit 1
+        fi
+    done
 done
 unset P_STALL
 unset PE_H

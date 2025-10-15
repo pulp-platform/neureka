@@ -762,13 +762,13 @@ module neureka_ctrl #(
     implicit_padding_map[INFEAT_BUFFER_SIZE_HW-1:0] &= implicit_padding_map_temp[INFEAT_BUFFER_SIZE_HW-1:0];
   end : padding_from_incomplete_infeat
 
-  for(genvar i=0; i<INFEAT_BUFFER_SIZE_W; i++)begin
-    assign implicit_padding_map_temp[(i+1)*INFEAT_BUFFER_SIZE_W-1:i*INFEAT_BUFFER_SIZE_W] = {INFEAT_BUFFER_SIZE_W{h_size_in_map[i]}}; 
+  for(genvar i=0; i<INFEAT_BUFFER_SIZE_H; i++)begin
+    assign implicit_padding_map_temp[(i+1)*INFEAT_BUFFER_SIZE_W-1:i*INFEAT_BUFFER_SIZE_W] = {INFEAT_BUFFER_SIZE_W{h_size_in_map[i]}};
   end
 
-  logic [INFEAT_BUFFER_SIZE_W-1:0] t_explicit_padding_map;
+  logic [INFEAT_BUFFER_SIZE_H-1:0] t_explicit_padding_map;
   logic [INFEAT_BUFFER_SIZE_W-1:0] r_explicit_padding_map_r, r_explicit_padding_map;
-  logic [INFEAT_BUFFER_SIZE_W-1:0] b_explicit_padding_map_r, b_explicit_padding_map;
+  logic [INFEAT_BUFFER_SIZE_H-1:0] b_explicit_padding_map_r, b_explicit_padding_map;
   logic [INFEAT_BUFFER_SIZE_W-1:0] l_explicit_padding_map;
 
   assign t_explicit_padding_map   = (1 << config_.padding_top) - 1;
@@ -782,7 +782,7 @@ module neureka_ctrl #(
     explicit_padding_map encodes which of the 8x8 elements in the array are padded (0) and which ones are not (1).
   */
 
-  for(genvar i=0; i<INFEAT_BUFFER_SIZE_W; i++)begin
+  for(genvar i=0; i<INFEAT_BUFFER_SIZE_H; i++)begin
     assign t_explicit_padding_map_temp[(i+1)*INFEAT_BUFFER_SIZE_W-1:i*INFEAT_BUFFER_SIZE_W] = {INFEAT_BUFFER_SIZE_W{t_explicit_padding_map[i]}};
     assign b_explicit_padding_map_temp[(i+1)*INFEAT_BUFFER_SIZE_W-1:i*INFEAT_BUFFER_SIZE_W] = {INFEAT_BUFFER_SIZE_W{b_explicit_padding_map[i]}}; 
   end
@@ -876,14 +876,14 @@ module neureka_ctrl #(
                                                                                    (state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN) & state_change )):(state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN) & state_change ;
   end
 
-  // the NEUREKA array has 36 PEs -- one per each spatial pixel in the output space that it can support (3x3)
-  logic [PE_H-1:0] enable_pe_vert, enable_pe_horiz;
+  logic [PE_H-1:0] enable_pe_h;
+  logic [PE_W-1:0] enable_pe_w;
   logic [PE_H*PE_W-1:0] enable_pe_strided, pe_col_strided;
   logic [PE_H*PE_W-1:0] enable_pe, enable_pe_temp;
 
   // enable pe_cols depending on the subtile size considering residuals in the horizontal & vertical directions
-  assign enable_pe_vert  = (1 << h_size_out) - 1;
-  assign enable_pe_horiz = (1 << w_size_out) - 1;
+  assign enable_pe_h = (1 << h_size_out) - 1;
+  assign enable_pe_w = (1 << w_size_out) - 1;
 
   for(genvar h=0; h<PE_H; h++) begin : strided_output_height
     for(genvar w=0; w<PE_W; w++) begin : strided_output_width
@@ -909,9 +909,9 @@ module neureka_ctrl #(
   // overall column enable takes into account both horizontal and vertical enables, as well as strided mode
 
   for(genvar ii=0; ii<PE_H; ii++) begin
-    assign enable_pe_temp[(ii+1)*PE_W-1:ii*PE_W] = {PE_W{enable_pe_vert[ii]}};  
-  end 
-  assign enable_pe = {PE_H{enable_pe_horiz}} & enable_pe_temp & enable_pe_strided;
+    assign enable_pe_temp[(ii+1)*PE_W-1:ii*PE_W] = {PE_W{enable_pe_h[ii]}};
+  end
+  assign enable_pe = {PE_H{enable_pe_w}} & enable_pe_temp & enable_pe_strided;
 
   // compute last enabled PE
   logic [$clog2(NEUREKA_NUM_PE_MAX)-1:0] last_pe_d, last_pe_q;
