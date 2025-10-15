@@ -20,9 +20,8 @@
  * Authors (NEUREKA): Arpan Suravi Prasad <prasadar@iis.ee.ethz.ch>
  */
 
-import neureka_package::*;
 
-module neureka_scale #(
+module neureka_scale import neureka_package::*; #(
   parameter int unsigned INP_ACC  =  8, // input bitwidth
   parameter int unsigned OUT_ACC  = 16, // output bitwidth
   parameter int unsigned N_SHIFTS =  8  // number of mutliplexed shifts

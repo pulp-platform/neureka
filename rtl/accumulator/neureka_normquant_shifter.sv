@@ -20,9 +20,8 @@
  * Authors (NEUREKA): Arpan Suravi Prasad <prasadar@iis.ee.ethz.ch>
  */
 
-import neureka_package::*;
 
-module neureka_normquant_shifter #(
+module neureka_normquant_shifter import neureka_package::*; #(
   parameter int unsigned ACC = neureka_package::NEUREKA_ACCUM_SIZE,
   parameter int unsigned INT = 33,
   parameter int unsigned OUTPUT_REGISTER = 0

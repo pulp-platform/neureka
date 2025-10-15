@@ -20,9 +20,8 @@
  * Authors (NEUREKA): Arpan Suravi Prasad <prasadar@iis.ee.ethz.ch>
  */
 
-import neureka_package::*;
 
-module neureka_accumulator_normquant #(
+module neureka_accumulator_normquant import neureka_package::*; #(
   parameter int unsigned TP               = NEUREKA_TP_IN, // output filter size in bits/cycle
   parameter int unsigned AP               = NEUREKA_TP_OUT, // number of accumulators
   parameter int unsigned ACC              = NEUREKA_ACCUM_SIZE,

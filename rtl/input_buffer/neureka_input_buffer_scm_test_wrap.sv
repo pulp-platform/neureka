@@ -24,7 +24,8 @@ module neureka_infeat_buffer_scm_test_wrap
 #(
   parameter int unsigned ADDR_WIDTH   = 6,
   parameter int unsigned DATA_WIDTH   = 128,
-  parameter int unsigned NUM_WORDS    = 64
+  parameter int unsigned NUM_WORDS    = 64,
+  parameter int unsigned USE_LATCHES  = 0
 )
 (
   input  logic                                 clk_i,
@@ -100,9 +101,10 @@ module neureka_infeat_buffer_scm_test_wrap
 
     neureka_infeat_buffer_scm
     #(
-      .ADDR_WIDTH     ( ADDR_WIDTH ),
-      .DATA_WIDTH     ( DATA_WIDTH ),
-      .NUM_WORDS      ( NUM_WORDS  )
+      .ADDR_WIDTH     ( ADDR_WIDTH  ),
+      .DATA_WIDTH     ( DATA_WIDTH  ),
+      .NUM_WORDS      ( NUM_WORDS   ),
+      .USE_LATCHES    ( USE_LATCHES )
     )
     neureka_infeat_buffer_scm_i
     (
