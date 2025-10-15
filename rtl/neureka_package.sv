@@ -288,6 +288,7 @@ package neureka_package;
   typedef struct packed {
     ctrl_binconv_col_t                ctrl_col;
     logic [NEUREKA_BLOCK_SIZE-1:0]    enable_col;
+    logic [NEUREKA_BLOCK_SIZE-1:0]    dw_weight_offset;
     logic [4*NEUREKA_COLUMN_SIZE-1:0] enable_col_pw;
     logic                             dw_accum;
     logic [31:0]                      padding_value;
@@ -305,6 +306,7 @@ package neureka_package;
     ctrl_binconv_pe_t               ctrl_pe;
     logic [$clog2(NEUREKA_TP_IN):0] depthwise_len;
     logic [NEUREKA_NUM_PE_MAX-1:0]  enable_pe;
+    logic                           clock_gating;
     logic [1:0]                     filter_mode;
     logic                           mode_linear;
     logic                           weight_offset;

@@ -951,6 +951,7 @@ module neureka_ctrl #(
   
   
   assign ctrl_engine.ctrl_binconv_array.enable_pe = enable_pe;
+  assign ctrl_engine.ctrl_binconv_array.clock_gating = (state==WEIGHTOFFS | state==MATRIXVEC);
 
   // block-level enables depend on the operating mode -- during WEIGHTOFFS, only 1; in 1x1 mode, as many as the weight_bits are; and in 3x3, all 9 according to the filter_mask_map
   assign ctrl_engine.ctrl_binconv_array.ctrl_pe.ctrl_col.enable_block  = ((state==LOAD || state==WEIGHTOFFS) && config_.filter_mode == NEUREKA_FILTER_MODE_1X1) ? '1 :
@@ -979,10 +980,12 @@ module neureka_ctrl #(
   assign fs1_row_mask     = {{{1'b0}, {kin_onehot[31:24]}},{{1'b0}, {kin_onehot[23:16]}},{{1'b0}, {kin_onehot[15:8]}},{{1'b0}, {kin_onehot[7:0]}}};
   assign fs1_kin_col_mask = {8{((k_in_lim < 8) ? 4'b01 : (k_in_lim < 16) ? 4'b11 : (k_in_lim < 24) ? 4'b111 : 4'b1111)}};
   
-  assign ctrl_engine.ctrl_binconv_array.ctrl_pe.enable_col    = (config_.filter_mode == NEUREKA_FILTER_MODE_1X1) ? ((state==WEIGHTOFFS) ? 
-                                                                  (fs1_qw_col_mask & 32'h0F & fs1_kin_col_mask) : 
-                                                                  fs1_qw_col_mask & fs1_kin_col_mask) : 
-                                                                  (1 << k_in_lim) - 1;
+  assign ctrl_engine.ctrl_binconv_array.ctrl_pe.enable_col    = (config_.filter_mode == NEUREKA_FILTER_MODE_1X1) ? fs1_qw_col_mask & fs1_kin_col_mask : 
+                                                                                                                   (1 << k_in_lim) - 1;
+  assign ctrl_engine.ctrl_binconv_array.ctrl_pe.dw_weight_offset = (config_.filter_mode == NEUREKA_FILTER_MODE_1X1) ? ((state==WEIGHTOFFS) ? 
+                                                                   (fs1_qw_col_mask & 32'h0F & fs1_kin_col_mask) : 
+                                                                    fs1_qw_col_mask & fs1_kin_col_mask) : 
+                                                                    (1 << k_in_lim) - 1;
   assign ctrl_engine.ctrl_binconv_array.ctrl_pe.enable_col_pw = (config_.filter_mode == NEUREKA_FILTER_MODE_1X1) ?  fs1_row_mask : 
                                                                   '1;
 

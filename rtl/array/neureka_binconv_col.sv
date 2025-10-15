@@ -45,13 +45,29 @@ module neureka_binconv_column #(
   output flags_binconv_block_t   flags_o
 );
 
+  logic enable_int, enable_dw, enable_d, enable_q;
+
+  assign enable_int = (ctrl_i.filter_mode==NEUREKA_FILTER_MODE_3X3_DW & ctrl_i.weight_offset) ? enable_dw : enable_i;
+
+  assign enable_dw = enable_i | enable_q;
+
   logic clk_gated;
   cluster_clock_gating i_hier_block_gate (
-    .clk_i     ( clk_i              ),
-    .en_i      ( enable_i | clear_i ),
-    .test_en_i ( test_mode_i        ),
-    .clk_o     ( clk_gated          )
+    .clk_i     ( clk_i                ),
+    .en_i      ( enable_int | clear_i ),
+    .test_en_i ( test_mode_i          ),
+    .clk_o     ( clk_gated            )
   );
+
+  assign enable_d = enable_i;
+  always_ff @(posedge clk_i or negedge rst_ni)
+  begin
+    if(~rst_ni) begin
+      enable_q <= '0;
+    end else begin
+      enable_q <= enable_d;
+    end
+  end
 
   ///////////////////////////////////////////
   // Local Params, Interfaces, and Signals //

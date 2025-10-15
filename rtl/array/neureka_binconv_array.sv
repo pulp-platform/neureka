@@ -322,13 +322,16 @@ module neureka_binconv_array #(
         ctrl_pe.ctrl_col.invalidate = ctrl_i.ctrl_pe.ctrl_col.filter_mode == NEUREKA_FILTER_MODE_3X3_DW & ctrl_i.ctrl_pe.ctrl_col.weight_offset ? block_invalidate_q : 1'b0;
       end
 
+      logic  clk_en_gated;
+      assign clk_en_gated = ctrl_i.enable_pe[ii] &  ctrl_i.clock_gating;
+
       // column instantiation
       logic clk_gated;
       cluster_clock_gating i_hier_column_gate (
-        .clk_i     ( clk_i                                         ),
-        .en_i      ( enable_i & ctrl_i.enable_pe[ii] | clear_i     ),
-        .test_en_i ( test_mode_i                                   ),
-        .clk_o     ( clk_gated                                     )
+        .clk_i     ( clk_i                             ),
+        .en_i      ( enable_i & clk_en_gated | clear_i ),
+        .test_en_i ( test_mode_i                       ),
+        .clk_o     ( clk_gated                         )
       );
 
       neureka_binconv_pe #(
