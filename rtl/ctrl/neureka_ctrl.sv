@@ -138,8 +138,8 @@ import hci_package::*;
   /* Error-counting memory-mapped registers */
 
   `REG_BUS_TYPEDEF_ALL(hci_ecc, logic[31:0], logic[31:0], logic[7:0])
-  hci_ecc_req_t hci_ecc_req;
-  hci_ecc_rsp_t hci_ecc_rsp;
+  hci_package::hci_ecc_req_t hci_ecc_req;
+  hci_package::hci_ecc_rsp_t hci_ecc_rsp;
 
   periph_to_reg #(
     .IW             ( ID_WIDTH           ),
