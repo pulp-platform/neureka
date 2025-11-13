@@ -489,21 +489,18 @@ module neureka_engine #(
 
     // duplicate load_in_blocks, load_weight_rows_conv, load_streamin_cols, norm stream
 
-    // TODO Maybe it's better to rewrite the copy module to keep without the NB_IN_STREAMS since it sucks
-    //      However this will require to rewrite the assignment down below (0 -> 0, 1 ; 1 -> 2, 3)
-    // for(genvar ii=0; ii<BLOCK_SIZE; ii++) begin
-    //   hwpe_stream_copy #( .NB_COPY_STREAMS (N_COPIES) ) i_copy_load_in_blocks ( .push_i (load_in_blocks[ii]), .pop_o (load_in_blocks_copy[N_COPIES*ii+1:N_COPIES*ii]) );
-    // end
     for(genvar ii=0; ii<COLUMN_SIZE; ii++) begin
-      // hwpe_stream_copy #( .NB_COPY_STREAMS (2) ) i_copy_load_weight_rows_conv ( .push_i (load_weight_rows_conv[ii]), .pop_o (load_weight_rows_conv_copy[2*ii+1:2*ii]) );
+      // Weights stream duplication
       hwpe_stream_copy #( .NB_COPY_STREAMS (2), .DEMUXED(1) ) i_copy_load_weight_rows_conv ( .sel_i(ctrl_i.active_datapath), .push_i (load_weight_rows_conv[ii]), .pop_o (load_weight_rows_conv_copy[2*ii+1:2*ii]) );
       hwpe_stream_assign i_to_load_weight_rows_conv_datapath_0 (.push_i(load_weight_rows_conv_copy[2*ii]), .pop_o(load_weight_rows_conv_datapath[ii]));
       hwpe_stream_assign i_to_load_weight_rows_conv_datapath_1 (.push_i(load_weight_rows_conv_copy[2*ii+1]), .pop_o(load_weight_rows_conv_datapath[COLUMN_SIZE+ii]));
     end
     for (genvar ii=0; ii<NR_PE; ii++) begin
+      // Streamin stream duplication
       hwpe_stream_copy #( .NB_COPY_STREAMS (2) ) i_copy_load_streamin_cols ( .push_i (load_streamin_cols[ii]), .pop_o (load_streamin_cols_copy[2*ii+1:2*ii]) );
       hwpe_stream_assign i_to_load_streamin_cols_datapath_0 (.push_i(load_streamin_cols_copy[2*ii]), .pop_o(load_streamin_cols_datapath[ii]));
       hwpe_stream_assign i_to_load_streamin_cols_datapath_1 (.push_i(load_streamin_cols_copy[2*ii+1]), .pop_o(load_streamin_cols_datapath[NR_PE+ii]));
+      // Norm stream duplication
       hwpe_stream_copy #( .NB_COPY_STREAMS (2), .DEMUXED(1) ) i_copy_norm ( .sel_i(ctrl_i.active_datapath), .push_i (norm[ii]), .pop_o (norm_copy[2*ii+1:2*ii]) );
       hwpe_stream_assign i_to_norm_copy_datapath_0 (.push_i(norm_copy[2*ii]), .pop_o(norm_copy_datapath[ii]));
       hwpe_stream_assign i_to_norm_copy_datapath_1 (.push_i(norm_copy[2*ii+1]), .pop_o(norm_copy_datapath[NR_PE+ii]));

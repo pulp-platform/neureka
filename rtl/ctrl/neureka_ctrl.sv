@@ -63,7 +63,7 @@ module neureka_ctrl #(
   logic active_datapath, active_datapath_change, double_active_datapath;
   logic [1:0] uloop_ready_d, uloop_ready_q;
   index_neureka_t  index, next_index;
-  base_addr_neureka_t base_addr, next_base_addr, prev_base_addr_d, prev_base_addr_q;
+  base_addr_neureka_t base_addr, next_base_addr;
   logic uloop_prefetch, uloop_prefetch_pulse;
 
   ctrl_slave_t   slave_ctrl;
@@ -583,27 +583,6 @@ module neureka_ctrl #(
       uloop_ready_q <= '0;
     else
       uloop_ready_q <= uloop_ready_d;
-  end
-
-  always_comb begin
-    prev_base_addr_d = prev_base_addr_q;
-    if(clear_o) begin
-      prev_base_addr_d = '0;
-    end else begin
-      if(state== STREAMOUT_DONE && state_change) begin // TODO It works but must be checked extensively!
-        prev_base_addr_d = base_addr;
-      end
-    end
-  end
-
-  always_ff @(posedge clk_i or negedge rst_ni)
-  begin
-    if(~rst_ni) begin
-      prev_base_addr_q <= '0;
-    end
-    else begin
-      prev_base_addr_q <= prev_base_addr_d;
-    end
   end
 
   /* Streamers binding:
