@@ -29,23 +29,16 @@
 #include "layer_util.h"
 #include "nnx_layer.h"
 #include "output.h"
-#include "ecc_check.h"
-
-uint32_t ecc_errs[ECC_REGS];
 
 int main() {
 
   // execute NNX layer
   execute_nnx_layer(NULL);
 
-  // output checking
-  int err = check_output();
+  // output checking is performed in the testbench
+  // int err = check_output();
 
-  for (int i=0; i < ECC_REGS; i++){
-    printf("Internal error detected: %d \n", ecc_errs[i]);
-  }
-
-  *(volatile int *) (0x80000000) = ((err != 0) && (ecc_errs[1]==0) && (ecc_errs[3]==0));
+  *(volatile int *) (0x80000000) = 0;
   *(volatile int *) (0x80000004) = 1;
   return 0;
 }

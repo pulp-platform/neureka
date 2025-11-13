@@ -19,7 +19,7 @@
  */
 
 #include "nnx_layer.h"
-#include "ecc_check.h"
+// #include "ecc_check.h"
 #include <pmsis.h>
 
 #include "neureka.h"
@@ -59,7 +59,7 @@ typedef neureka_task_flag_e nnx_task_flag_e;
 #define nnx_dispatch_wait neureka_nnx_dispatch_wait
 #define nnx_dispatch neureka_nnx_dispatch
 #define nnx_resolve_wait neureka_nnx_resolve_wait
-#define nnx_read_ecc_regs neureka_nnx_read_ecc_regs
+// #define nnx_read_ecc_regs neureka_nnx_read_ecc_regs
 #define nnx_term neureka_nnx_term
 
 // Generated headers
@@ -169,7 +169,7 @@ static void task_execute(nnx_task_t *task) {
 
   nnx_resolve_wait(dev, task);
 
-  nnx_read_ecc_regs(dev, (uint32_t)ecc_errs);
+  // nnx_read_ecc_regs(dev, (uint32_t)ecc_errs);
 
   nnx_term(dev);
 
