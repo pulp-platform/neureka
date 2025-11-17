@@ -157,7 +157,7 @@ hw-all: hw-lib hw-compile hw-opt
 .PHONY: stimuli build-cleanup
 
 PE_H ?= 4
-PE_W ?= 4
+PE_W ?= 2
 FS ?= 1
 ifeq ($(FS), 3)
   H_IN ?= 6
