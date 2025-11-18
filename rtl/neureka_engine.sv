@@ -493,7 +493,11 @@ module neureka_engine #(
       ctrl_double_infeat_buffer_t local_ctrl_double_infeat_buffer;
       flags_engine_t              local_flags;
       ctrl_engine_t               local_ctrl;
+      logic                       local_enable;
+      logic                       local_clear;
 
+      assign local_enable                    = enable_i;
+      assign local_clear                     = clear_i;
       assign local_ctrl                      = ctrl_i;
       assign flags[jj]                       = local_flags;
       assign local_ctrl_double_infeat_buffer = local_ctrl.resilience_mode || local_ctrl.broadcast || local_ctrl.active_datapath == jj ?
@@ -520,8 +524,8 @@ module neureka_engine #(
         .clk_i       ( clk_i                                ),
         .rst_ni      ( rst_ni                               ),
         .test_mode_i ( test_mode_i                          ),
-        .enable_i    ( enable_i                             ),
-        .clear_i     ( clear_i                              ),
+        .enable_i    ( local_enable                         ),
+        .clear_i     ( local_clear                          ),
         .ctrl_i      ( local_ctrl_double_infeat_buffer      ),
         .flags_o     ( local_flags.flags_double_infeat_buffer ),
         .feat_i      ( local_load_in_blocks                 ),
@@ -551,8 +555,8 @@ module neureka_engine #(
         .clk_i             ( clk_i                          ),
         .rst_ni            ( rst_ni                         ),
         .test_mode_i       ( test_mode_i                    ),
-        .enable_i          ( enable_i                       ),
-        .clear_i           ( clear_i                        ),
+        .enable_i          ( local_enable                   ),
+        .clear_i           ( local_clear                    ),
         .activation_i      ( in_from_buf                    ),
         .weight_conv_i     ( local_load_weight_rows_conv    ),
         .pres_o            ( pres                           ),
@@ -610,8 +614,8 @@ module neureka_engine #(
           .clk_i       ( clk_i                                              ),
           .rst_ni      ( rst_ni                                             ),
           .test_mode_i ( test_mode_i                                        ),
-          .enable_i    ( enable_i                                           ),
-          .clear_i     ( clear_i                                            ),
+          .enable_i    ( local_enable                                       ),
+          .clear_i     ( local_clear                                        ),
           .conv_i      ( pres                          [ii]                 ),
           .conv_dw_i   ( pres_depthwise [(ii+1)*BLOCK_SIZE-1:ii*BLOCK_SIZE] ),
           .norm_i      ( local_norm                    [ii]                 ),
