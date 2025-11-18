@@ -117,39 +117,6 @@ module neureka_engine #(
   );
 
   hwpe_stream_intf_stream #(
-    .DATA_WIDTH ( NEUREKA_QA_IN )
-`ifndef SYNTHESIS
-    ,
-    .BYPASS_VCR_ASSERT( 1'b1  ),
-    .BYPASS_VDR_ASSERT( 1'b1  )
-`endif
-  ) in_from_buf [N_COPIES*INPUT_BUF_SIZE-1:0] (
-    .clk ( clk_i )
-  );
-
-  hwpe_stream_intf_stream #(
-    .DATA_WIDTH ( BLOCK_PRES_SIZE )
-`ifndef SYNTHESIS
-    ,
-    .BYPASS_VCR_ASSERT( 1'b1  ),
-    .BYPASS_VDR_ASSERT( 1'b1  )
-`endif
-  ) pres [N_COPIES*NR_PE-1:0] (
-    .clk ( clk_i )
-  );
-
-  hwpe_stream_intf_stream #(
-    .DATA_WIDTH ( COLUMN_PRES_SIZE )
-`ifndef SYNTHESIS
-    ,
-    .BYPASS_VCR_ASSERT( 1'b1  ),
-    .BYPASS_VDR_ASSERT( 1'b1  )
-`endif
-  ) pres_depthwise [N_COPIES*BLOCK_SIZE*NR_PE-1:0] (
-    .clk ( clk_i )
-  );
-
-  hwpe_stream_intf_stream #(
     .DATA_WIDTH ( NEUREKA_MEM_BANDWIDTH )
 `ifndef SYNTHESIS
     ,
@@ -204,7 +171,7 @@ module neureka_engine #(
     .push_i  ( load_in        ),
     .pop_o   ( load_in_blocks )
   );
-  
+
   hwpe_stream_fifo #(
     .DATA_WIDTH ( NEUREKA_MEM_BANDWIDTH_EXT ),
     .FIFO_DEPTH ( 2                  )
@@ -340,9 +307,9 @@ module neureka_engine #(
   // hwpe_stream_copy #( .NB_COPY_STREAMS (NR_PE) ) i_norm ( .push_i (load_norm_fifo.sink), .pop_o (norm.source) ); // I don't remember why it can't be used here
 
   /* Input Buffer */
-  localparam int INFEAT_BUFFER_SIZE_H  = PE_H+2; // Input Feature buffer size across height. 
+  localparam int INFEAT_BUFFER_SIZE_H  = PE_H+2; // Input Feature buffer size across height.
   localparam int INFEAT_BUFFER_SIZE_W  = PE_W+2; // Input Feature buffer size across width
-  localparam int INFEAT_BUFFER_SIZE_HW = INFEAT_BUFFER_SIZE_H*INFEAT_BUFFER_SIZE_W; // Input Feature buffer size 
+  localparam int INFEAT_BUFFER_SIZE_HW = INFEAT_BUFFER_SIZE_H*INFEAT_BUFFER_SIZE_W; // Input Feature buffer size
   if (FAULT_TOLERANCE) begin : ft_datapath_gen
 
     logic data_gating_en;
@@ -356,28 +323,6 @@ module neureka_engine #(
       .BYPASS_VDR_ASSERT( 1'b1  )
   `endif
     ) out_cols [N_COPIES*NR_PE-1:0] (
-      .clk ( clk_i )
-    );
-
-    hwpe_stream_intf_stream #(
-      .DATA_WIDTH ( NEUREKA_MEM_BANDWIDTH )
-  `ifndef SYNTHESIS
-      ,
-      .BYPASS_VCR_ASSERT( 1'b1  ),
-      .BYPASS_VDR_ASSERT( 1'b1  )
-  `endif
-    ) out_cols_0 [NR_PE-1:0] (
-      .clk ( clk_i )
-    );
-
-    hwpe_stream_intf_stream #(
-      .DATA_WIDTH ( NEUREKA_MEM_BANDWIDTH )
-  `ifndef SYNTHESIS
-      ,
-      .BYPASS_VCR_ASSERT( 1'b1  ),
-      .BYPASS_VDR_ASSERT( 1'b1  )
-  `endif
-    ) out_cols_1 [NR_PE-1:0] (
       .clk ( clk_i )
     );
 
@@ -404,17 +349,6 @@ module neureka_engine #(
     );
 
     hwpe_stream_intf_stream #(
-      .DATA_WIDTH ( NEUREKA_QA_IN )
-  `ifndef SYNTHESIS
-      ,
-      .BYPASS_VCR_ASSERT( 1'b1  ),
-      .BYPASS_VDR_ASSERT( 1'b1  )
-  `endif
-    ) load_in_blocks_datapath [N_COPIES*BLOCK_SIZE-1:0] (
-      .clk ( clk_i )
-    );
-
-    hwpe_stream_intf_stream #(
       .DATA_WIDTH ( TP_IN )
   `ifndef SYNTHESIS
       ,
@@ -422,17 +356,6 @@ module neureka_engine #(
       .BYPASS_VDR_ASSERT( 1'b1  )
   `endif
     ) load_weight_rows_conv_copy [N_COPIES*COLUMN_SIZE-1:0] (
-      .clk ( clk_i )
-    );
-
-    hwpe_stream_intf_stream #(
-      .DATA_WIDTH ( TP_IN )
-  `ifndef SYNTHESIS
-      ,
-      .BYPASS_VCR_ASSERT( 1'b1  ),
-      .BYPASS_VDR_ASSERT( 1'b1  )
-  `endif
-    ) load_weight_rows_conv_datapath [N_COPIES*COLUMN_SIZE-1:0] (
       .clk ( clk_i )
     );
 
@@ -454,80 +377,135 @@ module neureka_engine #(
       .BYPASS_VCR_ASSERT( 1'b1  ),
       .BYPASS_VDR_ASSERT( 1'b1  )
   `endif
-    ) load_streamin_cols_datapath [N_COPIES*NR_PE-1:0] (
-      .clk ( clk_i )
-    );
-
-    hwpe_stream_intf_stream #(
-      .DATA_WIDTH ( NEUREKA_MEM_BANDWIDTH )
-  `ifndef SYNTHESIS
-      ,
-      .BYPASS_VCR_ASSERT( 1'b1  ),
-      .BYPASS_VDR_ASSERT( 1'b1  )
-  `endif
     ) norm_copy [N_COPIES*NR_PE-1:0] (
-      .clk ( clk_i )
-    );
-
-    hwpe_stream_intf_stream #(
-      .DATA_WIDTH ( NEUREKA_MEM_BANDWIDTH )
-  `ifndef SYNTHESIS
-      ,
-      .BYPASS_VCR_ASSERT( 1'b1  ),
-      .BYPASS_VDR_ASSERT( 1'b1  )
-  `endif
-    ) norm_copy_datapath [N_COPIES*NR_PE-1:0] (
       .clk ( clk_i )
     );
 
     flags_engine_t [N_COPIES-1:0] flags;
     logic [NR_PE-1:0] data_fault_d, data_fault_q;
 
-    ctrl_double_infeat_buffer_t [N_COPIES-1:0] ctrl_double_infeat_buffer_copy;
-    assign ctrl_double_infeat_buffer_copy[0] = (ctrl_i.resilience_mode == 1 | ctrl_i.broadcast) ? ctrl_i.ctrl_double_infeat_buffer :  (ctrl_i.active_datapath == 0) ? ctrl_i.ctrl_double_infeat_buffer : '0;
-    assign ctrl_double_infeat_buffer_copy[1] = (ctrl_i.resilience_mode == 1 | ctrl_i.broadcast) ? ctrl_i.ctrl_double_infeat_buffer :  (ctrl_i.active_datapath == 1) ? ctrl_i.ctrl_double_infeat_buffer : '0;
-
     // duplicate load_in_blocks, load_weight_rows_conv, load_streamin_cols, norm stream
-
-    for(genvar ii=0; ii<COLUMN_SIZE; ii++) begin
+    for(genvar ii=0; ii<COLUMN_SIZE; ii++) begin : gen_column_size_copy
       // Weights stream duplication
-      hwpe_stream_copy #( .NB_COPY_STREAMS (2), .DEMUXED(1) ) i_copy_load_weight_rows_conv ( .sel_i(ctrl_i.active_datapath), .push_i (load_weight_rows_conv[ii]), .pop_o (load_weight_rows_conv_copy[2*ii+1:2*ii]) );
-      hwpe_stream_assign i_to_load_weight_rows_conv_datapath_0 (.push_i(load_weight_rows_conv_copy[2*ii]), .pop_o(load_weight_rows_conv_datapath[ii]));
-      hwpe_stream_assign i_to_load_weight_rows_conv_datapath_1 (.push_i(load_weight_rows_conv_copy[2*ii+1]), .pop_o(load_weight_rows_conv_datapath[COLUMN_SIZE+ii]));
+      hwpe_stream_copy #( .NB_COPY_STREAMS (N_COPIES), .DEMUXED(1) ) i_copy_load_weight_rows_conv ( .sel_i(ctrl_i.active_datapath), .push_i (load_weight_rows_conv[ii]), .pop_o (load_weight_rows_conv_copy[2*ii+1:2*ii]) );
     end
-    for (genvar ii=0; ii<NR_PE; ii++) begin
+    for (genvar ii=0; ii<NR_PE; ii++) begin : gen_nr_pe_copy
       // Streamin stream duplication
-      hwpe_stream_copy #( .NB_COPY_STREAMS (2) ) i_copy_load_streamin_cols ( .push_i (load_streamin_cols[ii]), .pop_o (load_streamin_cols_copy[2*ii+1:2*ii]) );
-      hwpe_stream_assign i_to_load_streamin_cols_datapath_0 (.push_i(load_streamin_cols_copy[2*ii]), .pop_o(load_streamin_cols_datapath[ii]));
-      hwpe_stream_assign i_to_load_streamin_cols_datapath_1 (.push_i(load_streamin_cols_copy[2*ii+1]), .pop_o(load_streamin_cols_datapath[NR_PE+ii]));
+      hwpe_stream_copy #( .NB_COPY_STREAMS (N_COPIES) ) i_copy_load_streamin_cols ( .sel_i('0), .push_i (load_streamin_cols[ii]), .pop_o (load_streamin_cols_copy[2*ii+1:2*ii]) );
       // Norm stream duplication
-      hwpe_stream_copy #( .NB_COPY_STREAMS (2), .DEMUXED(1) ) i_copy_norm ( .sel_i(ctrl_i.active_datapath), .push_i (norm[ii]), .pop_o (norm_copy[2*ii+1:2*ii]) );
-      hwpe_stream_assign i_to_norm_copy_datapath_0 (.push_i(norm_copy[2*ii]), .pop_o(norm_copy_datapath[ii]));
-      hwpe_stream_assign i_to_norm_copy_datapath_1 (.push_i(norm_copy[2*ii+1]), .pop_o(norm_copy_datapath[NR_PE+ii]));
+      hwpe_stream_copy #( .NB_COPY_STREAMS (N_COPIES), .DEMUXED(1) ) i_copy_norm ( .sel_i(ctrl_i.active_datapath), .push_i (norm[ii]), .pop_o (norm_copy[2*ii+1:2*ii]) );
     end
 
-
-    logic [BLOCK_SIZE-1:0][2-1:0] load_in_blocks_datapath_ready;
-
-    for(genvar ii=0; ii<2; ii++) begin : stream_copy
-      for(genvar jj=0; jj<BLOCK_SIZE; jj++) begin
-        localparam ii_jj = ii*BLOCK_SIZE+jj;
-
-        assign load_in_blocks_datapath[ii_jj].data  = load_in_blocks[jj].data;
-        assign load_in_blocks_datapath[ii_jj].strb  = load_in_blocks[jj].strb;
-        assign load_in_blocks_datapath[ii_jj].valid = load_in_blocks[jj].valid;
-
-        // auxiliary for ready generation
-        assign load_in_blocks_datapath_ready[jj][ii] = load_in_blocks_datapath[ii_jj].ready;
-
-      end
-    end
-
-    for(genvar jj=0; jj<BLOCK_SIZE; jj++) begin : ready_assign
-      assign load_in_blocks[jj].ready = (ctrl_i.resilience_mode == 1) ? &(load_in_blocks_datapath_ready[jj]) : (ctrl_i.active_datapath == 0) ? load_in_blocks_datapath_ready[jj][0] : load_in_blocks_datapath_ready[jj][1];
+    for(genvar ii=0; ii<BLOCK_SIZE; ii++) begin : gen_block_size_copy
+      hwpe_stream_copy #( .NB_COPY_STREAMS (N_COPIES), .DEMUXED (1) ) i_copy_load_in_blocks ( .sel_i(ctrl_i.active_datapath), .push_i (load_in_blocks[ii]), .pop_o (load_in_blocks_copy[2*ii+1:2*ii]) );
     end
 
     for (genvar jj=0; jj<N_COPIES; jj++) begin : redundancy_gen
+
+      hwpe_stream_intf_stream #(
+        .DATA_WIDTH ( NEUREKA_QA_IN )
+    `ifndef SYNTHESIS
+        ,
+        .BYPASS_VCR_ASSERT( 1'b1  ),
+        .BYPASS_VDR_ASSERT( 1'b1  )
+    `endif
+      ) local_load_in_blocks [BLOCK_SIZE-1:0] (
+        .clk ( clk_i )
+      );
+
+      hwpe_stream_intf_stream #(
+        .DATA_WIDTH ( TP_IN )
+    `ifndef SYNTHESIS
+        ,
+        .BYPASS_VCR_ASSERT( 1'b1  ),
+        .BYPASS_VDR_ASSERT( 1'b1  )
+    `endif
+      ) local_load_weight_rows_conv [COLUMN_SIZE-1:0] (
+        .clk ( clk_i )
+      );
+
+      hwpe_stream_intf_stream #(
+        .DATA_WIDTH ( NEUREKA_MEM_BANDWIDTH )
+    `ifndef SYNTHESIS
+        ,
+        .BYPASS_VCR_ASSERT( 1'b1  ),
+        .BYPASS_VDR_ASSERT( 1'b1  )
+    `endif
+      ) local_norm [NR_PE-1:0] (
+        .clk ( clk_i )
+      );
+
+      hwpe_stream_intf_stream #(
+        .DATA_WIDTH ( NEUREKA_MEM_BANDWIDTH )
+    `ifndef SYNTHESIS
+        ,
+        .BYPASS_VCR_ASSERT( 1'b1  ),
+        .BYPASS_VDR_ASSERT( 1'b1  )
+    `endif
+      ) local_load_streamin_cols [NR_PE-1:0] (
+        .clk ( clk_i )
+      );
+
+      hwpe_stream_intf_stream #(
+        .DATA_WIDTH ( NEUREKA_QA_IN )
+    `ifndef SYNTHESIS
+        ,
+        .BYPASS_VCR_ASSERT( 1'b1  ),
+        .BYPASS_VDR_ASSERT( 1'b1  )
+    `endif
+      ) in_from_buf [INPUT_BUF_SIZE-1:0] (
+        .clk ( clk_i )
+      );
+
+      hwpe_stream_intf_stream #(
+        .DATA_WIDTH ( BLOCK_PRES_SIZE )
+    `ifndef SYNTHESIS
+        ,
+        .BYPASS_VCR_ASSERT( 1'b1  ),
+        .BYPASS_VDR_ASSERT( 1'b1  )
+    `endif
+      ) pres [NR_PE-1:0] (
+        .clk ( clk_i )
+      );
+
+      hwpe_stream_intf_stream #(
+        .DATA_WIDTH ( COLUMN_PRES_SIZE )
+    `ifndef SYNTHESIS
+        ,
+        .BYPASS_VCR_ASSERT( 1'b1  ),
+        .BYPASS_VDR_ASSERT( 1'b1  )
+    `endif
+      ) pres_depthwise [BLOCK_SIZE*NR_PE-1:0] (
+        .clk ( clk_i )
+      );
+
+      hwpe_stream_intf_stream #(
+        .DATA_WIDTH ( NEUREKA_MEM_BANDWIDTH )
+    `ifndef SYNTHESIS
+        ,
+        .BYPASS_VCR_ASSERT( 1'b1  ),
+        .BYPASS_VDR_ASSERT( 1'b1  )
+    `endif
+      ) local_store_out_cols [NR_PE-1:0] (
+        .clk ( clk_i )
+      );
+
+      ctrl_double_infeat_buffer_t local_ctrl_double_infeat_buffer;
+      flags_engine_t              local_flags;
+      ctrl_engine_t               local_ctrl;
+
+      assign local_ctrl                      = ctrl_i;
+      assign flags[jj]                       = local_flags;
+      assign local_ctrl_double_infeat_buffer = local_ctrl.resilience_mode || local_ctrl.broadcast || local_ctrl.active_datapath == jj ?
+                                               local_ctrl.ctrl_double_infeat_buffer : '0;
+
+      for (genvar ii=0; ii<BLOCK_SIZE; ii++) begin : gen_local_load_in_blocks_assign
+        hwpe_stream_assign i_local_load_in_block_assign (.push_i(load_in_blocks_copy[N_COPIES*ii+jj]), .pop_o(local_load_in_blocks[ii]));
+      end
+
+      for(genvar ii=0; ii<COLUMN_SIZE; ii++) begin : gen_local_load_weight_rows_conv_assign
+        hwpe_stream_assign i_local_load_weight_rows_conv_assign (.push_i(load_weight_rows_conv_copy[N_COPIES*ii+jj]), .pop_o(local_load_weight_rows_conv[ii]));
+      end
 
       neureka_double_infeat_buffer #(
         .INPUT_BUF_SIZE        ( INPUT_BUF_SIZE        ),
@@ -539,22 +517,24 @@ module neureka_engine #(
         .INFEAT_BUFFER_SIZE_W  ( INFEAT_BUFFER_SIZE_W  ),
         .INFEAT_BUFFER_SIZE_HW ( INFEAT_BUFFER_SIZE_HW )
       ) i_double_infeat_buffer (
-        .clk_i       ( clk_i                              ),
-        .rst_ni      ( rst_ni                             ),
-        .test_mode_i ( test_mode_i                        ),
-        .enable_i    ( enable_i                           ),
-        .clear_i     ( clear_i                            ),
-        .ctrl_i      ( ctrl_double_infeat_buffer_copy[jj]   ),
-        .flags_o     ( flags[jj].flags_double_infeat_buffer ),
-        .feat_i      ( load_in_blocks_datapath[(jj+1)*BLOCK_SIZE-1:jj*BLOCK_SIZE] ),
-        .feat_o      ( in_from_buf[(jj+1)*INPUT_BUF_SIZE-1:jj*INPUT_BUF_SIZE] )
+        .clk_i       ( clk_i                                ),
+        .rst_ni      ( rst_ni                               ),
+        .test_mode_i ( test_mode_i                          ),
+        .enable_i    ( enable_i                             ),
+        .clear_i     ( clear_i                              ),
+        .ctrl_i      ( local_ctrl_double_infeat_buffer      ),
+        .flags_o     ( local_flags.flags_double_infeat_buffer ),
+        .feat_i      ( local_load_in_blocks                 ),
+        .feat_o      ( in_from_buf                          )
       );
 
       ctrl_binconv_array_t ctrl_binconv_array;
       always_comb
       begin
-        ctrl_binconv_array = ctrl_i.ctrl_binconv_array;
-        ctrl_binconv_array.enable_pe = (ctrl_i.resilience_mode == 1) ? ctrl_i.enable_accumulator : ctrl_i.enable_accumulator[jj*NR_PE+:NR_PE];
+        ctrl_binconv_array = local_ctrl.ctrl_binconv_array;
+        ctrl_binconv_array.enable_pe = local_ctrl.resilience_mode ?
+                                       local_ctrl.enable_accumulator :
+                                       local_ctrl.enable_accumulator[jj*NR_PE+:NR_PE];
       end
 
       /* BinConv Array */
@@ -573,24 +553,27 @@ module neureka_engine #(
         .test_mode_i       ( test_mode_i                    ),
         .enable_i          ( enable_i                       ),
         .clear_i           ( clear_i                        ),
-        .activation_i      ( in_from_buf[(jj+1)*INPUT_BUF_SIZE-1:jj*INPUT_BUF_SIZE] ),
-        .weight_conv_i     ( load_weight_rows_conv_datapath[(jj+1)*COLUMN_SIZE-1:jj*COLUMN_SIZE]          ),
-        .pres_o            ( pres[(jj+1)*NR_PE-1:jj*NR_PE]          ),
-        .pres_depthwise_o  ( pres_depthwise[(jj+1)*BLOCK_SIZE*NR_PE-1:jj*BLOCK_SIZE*NR_PE] ), // check this
-        .ctrl_i            ( ctrl_binconv_array      ),
-        .flags_o           ( flags[jj].flags_binconv_array  )
+        .activation_i      ( in_from_buf                    ),
+        .weight_conv_i     ( local_load_weight_rows_conv    ),
+        .pres_o            ( pres                           ),
+        .pres_depthwise_o  ( pres_depthwise                 ),
+        .ctrl_i            ( ctrl_binconv_array             ),
+        .flags_o           ( local_flags.flags_binconv_array  )
       );
 
       /* Accumulators + Normalization/Quantization */
       for (genvar ii=0; ii<NR_PE; ii++) begin : accumulator_gen
 
+        hwpe_stream_assign i_local_norm_assign (.push_i(norm_copy[N_COPIES*ii+jj]), .pop_o(local_norm[ii]));
+        hwpe_stream_assign i_local_load_streamin_cols_assign (.push_i(load_streamin_cols_copy[N_COPIES*ii+jj]), .pop_o(local_load_streamin_cols[ii]));
+
         ctrl_aq_t ctrl_accumulator;
         always_comb
         begin
-          ctrl_accumulator = ctrl_i.ctrl_accumulator;
-          if (ctrl_i.resilience_mode) begin
-            ctrl_accumulator.enable_streamout = ctrl_i.enable_accumulator[ii] ;
-            if(ctrl_i.enable_accumulator[ii] == '0) begin
+          ctrl_accumulator = local_ctrl.ctrl_accumulator;
+          if (local_ctrl.resilience_mode) begin
+            ctrl_accumulator.enable_streamout = local_ctrl.enable_accumulator[ii] ;
+            if(local_ctrl.enable_accumulator[ii] == '0) begin
               ctrl_accumulator.goto_normquant        = '0;
               ctrl_accumulator.goto_accum            = '0;
               ctrl_accumulator.goto_streamin         = '0;
@@ -600,11 +583,11 @@ module neureka_engine #(
               ctrl_accumulator.weight_offset         = '0;
               ctrl_accumulator.sample_shift          = '0;
             end
-            if(ctrl_i.last_pe == ii)
+            if(local_ctrl.last_pe == ii)
               ctrl_accumulator.last_pe = 1'b1;
           end else begin
-            ctrl_accumulator.enable_streamout = ctrl_i.enable_accumulator[jj*NR_PE+ii] ;
-            if(ctrl_i.enable_accumulator[ii] == '0 && ctrl_i.enable_accumulator[NR_PE+ii] == '0) begin
+            ctrl_accumulator.enable_streamout = local_ctrl.enable_accumulator[jj*NR_PE+ii] ;
+            if(local_ctrl.enable_accumulator[ii] == '0 && local_ctrl.enable_accumulator[NR_PE+ii] == '0) begin
               ctrl_accumulator.goto_normquant        = '0;
               ctrl_accumulator.goto_accum            = '0;
               ctrl_accumulator.goto_streamin         = '0;
@@ -614,7 +597,7 @@ module neureka_engine #(
               ctrl_accumulator.weight_offset         = '0;
               ctrl_accumulator.sample_shift          = '0;
             end
-            if(ctrl_i.last_pe == ii)
+            if(local_ctrl.last_pe == ii)
                 ctrl_accumulator.last_pe = 1'b1;
             end
         end
@@ -629,37 +612,40 @@ module neureka_engine #(
           .test_mode_i ( test_mode_i                                        ),
           .enable_i    ( enable_i                                           ),
           .clear_i     ( clear_i                                            ),
-          .conv_i      ( pres             [jj*NR_PE+ii]                    ),
-          .conv_dw_i   ( pres_depthwise   [(jj*NR_PE*BLOCK_SIZE)+(ii+1)*BLOCK_SIZE-1:(jj*NR_PE*BLOCK_SIZE)+ii*BLOCK_SIZE] ), // check this
-          .norm_i      ( norm_copy_datapath                       [jj*NR_PE+ii]      ),
-          .streamin_i  ( load_streamin_cols_datapath         [jj*NR_PE+ii]      ),
-          .conv_o      ( out_cols                        [jj*NR_PE+ii]      ),
+          .conv_i      ( pres                          [ii]                 ),
+          .conv_dw_i   ( pres_depthwise [(ii+1)*BLOCK_SIZE-1:ii*BLOCK_SIZE] ),
+          .norm_i      ( local_norm                    [ii]                 ),
+          .streamin_i  ( local_load_streamin_cols      [ii]                 ),
+          .conv_o      ( local_store_out_cols          [ii]                 ),
           .ctrl_i      ( ctrl_accumulator                                   ),
-          .flags_o     ( flags[jj].flags_accumulator    [ii]                )
+          .flags_o     ( local_flags.flags_accumulator [ii]                 )
         );
 
+        always_comb
+        begin
+          out_cols[NR_PE*jj+ii].data  = local_store_out_cols[ii].data;
+          out_cols[NR_PE*jj+ii].valid = local_store_out_cols[ii].valid;
+          out_cols[NR_PE*jj+ii].strb  = local_store_out_cols[ii].strb;
+          if (jj == 0)
+            local_store_out_cols[ii].ready = out_cols[ii].ready;
+          else
+            local_store_out_cols[ii].ready = ctrl_i.resilience_mode ?
+                                             out_cols[ii].ready :
+                                             out_cols[NR_PE*jj+ii].ready;
+        end
       end // accumulator_gen
     end // redundancy_gen
 
     for(genvar ii=0; ii<NR_PE; ii++) begin
 
-      // Workaround
-      hwpe_stream_assign i_to_out_cols_0 (.push_i(out_cols[ii]), .pop_o(out_cols_0[ii]));
-
-      assign out_cols_1[ii].data  = out_cols[NR_PE+ii].data;
-      assign out_cols_1[ii].valid = out_cols[NR_PE+ii].valid;
-      assign out_cols_1[ii].strb  = out_cols[NR_PE+ii].strb;
-
-      assign out_cols[NR_PE+ii].ready = (ctrl_i.resilience_mode) ? out_cols_0[ii].ready : out_cols_1[ii].ready;
-
       hwpe_stream_mux_static i_out_cols_mux (
-        .clk_i    ( clk_i            ),
-        .rst_ni   ( rst_ni           ),
-        .clear_i  ( clear_i          ),
+        .clk_i    ( clk_i                  ),
+        .rst_ni   ( rst_ni                 ),
+        .clear_i  ( clear_i                ),
         .sel_i    ( ctrl_i.active_datapath ),
-        .push_0_i ( out_cols_0[ii]     ),
-        .push_1_i ( out_cols_1[ii]     ),
-        .pop_o    ( store_out_cols[ii] )
+        .push_0_i ( out_cols[ii]           ),
+        .push_1_i ( out_cols[NR_PE+ii]     ),
+        .pop_o    ( store_out_cols[ii]     )
       );
 
       // Maurus's solution
@@ -683,8 +669,8 @@ module neureka_engine #(
       logic [NEUREKA_MEM_BANDWIDTH-1:0] gated_outdata_0, gated_outdata_1;
 
       always_comb begin : checker_gen
-        gated_outdata_0 = data_gating_en ? out_cols_0[ii].data : '0;
-        gated_outdata_1 = data_gating_en ? out_cols_1[ii].data : '0;
+        gated_outdata_0 = data_gating_en ? out_cols[ii].data : '0;
+        gated_outdata_1 = data_gating_en ? out_cols[NR_PE+ii].data : '0;
         data_fault_d[ii] = data_gating_en ? (gated_outdata_0 != gated_outdata_1) : '0;
       end
     end
@@ -716,6 +702,40 @@ module neureka_engine #(
     assign flags_o.flags_binconv_array = (ctrl_i.resilience_mode == 1) ? flags[0].flags_binconv_array : flags[sel].flags_binconv_array;
 
   end else begin : datapath_gen
+
+    hwpe_stream_intf_stream #(
+      .DATA_WIDTH ( NEUREKA_QA_IN )
+  `ifndef SYNTHESIS
+      ,
+      .BYPASS_VCR_ASSERT( 1'b1  ),
+      .BYPASS_VDR_ASSERT( 1'b1  )
+  `endif
+    ) in_from_buf [INPUT_BUF_SIZE-1:0] (
+      .clk ( clk_i )
+    );
+
+    hwpe_stream_intf_stream #(
+      .DATA_WIDTH ( BLOCK_PRES_SIZE )
+  `ifndef SYNTHESIS
+      ,
+      .BYPASS_VCR_ASSERT( 1'b1  ),
+      .BYPASS_VDR_ASSERT( 1'b1  )
+  `endif
+    ) pres [NR_PE-1:0] (
+      .clk ( clk_i )
+    );
+
+    hwpe_stream_intf_stream #(
+      .DATA_WIDTH ( COLUMN_PRES_SIZE )
+  `ifndef SYNTHESIS
+      ,
+      .BYPASS_VCR_ASSERT( 1'b1  ),
+      .BYPASS_VDR_ASSERT( 1'b1  )
+  `endif
+    ) pres_depthwise [BLOCK_SIZE*NR_PE-1:0] (
+      .clk ( clk_i )
+    );
+
     /* Input Buffer */
     localparam int INFEAT_BUFFER_SIZE_H  = PE_H+2; // Input Feature buffer size across height.
     localparam int INFEAT_BUFFER_SIZE_W  = PE_W+2; // Input Feature buffer size across width
