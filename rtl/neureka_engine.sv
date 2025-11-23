@@ -327,6 +327,17 @@ module neureka_engine #(
     );
 
     hwpe_stream_intf_stream #(
+      .DATA_WIDTH ( NEUREKA_MEM_BANDWIDTH )
+  `ifndef SYNTHESIS
+      ,
+      .BYPASS_VCR_ASSERT( 1'b1  ),
+      .BYPASS_VDR_ASSERT( 1'b1  )
+  `endif
+    ) out_cols_copy [N_COPIES*NR_PE-1:0] (
+      .clk ( clk_i )
+    );
+
+    hwpe_stream_intf_stream #(
       .DATA_WIDTH ( NEUREKA_QA_IN )
   `ifndef SYNTHESIS
       ,
@@ -399,6 +410,10 @@ module neureka_engine #(
     for(genvar ii=0; ii<BLOCK_SIZE; ii++) begin : gen_block_size_copy
       hwpe_stream_copy #( .NB_COPY_STREAMS (N_COPIES), .DEMUXED (1) ) i_copy_load_in_blocks ( .sel_i(ctrl_i.active_datapath), .push_i (load_in_blocks[ii]), .pop_o (load_in_blocks_copy[2*ii+1:2*ii]) );
     end
+
+    logic delay_enable;
+
+    assign delay_enable = ctrl_i.resilience_mode;
 
     for (genvar jj=0; jj<N_COPIES; jj++) begin : redundancy_gen
 
@@ -490,25 +505,50 @@ module neureka_engine #(
         .clk ( clk_i )
       );
 
+      localparam bit MAIN_DATAPATH = jj == 0;
+
       ctrl_double_infeat_buffer_t local_ctrl_double_infeat_buffer;
       flags_engine_t              local_flags;
       ctrl_engine_t               local_ctrl;
       logic                       local_enable;
       logic                       local_clear;
 
-      assign local_enable                    = enable_i;
-      assign local_clear                     = clear_i;
-      assign local_ctrl                      = ctrl_i;
+      if (MAIN_DATAPATH) begin
+        assign local_enable = enable_i;
+        assign local_clear  = clear_i;
+        assign local_ctrl   = ctrl_i;
+      end else begin
+        ctrl_engine_t delayed_ctrl_q;
+        logic         delayed_enable_q;
+        logic         delayed_clear_q;
+        always_ff @(posedge clk_i or negedge rst_ni) begin
+          if (!rst_ni) begin
+            delayed_ctrl_q   <= '0;
+            delayed_enable_q <= '0;
+            delayed_clear_q  <= '0;
+          end else begin
+            delayed_ctrl_q   <= ctrl_i;
+            delayed_enable_q <= enable_i;
+            delayed_clear_q  <= clear_i;
+          end
+        end
+        assign local_enable = delay_enable ? delayed_enable_q : enable_i;
+        assign local_clear  = delay_enable ? delayed_clear_q  : clear_i;
+        assign local_ctrl   = delay_enable ? delayed_ctrl_q   : ctrl_i;
+      end
+
       assign flags[jj]                       = local_flags;
       assign local_ctrl_double_infeat_buffer = local_ctrl.resilience_mode || local_ctrl.broadcast || local_ctrl.active_datapath == jj ?
                                                local_ctrl.ctrl_double_infeat_buffer : '0;
 
       for (genvar ii=0; ii<BLOCK_SIZE; ii++) begin : gen_local_load_in_blocks_assign
-        hwpe_stream_assign i_local_load_in_block_assign (.push_i(load_in_blocks_copy[N_COPIES*ii+jj]), .pop_o(local_load_in_blocks[ii]));
+        hwpe_stream_delay_assign #(.DATA_WIDTH (NEUREKA_QA_IN), .DELAY_REQ (!MAIN_DATAPATH), .DELAY_RESP (1'b0)) i_local_load_in_block_assign
+          (.clk_i, .rst_ni, .delay_i(delay_enable), .push_i(load_in_blocks_copy[N_COPIES*ii+jj]), .pop_o(local_load_in_blocks[ii]));
       end
 
       for(genvar ii=0; ii<COLUMN_SIZE; ii++) begin : gen_local_load_weight_rows_conv_assign
-        hwpe_stream_assign i_local_load_weight_rows_conv_assign (.push_i(load_weight_rows_conv_copy[N_COPIES*ii+jj]), .pop_o(local_load_weight_rows_conv[ii]));
+        hwpe_stream_delay_assign #(.DATA_WIDTH (TP_IN), .DELAY_REQ (!MAIN_DATAPATH), .DELAY_RESP (1'b0)) i_local_load_weight_rows_conv_assign
+          (.clk_i, .rst_ni, .delay_i(delay_enable), .push_i(load_weight_rows_conv_copy[N_COPIES*ii+jj]), .pop_o(local_load_weight_rows_conv[ii]));
       end
 
       neureka_double_infeat_buffer #(
@@ -568,8 +608,11 @@ module neureka_engine #(
       /* Accumulators + Normalization/Quantization */
       for (genvar ii=0; ii<NR_PE; ii++) begin : accumulator_gen
 
-        hwpe_stream_assign i_local_norm_assign (.push_i(norm_copy[N_COPIES*ii+jj]), .pop_o(local_norm[ii]));
-        hwpe_stream_assign i_local_load_streamin_cols_assign (.push_i(load_streamin_cols_copy[N_COPIES*ii+jj]), .pop_o(local_load_streamin_cols[ii]));
+        hwpe_stream_delay_assign #(.DATA_WIDTH (NEUREKA_MEM_BANDWIDTH), .DELAY_REQ (!MAIN_DATAPATH), .DELAY_RESP (1'b0)) i_local_norm_assign
+          (.clk_i, .rst_ni, .delay_i(delay_enable), .push_i(norm_copy[N_COPIES*ii+jj]), .pop_o(local_norm[ii]));
+
+        hwpe_stream_delay_assign #(.DATA_WIDTH (NEUREKA_MEM_BANDWIDTH), .DELAY_REQ (!MAIN_DATAPATH), .DELAY_RESP (1'b0)) i_local_load_streamin_cols_assign
+          (.clk_i, .rst_ni, .delay_i(delay_enable), .push_i(load_streamin_cols_copy[N_COPIES*ii+jj]), .pop_o(local_load_streamin_cols[ii]));
 
         ctrl_aq_t ctrl_accumulator;
         always_comb
@@ -625,22 +668,27 @@ module neureka_engine #(
           .flags_o     ( local_flags.flags_accumulator [ii]                 )
         );
 
-        always_comb
-        begin
-          out_cols[NR_PE*jj+ii].data  = local_store_out_cols[ii].data;
-          out_cols[NR_PE*jj+ii].valid = local_store_out_cols[ii].valid;
-          out_cols[NR_PE*jj+ii].strb  = local_store_out_cols[ii].strb;
-          if (jj == 0)
-            local_store_out_cols[ii].ready = out_cols[ii].ready;
-          else
-            local_store_out_cols[ii].ready = ctrl_i.resilience_mode ?
-                                             out_cols[ii].ready :
-                                             out_cols[NR_PE*jj+ii].ready;
-        end
+        hwpe_stream_delay_assign #(.DATA_WIDTH (NEUREKA_MEM_BANDWIDTH), .DELAY_REQ (1'b0), .DELAY_RESP (!MAIN_DATAPATH)) i_local_store_out_cols_assign
+          (.clk_i, .rst_ni, .delay_i(delay_enable), .push_i(local_store_out_cols[ii]), .pop_o(out_cols_copy[NR_PE*jj+ii]));
       end // accumulator_gen
     end // redundancy_gen
 
     for(genvar ii=0; ii<NR_PE; ii++) begin
+
+      for(genvar jj=0; jj<N_COPIES; jj++) begin
+        always_comb
+        begin
+          out_cols[NR_PE*jj+ii].data  = out_cols_copy[NR_PE*jj+ii].data;
+          out_cols[NR_PE*jj+ii].valid = out_cols_copy[NR_PE*jj+ii].valid;
+          out_cols[NR_PE*jj+ii].strb  = out_cols_copy[NR_PE*jj+ii].strb;
+          if (jj == 0)
+            out_cols_copy[NR_PE*jj+ii].ready = out_cols[ii].ready;
+          else
+            out_cols_copy[NR_PE*jj+ii].ready = ctrl_i.resilience_mode ?
+                                             out_cols[ii].ready :
+                                             out_cols[NR_PE*jj+ii].ready;
+        end
+      end
 
       hwpe_stream_mux_static i_out_cols_mux (
         .clk_i    ( clk_i                  ),
@@ -670,10 +718,15 @@ module neureka_engine #(
 
       // Output Checker
       // It checks for mismatches at PE level
-      logic [NEUREKA_MEM_BANDWIDTH-1:0] gated_outdata_0, gated_outdata_1;
+      logic [NEUREKA_MEM_BANDWIDTH-1:0] gated_outdata_0, gated_outdata_1, outdata_0_q;
+
+      always_ff @(posedge clk_i or negedge rst_ni) begin
+        if (!rst_ni) outdata_0_q <= '0;
+        else         outdata_0_q <= out_cols[ii].data;
+      end
 
       always_comb begin : checker_gen
-        gated_outdata_0 = data_gating_en ? out_cols[ii].data : '0;
+        gated_outdata_0 = data_gating_en ? outdata_0_q             : '0;
         gated_outdata_1 = data_gating_en ? out_cols[NR_PE+ii].data : '0;
         data_fault_d[ii] = data_gating_en ? (gated_outdata_0 != gated_outdata_1) : '0;
       end
