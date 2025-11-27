@@ -136,7 +136,7 @@ module neureka_ctrl_fsm
             state_d = STREAMIN;
           else 
             state_d = WEIGHTOFFS;
-            state_change_d = 1'b1; 
+          state_change_d = 1'b1; 
         end
       end
 

@@ -22,7 +22,7 @@
 
 `include "hci_helpers.svh"
 
-module neureka_streamer 
+module neureka_streamer
   import neureka_package::*;
   import hwpe_stream_package::*;
   import hci_package::*;

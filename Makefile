@@ -69,6 +69,9 @@ update-ips: $(BENDER)
 	--vcom-arg="-pedanticerrors" \
 	-t rtl -t neureka_standalone \
 	> sim/${compile_script}
+	$(BENDER) script verilator \
+	-t rtl -t neureka_standalone \
+	-D SYNTHESIS > verilator/file.tcl
 
 .PHONY: generate-scripts
 generate-scripts: $(BENDER)
@@ -77,6 +80,9 @@ generate-scripts: $(BENDER)
 	--vcom-arg="-pedanticerrors" \
 	-t rtl -t neureka_standalone \
 	> sim/${compile_script}
+	$(BENDER) script verilator \
+	-t rtl -t neureka_standalone \
+	-D SYNTHESIS > verilator/file.tcl
 
 # Hardware rules
 .PHONY: hw-clean-all hw-opt hw-compile hw-lib hw-clean hw-all
@@ -107,6 +113,29 @@ hw-clean:
 	rm -rf sim/modelsim.ini
 
 hw-all: hw-lib hw-compile hw-opt
+
+
+verilate:
+	verilator -f verilator/file.tcl           --cc \
+	-O3                                                                           \
+	-Wno-fatal                                                                    \
+	-Wno-WIDTH                                                                    \
+	-Wno-WIDTHCONCAT                                                              \
+	-Wno-PINCONNECTEMPTY                                                          \
+	-Wno-BLKANDNBLK                                                               \
+	-Wno-CASEINCOMPLETE                                                           \
+	-Wno-CMPCONST                                                                 \
+	-Wno-LATCH                                                                    \
+	-Wno-LITENDIAN                                                                \
+	-Wno-UNOPTFLAT                                                                \
+	-Wno-UNPACKED                                                                 \
+	-Wno-UNSIGNED                                                                 \
+	-Wno-ENUMVALUE                                                                \
+	-Wno-COMBDLY                                                                  \
+	-Wno-ASCRANGE                                                                 \
+	--hierarchical                                                                \
+        --top-module neureka_top_wrap \
+        --no-timing 
 
 # Software stuff... to be moved?
 .PHONY: stimuli build-cleanup

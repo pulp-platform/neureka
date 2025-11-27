@@ -272,27 +272,61 @@ module neureka_binconv_array #(
 
 
       for(genvar rr=0; rr<COLUMN_SIZE; rr++) begin : row_a_gen
+        /**
+         * This module is responsible for mapping activation data from a 1x1 filter and a 3x3 filter.
+         *
+         * The `ctrl_i.filter_mode` parameter determines which filter mode to use.
+         * If the filter mode is 1x1, then only the activation data from the 1x1 filter is used.
+         * Otherwise, both the 1x1 and 3x3 filters are used simultaneously.
+         */
 
         localparam i=0;
         localparam j=0;
 
         // filter size = 1
+        /**
+         * Calculate the filter indices for a 1x1 filter.
+         *
+         * `i_fs1` is the row index of the activation data in the input buffer.
+         * `j_fs1` is the column index of the activation data in the input buffer.
+         */
         localparam j_fs1  = (ii % PE_W);
         localparam i_fs1  = ((ii-(ii%PE_H)) / PE_W);
 
         // filter size = 3
+        /**
+         * Calculate the filter indices for a 3x3 filter.
+         *
+         * `fi_fs3` and `fj_fs3` are the row and column offsets of the current filter position in the input buffer.
+         * `i_fs3` and `j_fs3` are the row and column indices of the activation data in the input buffer, taking into account the filter offset.
+         */
         localparam fj_fs3 = rr % 3;
         localparam fi_fs3 = (rr-fj_fs3)/ 3;
         localparam j_fs3  = ii % PE_H + fj_fs3;
         localparam i_fs3  = (ii-(ii%PE_H)) / PE_H + fi_fs3;
 
         for(genvar bb=0; bb<BLOCK_SIZE; bb++) begin : act_blk_gen
+          /**
+           * This block is responsible for mapping activation data from the 1x1 and 3x3 filters to the output.
+           *
+           * The `activation_mapped` variable holds the mapped activation data, which can be either from the 1x1 filter (if `ctrl_i.filter_mode` is 1x1) or both filters (otherwise).
+           */
 
           // FIXME parameterize 5 (also NR_ACTIVATIONS)
+          /**
+           * Map activation data from the 3x3 filter to the output.
+           *
+           * The `activation_mapped_fs3_data` and `activation_mapped_fs3_valid` variables hold the mapped data and valid flag, respectively.
+           */
           assign activation_mapped_fs3_data [ii][rr][bb][NEUREKA_QA_IN-1:0]   = activation_data [i_fs3*NEUREKA_TP_IN*INPUT_BUFFER_SIZE_W + j_fs3*NEUREKA_TP_IN + bb][NEUREKA_QA_IN-1:0];
           assign activation_mapped_fs3_valid[ii][rr][bb]                   = activation_valid[0];
           assign activation_mapped_fs3_strb [ii][rr][bb][NEUREKA_QA_IN/8-1:0] = activation_strb [0][NEUREKA_QA_IN/8-1:0];
 
+          /**
+           * Map activation data from the 1x1 filter to the output.
+           *
+           * The `activation_mapped_fs1_data` and `activation_mapped_fs1_valid` variables hold the mapped data and valid flag, respectively.
+           */
           localparam i_bb = bb/8;
           localparam j_bb = bb%4;
 
@@ -300,6 +334,11 @@ module neureka_binconv_array #(
           assign activation_mapped_fs1_valid[ii][rr][bb]                   = activation_valid[0];
           assign activation_mapped_fs1_strb [ii][rr][bb][NEUREKA_QA_IN/8-1:0] = activation_strb [0][NEUREKA_QA_IN/8-1:0];
 
+          /**
+           * Calculate the global index for the output.
+           *
+           * `ii_rr_bb` is used to access the output buffer and hold the mapped data.
+           */
           localparam ii_rr_bb = ii*(COLUMN_SIZE*BLOCK_SIZE) + bb*(COLUMN_SIZE) + rr; // modified to NR_PE    , BLOCK_SIZE, COLUMN_SIZE
 
           assign activation_mapped[ii_rr_bb].valid = (ctrl_i.filter_mode == NEUREKA_FILTER_MODE_1X1) ? activation_mapped_fs1_valid[ii][rr][bb] : activation_mapped_fs3_valid[ii][rr][bb];
@@ -308,6 +347,13 @@ module neureka_binconv_array #(
 
         end // block_gen
       end // row_a_gen
+          /**
+           * Assign the mapped activation data to the output based on the filter mode.
+           *
+           * If `ctrl_i.filter_mode` is 1x1, then only the data from the 1x1 filter is used.
+           * Otherwise, both filters are used simultaneously.
+           */
+          assign activation_mapped[ii_rr_bb].valid = (ctrl_i.filter_mode == NEUREKA_FILTER_MODE_1X1) ? activation_mapped_fs1_valid[ii][rr
 
       ctrl_binconv_pe_t ctrl_pe;
       always_comb
