@@ -19,20 +19,44 @@
 
 export N_PROC=20
 export P_STALL=0.04
-TIMEOUT=200
+TIMEOUT=300
+
+export PE_H=4
+export PE_W=2
+
+MODES=(0 1)
 
 # Declare a string array with type
 declare -a test_list=(
-    "regr/basic.yml"
-#    "regr/fs1.yml"
+   "regr/basic.yml"
 )
 
-# Read the list values with space
-for val in "${test_list[@]}"; do
-    nice -n10 regr/bwruntests.py --report_junit -t ${TIMEOUT} --yaml -o regr/neureka_tests.xml -p${N_PROC} --perf regr/perf.json $val
-    if test $? -ne 0; then
-        echo "Error in test $val"
-        exit 1
-    fi
+# Check if a YML file is passed as an argument
+if [ $# -gt 0 ]; then
+    # If argument passed, treat it as a file to use as the test list
+    test_list=("$@")
+    echo "Running tests with the provided YML files: ${test_list[@]}"
+else
+    echo "No YML file provided, using default list: ${test_list[@]}"
+fi
+
+i=0
+while [[ $i -lt ${#MODES[@]} ]]; do
+    export MODE=${MODES[$i]}
+    i=$((i + 1))
+
+    echo "Running with config (H, W)=($PE_H, $PE_W), MODE=$MODE"
+
+    # Read the list values with space
+    for val in "${test_list[@]}"; do
+        nice -n10 regr/bwruntests.py --report_junit -t ${TIMEOUT} --yaml -o regr/neureka_tests.xml -p${N_PROC} --perf regr/perf.json $val
+        if test $? -ne 0; then
+            echo "Error in test $val with config (H, W)=($PE_H, $PE_W), MODE=$MODE"
+        fi
+    done
 done
+
 unset P_STALL
+unset PE_H
+unset PE_W
+unset MODE

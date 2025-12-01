@@ -18,6 +18,10 @@
  *                    Arpan Suravi Prasad <prasadar@iis.ee.ethz.ch>
  */
 
+`ifndef NEUREKA_TOP
+  `define NEUREKA_TOP pulp_cluster_neureka_top_00000009_00000008_4_2_I_tcdm_hci_core_intf__DW_32_h00000120_AW_32_h00000020_EW_32_h00000048_EHW_32_h00000001I_periph_hwpe_ctrl_intf_periph__ID_WIDTH_32_h00000009_0
+`endif
+
 timeunit 1ps;
 timeprecision 1ps;
 import neureka_package::*;
@@ -30,14 +34,18 @@ module tb_neureka;
   parameter int unsigned TP_OUT = NEUREKA_TP_OUT;
   parameter int unsigned BP = 9*NEUREKA_TP_OUT;
   parameter int unsigned MP = BP/NEUREKA_TP_OUT;
+  parameter int unsigned PE_H = 4;
+  parameter int unsigned PE_W = 4;
   parameter MEMORY_SIZE = 2*8192*3;
   parameter STACK_MEMORY_SIZE = 4*MEMORY_SIZE;
   parameter BASE_ADDR = 0;
-  parameter ID = 16;
+  parameter ID = 9; // Originally 16, 9 for synthesis
   parameter NC = 8;
   parameter HWPE_ADDR_BASE_BIT = 20;
   parameter STIM_INSTR = "./stim_instr.txt";
   parameter STIM_DATA  = "./stim_data.txt";
+  parameter int unsigned GOLD_ADDR  = 32'h0;
+  parameter int unsigned OUT_ADDR  = 32'h0;
   parameter STIM_OUTPUT_DATA = "./stim_output_data.txt";
   parameter DATA_BASE_ADDRESS = 32'h1c01_0000;
   parameter VLEN_CNT_SIZE = 32;
@@ -46,6 +54,7 @@ module tb_neureka;
 
   // global signals
   logic                         clk_i  = '0;
+  logic                         done   = '0;
   logic                         rst_ni = '1;
   logic                         test_mode_i = '0;
   // local enable
@@ -75,6 +84,13 @@ module tb_neureka;
 
   logic [NC-1:0][1:0] evt;
   logic neureka_busy;
+
+  // Signals for Vulnerabilty Analysis
+  logic correct_termination;
+  logic incorrect_termination;
+  logic exception_termination;
+  logic correct_retry_termination;
+  logic incorrect_retry_termination;
 
   logic [MP-1:0]       tcdm_req;
   logic [MP-1:0]       tcdm_gnt;
@@ -123,6 +139,24 @@ module tb_neureka;
   logic [31:0]   data_wdata;
   logic [31:0]   data_rdata;
   logic          data_err;
+
+  function automatic int check_results(
+    input logic [31:0] golden_start_addr,
+    input logic [31:0] output_start_addr,
+    input int num_entries
+);
+    int error_count = 0;
+
+    for (int i = 0; i < num_entries; i++) begin
+        if (tb_neureka.i_dummy_memory.memory[golden_start_addr + i] !== tb_neureka.i_dummy_memory.memory[output_start_addr + i]) begin
+            // $display("Mismatch at index %0d: Golden=0x%0h, Output=0x%0h",
+                  //  i, tb_neureka.i_dummy_memory.memory[golden_start_addr + i], tb_neureka.i_dummy_memory.memory[output_start_addr + i]);
+            error_count++;
+        end
+    end
+
+    return error_count;
+endfunction
 
   // ATI timing parameters.
   localparam TCP = 1.0ns; // clock period, 1 GHz clock
@@ -271,15 +305,13 @@ module tb_neureka;
   end
 
   neureka_top_wrap #(
-    .TP_IN        ( TP_IN               ),
-    .TP_OUT       ( TP_OUT            ),
-    .CNT          ( TP_IN            ),
-    // .BW           (9*32),
-    // .MP           ( MP               ),
-    .EW           ( EW               ),
-    .ID           ( ID               ),
-    .PE_H         ( 4 ),
-    .PE_W         ( 4 )
+    .TP_IN          ( TP_IN          ),
+    .TP_OUT         ( TP_OUT         ),
+    .CNT            ( TP_IN          ),
+    .EW             ( EW             ),
+    .ID             ( ID             ),
+    .PE_H           ( PE_H           ),
+    .PE_W           ( PE_W           )
   ) i_dut (
     .clk_i          ( clk_i          ),
     .rst_ni         ( rst_ni         ),
@@ -334,7 +366,7 @@ module tb_neureka;
   );
 
   tb_dummy_memory #(
-    .MP              ( MP           ), 
+    .MP              ( MP           ),
     .MEMORY_SIZE     ( MEMORY_SIZE  ),
     .BASE_ADDR       ( 32'h1c010000+MEMORY_SIZE*4),
     .PROB_STALL      ( PROB_STALL   ),
@@ -407,7 +439,7 @@ module tb_neureka;
     .data_wdata_o        ( data_wdata   ),
     .data_rdata_i        ( data_rdata   ),
     .data_err_i          ( data_err     ),
-    .irq_i               ( evt[0][0]    ),
+    .irq_i               ( |(evt[0])    ),
     .irq_id_i            ( '0           ),
     .irq_ack_o           (              ),
     .irq_id_o            (              ),
@@ -440,7 +472,7 @@ module tb_neureka;
       cycle();
     rst_ni <= #TA 1'b1;
 
-    while(1) begin
+    while(~done) begin
       cycle();
     end
 
@@ -450,11 +482,11 @@ module tb_neureka;
   integer f_x, f_W, f_y, f_tau;
   logic start;
 
-  int errors = -1;
+  int eoc = -1;
   always_ff @(posedge clk_i)
   begin
     if((data_addr == 32'h80000000 ) && (data_we & data_req == 1'b1)) begin
-      errors = data_wdata;
+      eoc = data_wdata;
     end
     if((data_addr == 32'h80000004 ) && (data_we & data_req == 1'b1)) begin
       $write("%c", data_wdata);
@@ -464,20 +496,47 @@ module tb_neureka;
   int cnt_cycles;
   always_ff @(posedge clk_i or negedge rst_ni)
   begin
-    if(~rst_ni)  
+    if(~rst_ni)
       cnt_cycles <= 0;
     else if(neureka_busy) begin
       cnt_cycles += 1;
     end
   end
 
+  logic error_status;
+  logic detected_q;
+  `ifdef TARGET_NETLIST
+  assign error_status = ({tb_neureka.i_dut.i_neureka_top.`NEUREKA_TOP.i_ctrl.i_slave.i_regfile.regfile_mem_mandatory_reg_3__1_.Q, tb_neureka.i_dut.i_neureka_top.`NEUREKA_TOP.i_ctrl.i_slave.i_regfile.regfile_mem_mandatory_reg_3__0_.Q} == 2'b10);
+  `else
+  assign error_status = (tb_neureka.i_dut.i_neureka_top.i_ctrl.i_slave.i_regfile.regfile_mem_mandatory[3] == 2);
+  `endif
+
+  always_ff @(posedge error_status or negedge rst_ni) begin
+      if (!rst_ni)
+          detected_q <= 1'b0;
+      else if (error_status)
+          detected_q <= 1'b1;
+  end
+
+  int out_byte;
+  logic [31:0] errors;
+
   initial begin
 
     integer id;
     int cnt_rd, cnt_wr;
 
-    f_t0 = $fopen("time_start.txt");
-    f_t1 = $fopen("time_stop.txt");
+    errors = 'x;
+
+    // Set signals for InjectaFault
+    correct_termination = '0;
+    incorrect_termination = '0;
+    exception_termination = '0;
+    correct_retry_termination = '0;
+    incorrect_retry_termination = '0;
+
+    // f_t0 = $fopen("time_start.txt");
+    // f_t1 = $fopen("time_stop.txt");
     start = 1'b1;
 
     periph.req  <= #TA '0;
@@ -496,21 +555,48 @@ module tb_neureka;
     #TA;
 
     #(400*TCP);
-    // end WFI + errors != -1 signals end-of-computation
-    while(tb_neureka.i_zeroriscy.sleeping || errors==-1)
+    // end WFI + eoc != -1 signals end-of-computation
+    while(tb_neureka.i_zeroriscy.sleeping || eoc==-1)
       #(TCP);
     cnt_rd = tb_neureka.i_dummy_memory.cnt_rd[0] + tb_neureka.i_dummy_memory.cnt_rd[1] + tb_neureka.i_dummy_memory.cnt_rd[2] + tb_neureka.i_dummy_memory.cnt_rd[3];
     cnt_wr = tb_neureka.i_dummy_memory.cnt_wr[0] + tb_neureka.i_dummy_memory.cnt_wr[1] + tb_neureka.i_dummy_memory.cnt_wr[2] + tb_neureka.i_dummy_memory.cnt_wr[3];
-    
-    $writememh(STIM_OUTPUT_DATA, tb_neureka.i_dummy_memory.memory);
+
+    // $writememh(STIM_OUTPUT_DATA, tb_neureka.i_dummy_memory.memory);
     $display("hwpe cycles = %d\n", cnt_cycles);
 
+    // $display("golden addr = %d, output addr = %d\n", (GOLD_ADDR-DATA_BASE_ADDRESS)/4, (OUT_ADDR-DATA_BASE_ADDRESS)/4);
+
+    out_byte = (GOLD_ADDR > OUT_ADDR) ? (GOLD_ADDR-OUT_ADDR)/4 : (OUT_ADDR-GOLD_ADDR)/4;
+    errors = check_results((GOLD_ADDR-DATA_BASE_ADDRESS)/4, (OUT_ADDR-DATA_BASE_ADDRESS)/4, out_byte); // (output byte / 4)
+
+    // Parse Error Types
+    if (detected_q) begin
+      if (errors == 0) begin
+        correct_retry_termination = '1;
+        $info("Neureka Terminated Correctly after Restart due to Internal Error!");
+      end else begin
+        incorrect_retry_termination = '1;
+        $info("Neureka Terminated Incorrectly after Restart due to Internal Error!");
+      end
+    end else if (errors == 0) begin
+      correct_termination = '1;
+      $info("Neureka Terminated Correctly!");
+    end else begin
+      incorrect_termination = '1;
+      $error("Oh no! Errors happened");
+    end
+
+    done = 1'b1;
+
+`ifndef VULNERABILITY_ANALYSIS
     assert (errors == '0) else $fatal(1, "errors happened");
 
     $finish(0);
+`endif
 
   end
 
+`ifdef NEUREKA_TRACE
   integer f_log;
 
   initial
@@ -557,5 +643,6 @@ module tb_neureka;
       $sformat( str, ",\n  { \"instance\": \"tcdm_load\", \"type\": \"r_data\", \"value\": \"0x%072x\", \"job\": \"%1d\", \"time\": \"%t\" }", tb_neureka.i_dut.i_neureka_top.tcdm.r_data, tb_neureka.i_dut.i_neureka_top.i_ctrl.i_slave.i_regfile.running_job_id, $time); $fwrite(f_log, str);
     end
   end
+`endif
 
 endmodule // tb_neureka

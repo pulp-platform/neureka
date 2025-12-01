@@ -378,7 +378,8 @@ the pyyaml library which is not installed.""",
         testpassedcount = testcount - testfailcount
         resulttable = PrettyTable(['test', 'cycles', 'time', 'passed/total'])
         resulttable.align['test'] = "l"
-        for p in procresults:
+        procresults_sorted = sorted(procresults, key=lambda p: p.name)
+        for p in procresults_sorted:
             testpassed = 1 if p.returncode == 0 else 0
             testname = p.name
             resulttable.add_row([testname,

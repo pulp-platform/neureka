@@ -60,7 +60,8 @@ module neureka_ctrl #(
   config_neureka_t config_;
   state_neureka_t  state;
   logic         state_change;
-  logic uloop_ready_d, uloop_ready_q;
+  logic active_datapath, active_datapath_change, double_active_datapath;
+  logic [1:0] uloop_ready_d, uloop_ready_q;
   index_neureka_t  index, next_index;
   base_addr_neureka_t base_addr, next_base_addr;
   logic uloop_prefetch, uloop_prefetch_pulse;
@@ -114,7 +115,7 @@ module neureka_ctrl #(
   hwpe_ctrl_slave #(
     .N_CORES        ( N_CORES                      ),
     .N_CONTEXT      ( 2                            ),
-    .N_IO_REGS      ( 25                           ),
+    .N_IO_REGS      ( 26                           ),
     .N_GENERIC_REGS ( 0                            ),
     .ID_WIDTH       ( ID                           ),
     .REGFILE_SCM    ( neureka_package::REGFILE_SCM )
@@ -132,6 +133,8 @@ module neureka_ctrl #(
   begin
     slave_ctrl = '0;
     slave_ctrl.done = (state==DONE) & state_change;
+    // slave_ctrl.evt  = (state==ERROR) & state_change;
+    slave_ctrl.int_error  = (state==ERROR) & state_change;
   end
   assign busy_o = slave_flags.is_working;
 
@@ -194,6 +197,9 @@ module neureka_ctrl #(
     .config_i         ( config_          ),
     .state_o          ( state            ),
     .state_change_o   ( state_change     ),
+    .active_datapath_o( active_datapath  ),
+    .active_datapath_change_o ( active_datapath_change ),
+    .double_active_datapath_o ( double_active_datapath ),
     .uloop_ready_i    ( uloop_ready_q    ),
     .index_o          ( index            ),
     .prefetch_o       ( uloop_prefetch   ),
@@ -240,6 +246,7 @@ module neureka_ctrl #(
   assign config_.filter_mask_right   = reg_file.hwpe_params[NEUREKA_REG_FILTER_MASK][23:16];
   assign config_.filter_mask_bottom  = reg_file.hwpe_params[NEUREKA_REG_FILTER_MASK][15: 8];
   assign config_.filter_mask_left    = reg_file.hwpe_params[NEUREKA_REG_FILTER_MASK][ 7: 0];
+  assign config_.resilience_mode     = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][27];
   assign config_.feat_broadcast      = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][26];
   assign config_.norm_option_bias    = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][25];
   assign config_.norm_option_shift   = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][24];
@@ -252,7 +259,7 @@ module neureka_ctrl #(
   assign config_.use_rounding        = ~reg_file.hwpe_params[NEUREKA_REG_CONFIG0][11];
   assign config_.prefetch            = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][10];
   assign config_.wmem_sel            = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][9];
-  assign config_.mode_strided        = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][8]; 
+  assign config_.mode_strided        = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][8];
   assign config_.mode_linear         = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][7]; // Not supported in this version. Use PW mode instead
   assign config_.filter_mode         = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][6:5];
   assign config_.streamout_quant     = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][4];
@@ -289,7 +296,7 @@ module neureka_ctrl #(
   logic infeat_buffer_write_sel_d, infeat_buffer_write_sel_q;
   logic infeat_buffer_read_sel_d, infeat_buffer_read_sel_q;
 
-  /* 
+  /*
     These assignments are used to calculate online runtime parameters.
     Some simplification can / should be performed here.
    */
@@ -301,9 +308,9 @@ module neureka_ctrl #(
   assign next_h_size_in  = (next_index.i_major < config_.subtile_nb_ho-1) || (config_.subtile_rem_hi==0) ? (config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? PE_H : INFEAT_BUFFER_SIZE_H) : config_.subtile_rem_hi;
   assign next_w_size_in  = (next_index.j_major < config_.subtile_nb_wo-1) || (config_.subtile_rem_wi==0) ? (config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? PE_W : INFEAT_BUFFER_SIZE_W) : config_.subtile_rem_wi;
   assign next_h_size_out = (next_index.i_major < config_.subtile_nb_ho-1) || (config_.subtile_rem_ho==0) ? PE_H : config_.subtile_rem_ho;
-  assign next_w_size_out = (next_index.j_major < config_.subtile_nb_wo-1) || (config_.subtile_rem_wo==0) ? PE_W : config_.subtile_rem_wo;  
+  assign next_w_size_out = (next_index.j_major < config_.subtile_nb_wo-1) || (config_.subtile_rem_wo==0) ? PE_W : config_.subtile_rem_wo;
 
-  assign k_in_lim   = (index.k_in_major < config_.subtile_nb_ki-1) || (config_.subtile_rem_ki==0) ? NEUREKA_TP_IN :  
+  assign k_in_lim   = (index.k_in_major < config_.subtile_nb_ki-1) || (config_.subtile_rem_ki==0) ? NEUREKA_TP_IN :
                       config_.subtile_rem_ki;
   assign k_out_lim  = config_.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? (index.k_out_major == config_.subtile_nb_ko-1) && (config_.subtile_rem_ko != NEUREKA_TP_IN)  && (config_.subtile_rem_ko != 0) ? config_.subtile_rem_ko : NEUREKA_TP_IN :
                       (index.k_out_major == config_.subtile_nb_ko-1) && (config_.subtile_rem_ko != NEUREKA_TP_OUT) && (config_.subtile_rem_ko != 0) ? config_.subtile_rem_ko : NEUREKA_TP_OUT;
@@ -317,7 +324,7 @@ module neureka_ctrl #(
   assign qw_lim       = config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? 1 : config_.weight_bits;
   assign qw_k_out_lim = qw_lim * k_out_lim; // this uses a non-static multiplier, consider moving it to an own register
 
-  /* 
+  /*
     uloop iterators: these serial multipliers are used to compute subtiling spatial iteration parameters at runtime:
       input vertical iterator    infeat_hom_iter  <- h_size_out * infeat_d1_stride
       input horizontal iterator  infeat_wom_iter  <- w_size_out * infeat_d0_stride
@@ -394,7 +401,7 @@ module neureka_ctrl #(
   );
   assign config_.uloop_iter.outfeat_wom_iter = outfeat_wom_prod[31:0];
 
-  /* 
+  /*
     uloop iterators: subtiling channel iteration parameters are computed depending on the various operating filter_modes.
     The iterators are used by uloop to compute new indeces inside a loop when using automatic subtiling.
    */
@@ -408,7 +415,7 @@ module neureka_ctrl #(
   assign config_.uloop_iter.weights_kim_iter = config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? config_.weight_bits * (NEUREKA_TP_IN/8) :
                                                                                              config_.weight_bits * 3*3 * (NEUREKA_TP_IN/8);
 
-  /* 
+  /*
     uloop reset iterators: these serial multipliers are used to compute subtiling reset iteration parameters at runtime:
       weights_kom_reset_iter = (subtile_nb_ko-1) * weights_kom_iter
       weights_kim_reset_iter = (subtile_nb_ki-1) * weights_kim_iter
@@ -562,11 +569,12 @@ module neureka_ctrl #(
 
   assign config_.uloop_iter.scale_kom_iter = 1;
 
-  /* 
+  /*
     uloop_ready_q is set whenever the uloop parameters have been calculated.
    */
-  assign uloop_ready_d = infeat_wom_reset_valid & infeat_hom_reset_valid & infeat_kim_reset_valid & outfeat_wom_reset_valid & outfeat_hom_reset_valid & outfeat_kom_reset_valid; // the others are always computed earlier
-  
+  assign uloop_ready_d[0] = infeat_wom_reset_valid & infeat_hom_reset_valid & infeat_kim_reset_valid & outfeat_wom_reset_valid & outfeat_hom_reset_valid & outfeat_kom_reset_valid; // the others are always computed earlier
+  assign uloop_ready_d[1] = infeat_wom_valid & outfeat_wom_valid;
+
   always_ff @(posedge clk_i or negedge rst_ni)
   begin
     if(~rst_ni)
@@ -593,7 +601,7 @@ module neureka_ctrl #(
     Stride for d2 is currently unused.
   */
 
-  assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.base_addr     = config_.infeat_ptr + (config_.prefetch ? ( state == LOAD ? base_addr.infeat : next_base_addr.infeat) : base_addr.infeat ); 
+  assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.base_addr     = config_.infeat_ptr + (config_.prefetch ? ( state == LOAD ? base_addr.infeat : next_base_addr.infeat) : (active_datapath == 0) ? base_addr.infeat : next_base_addr.infeat );
   assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.tot_len       = config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? NUM_PE : INFEAT_BUFFER_SIZE_HW;
   assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.d0_stride     = config_.infeat_d0_stride;
   assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.d0_len        = config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? PE_W : INFEAT_BUFFER_SIZE_W;
@@ -631,7 +639,7 @@ module neureka_ctrl #(
 
   /*
     outfeat sink base address is given by the pointer in regfile + the subtiling offset (base_addr) calculated by uloop.
-    The total length is given by the output quantization mode and by the number of output channels in the current subtile, 
+    The total length is given by the output quantization mode and by the number of output channels in the current subtile,
     according to the following rule:
      - 8-bit  quant                       --> length = 36
      - 32-bit quant, k_out_lim in [25,32] --> length = 4*36
@@ -639,7 +647,7 @@ module neureka_ctrl #(
      - 32-bit quant, k_out_lim in [9,16]  --> length = 2*36
      - 32-bit quant, k_out_lim in [1,8]   --> length = 1*36
     Notice that even if the subtile is not spatially full due to remainders or padding, all column accumulators are streamed
-    out none the less -- disabling the write enables for columns that are not actually used. 
+    out none the less -- disabling the write enables for columns that are not actually used.
     These are divided in three dimensions:
      - d0: total length divided by 36
      - d1: 6 elements
@@ -648,18 +656,18 @@ module neureka_ctrl #(
     Notice that these parameters are also used for streamin, not only streamout.
   */
 
-  
+
   logic [31:0] h_size_X_w_size_with_strb_streamin; // currently using a nil'd strobe to remove outputs --> constant h_size_out / w_size_out
   logic [31:0] h_size_out_X_w_size_out_with_strb; // currently using a nil'd strobe to remove outputs --> constant h_size_out / w_size_out
   logic [1:0]  streamin_quant_mode;
 
   assign h_size_out_X_w_size_out_with_strb = (config_.quant_mode == NEUREKA_MODE_8B) || (k_out_lim <= 8)? (config_.last_pe+1)   :
                                                                                      (k_out_lim <= 16)  ? 2*(config_.last_pe+1) :
-                                                                                     (k_out_lim <= 24)  ? 3*(config_.last_pe+1) : 
+                                                                                     (k_out_lim <= 24)  ? 3*(config_.last_pe+1) :
                                                                                      4*(config_.last_pe+1);
   assign h_size_X_w_size_with_strb_streamin= (config_.streamin_mode == NEUREKA_STREAMIN_MODE_8B) || (k_out_lim <= 8)  ? (config_.last_pe+1) :
                                                                                      (k_out_lim <= 16) ? 2*(config_.last_pe+1) :
-                                                                                     (k_out_lim <= 24) ? 3*(config_.last_pe+1) : 
+                                                                                     (k_out_lim <= 24) ? 3*(config_.last_pe+1) :
                                                                                      4*(config_.last_pe+1);
 
 
@@ -667,7 +675,7 @@ module neureka_ctrl #(
                                (config_.quant_mode == NEUREKA_MODE_8B) && (config_.streamin_mode == NEUREKA_STREAMIN_MODE_32B) ? NEUREKA_STREAMIN_32B_QUANT_8B :
                                (config_.quant_mode == NEUREKA_MODE_32B) && (config_.streamin_mode == NEUREKA_STREAMIN_MODE_8B) ? NEUREKA_STREAMIN_8B_QUANT_32B :
                                NEUREKA_STREAMIN_32B_QUANT_32B ;
-  assign ctrl_streamer.streamin_source_ctrl.addressgen_ctrl.base_addr = config_.streamin_ptr + 
+  assign ctrl_streamer.streamin_source_ctrl.addressgen_ctrl.base_addr = config_.streamin_ptr +
                                                                           ((streamin_quant_mode==NEUREKA_STREAMIN_8B_QUANT_8B || streamin_quant_mode==NEUREKA_STREAMIN_32B_QUANT_32B) ? base_addr.outfeat :
                                                                           (streamin_quant_mode==NEUREKA_STREAMIN_32B_QUANT_8B) ? base_addr.outfeat << 2 :
                                                                           base_addr.outfeat >> 2);
@@ -686,7 +694,7 @@ module neureka_ctrl #(
   assign ctrl_streamer.streamin_source_ctrl.addressgen_ctrl.d1_len        = PE_W;
   assign ctrl_streamer.streamin_source_ctrl.addressgen_ctrl.dim_enable_1h = '1;
 
-  assign ctrl_streamer.outfeat_sink_ctrl.addressgen_ctrl.base_addr     = config_.outfeat_ptr + base_addr.outfeat;
+  assign ctrl_streamer.outfeat_sink_ctrl.addressgen_ctrl.base_addr     = config_.outfeat_ptr + ((active_datapath == 0) ? base_addr.outfeat : next_base_addr.outfeat);
   assign ctrl_streamer.outfeat_sink_ctrl.addressgen_ctrl.tot_len       = h_size_out_X_w_size_out_with_strb;
   assign ctrl_streamer.outfeat_sink_ctrl.addressgen_ctrl.d0_stride     = config_.outfeat_d0_stride;
   assign ctrl_streamer.outfeat_sink_ctrl.addressgen_ctrl.d0_len        = (config_.quant_mode == NEUREKA_MODE_32B) ? (k_out_lim/8 > 0 ? k_out_lim/8 + (k_out_lim%8==0 ? 0 : 1) : 1) : 1;
@@ -700,7 +708,7 @@ module neureka_ctrl #(
     It is used for three distinct parameters: scale, bias, and shift.
 
     Scale:
-    The total length of scale is given by the output scaling mode and by the number of output channels in the current subtile, 
+    The total length of scale is given by the output scaling mode and by the number of output channels in the current subtile,
     according to the following rule:
      - 8-bit  scaling                       --> length = 1
      - 32-bit scaling, k_out_lim in [25,32] --> length = 4
@@ -708,7 +716,7 @@ module neureka_ctrl #(
      - 32-bit scaling, k_out_lim in [9,16]  --> length = 2
      - 32-bit scaling, k_out_lim in [1,8]   --> length = 1
     These are single-dimension, with d0 stride statically set to 32.
-    
+
     Shift:
     The total length of shift is 1 (if norm_option_shift is set).
 
@@ -729,8 +737,8 @@ module neureka_ctrl #(
                        (config_.norm_mode == NEUREKA_MODE_32B && k_out_lim <= 24) ? 3 : 4;
   assign norm_stride = 32;
   assign norm_shift_len     = config_.norm_option_shift ? 1 : 0;
-  assign norm_shift_stride  = config_.norm_option_shift ? 
-                              config_.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? 
+  assign norm_shift_stride  = config_.norm_option_shift ?
+                              config_.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ?
                               NEUREKA_TP_IN/4 : NEUREKA_TP_OUT/4
                               : 0;
   assign norm_bias_len      = config_.norm_option_bias ? (k_out_lim <= 8  ? 1 :
@@ -741,18 +749,18 @@ module neureka_ctrl #(
   logic [7:0] scale_base_mul;
   logic [7:0] scale_bias_base_mul;
   logic [7:0] scale_shift_base_mul;
-  assign scale_base_mul = config_.filter_mode ==  NEUREKA_FILTER_MODE_3X3_DW    ? 
-                          (config_.norm_mode  ==  NEUREKA_MODE_32B              ? NEUREKA_TP_IN*4 :  
-                          config_.norm_mode   ==  NEUREKA_MODE_16B              ? NEUREKA_TP_IN*2 : 
-                          NEUREKA_TP_IN) : (config_.norm_mode==NEUREKA_MODE_32B ? 
-                          NEUREKA_TP_IN*4: config_.norm_mode==NEUREKA_MODE_16B  ? NEUREKA_TP_IN*2 : 
+  assign scale_base_mul = config_.filter_mode ==  NEUREKA_FILTER_MODE_3X3_DW    ?
+                          (config_.norm_mode  ==  NEUREKA_MODE_32B              ? NEUREKA_TP_IN*4 :
+                          config_.norm_mode   ==  NEUREKA_MODE_16B              ? NEUREKA_TP_IN*2 :
+                          NEUREKA_TP_IN) : (config_.norm_mode==NEUREKA_MODE_32B ?
+                          NEUREKA_TP_IN*4: config_.norm_mode==NEUREKA_MODE_16B  ? NEUREKA_TP_IN*2 :
                           NEUREKA_TP_IN);
 
-  assign scale_bias_base_mul =  config_.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? 
+  assign scale_bias_base_mul =  config_.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ?
                                 NEUREKA_TP_IN*4 :
                                 NEUREKA_TP_OUT*4;
-  
-  assign scale_shift_base_mul = config_.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? 
+
+  assign scale_shift_base_mul = config_.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ?
                                 NEUREKA_TP_IN :
                                 NEUREKA_TP_OUT;
   assign ctrl_streamer.norm_source_ctrl.addressgen_ctrl.base_addr = state==NORMQUANT       ? config_.scale_ptr       + base_addr.scale * scale_base_mul :
@@ -792,11 +800,10 @@ module neureka_ctrl #(
     a state transition (like in a Mealy FSM).
   */
 
-  assign ctrl_streamer.infeat_source_ctrl.req_start   = config_.prefetch ? prefetch_pulse | ((state==LOAD) & state_change) 
-                                                          :(state==LOAD) & state_change;
+  assign ctrl_streamer.infeat_source_ctrl.req_start   = config_.prefetch ? prefetch_pulse | ((state==LOAD) & state_change) :(state==LOAD) & (state_change | active_datapath_change);
   assign ctrl_streamer.weight_source_ctrl.req_start   = config_.streamin ? (state==MATRIXVEC & state_change) : (state==WEIGHTOFFS & state_change);
   assign ctrl_streamer.norm_source_ctrl.req_start     = (state==NORMQUANT || state==NORMQUANT_BIAS || state==NORMQUANT_SHIFT)  & state_change;
-  assign ctrl_streamer.outfeat_sink_ctrl.req_start    = (state==STREAMOUT) & state_change;
+  assign ctrl_streamer.outfeat_sink_ctrl.req_start    = (state==STREAMOUT) & (state_change || active_datapath_change);
   assign ctrl_streamer.streamin_source_ctrl.req_start = (state==STREAMIN)  & state_change;
 
   /*
@@ -820,9 +827,9 @@ module neureka_ctrl #(
   assign ctrl_streamer.clear_source     = (state==STREAMOUT || state==STREAMOUT_DONE);
   assign ctrl_streamer.clear_sink       = (state==LOAD) & state_change;
 
-  always_comb begin 
+  always_comb begin
     ctrl_streamer.wmem_source_ctrl = ctrl_streamer.weight_source_ctrl;
-  end 
+  end
 
   /*
     Implicit padding indicates the output padding that is "required" by spatial subtiling residuals.
@@ -841,22 +848,22 @@ module neureka_ctrl #(
   /*
     implicit_padding_map encodes which of the 8x8 elements in the array are valid (1) and which ones are unused (0).
   */
-  assign h_size_in_map = config_.prefetch & ((state==WEIGHTOFFS) | (state==MATRIXVEC)) ? (1 << next_h_size_in) - 1 : (1 << h_size_in) - 1;
-  assign w_size_in_map = config_.prefetch & ((state==WEIGHTOFFS) | (state==MATRIXVEC)) ? (1 << next_w_size_in) - 1 : (1 << w_size_in) - 1;
-  always_comb 
+  assign h_size_in_map = (config_.prefetch & ((state==WEIGHTOFFS) | (state==MATRIXVEC))) | (active_datapath==1 & state==LOAD) ? (1 << next_h_size_in) - 1 : (1 << h_size_in) - 1;
+  assign w_size_in_map = (config_.prefetch & ((state==WEIGHTOFFS) | (state==MATRIXVEC))) | (active_datapath==1 & state==LOAD) ? (1 << next_w_size_in) - 1 : (1 << w_size_in) - 1;
+  always_comb
   begin : padding_from_incomplete_infeat
     implicit_padding_map = '1;
     implicit_padding_map[INFEAT_BUFFER_SIZE_HW-1:0] &= {INFEAT_BUFFER_SIZE_H{w_size_in_map}};
     implicit_padding_map[INFEAT_BUFFER_SIZE_HW-1:0] &= implicit_padding_map_temp[INFEAT_BUFFER_SIZE_HW-1:0];
   end : padding_from_incomplete_infeat
 
-  for(genvar i=0; i<INFEAT_BUFFER_SIZE_W; i++)begin
-    assign implicit_padding_map_temp[(i+1)*INFEAT_BUFFER_SIZE_W-1:i*INFEAT_BUFFER_SIZE_W] = {INFEAT_BUFFER_SIZE_W{h_size_in_map[i]}}; 
+  for(genvar i=0; i<INFEAT_BUFFER_SIZE_H; i++)begin
+    assign implicit_padding_map_temp[(i+1)*INFEAT_BUFFER_SIZE_W-1:i*INFEAT_BUFFER_SIZE_W] = {INFEAT_BUFFER_SIZE_W{h_size_in_map[i]}};
   end
 
-  logic [INFEAT_BUFFER_SIZE_W-1:0] t_explicit_padding_map;
+  logic [INFEAT_BUFFER_SIZE_H-1:0] t_explicit_padding_map;
   logic [INFEAT_BUFFER_SIZE_W-1:0] r_explicit_padding_map_r, r_explicit_padding_map;
-  logic [INFEAT_BUFFER_SIZE_W-1:0] b_explicit_padding_map_r, b_explicit_padding_map;
+  logic [INFEAT_BUFFER_SIZE_H-1:0] b_explicit_padding_map_r, b_explicit_padding_map;
   logic [INFEAT_BUFFER_SIZE_W-1:0] l_explicit_padding_map;
 
   assign t_explicit_padding_map   = (1 << config_.padding_top) - 1;
@@ -870,9 +877,9 @@ module neureka_ctrl #(
     explicit_padding_map encodes which of the 8x8 elements in the array are padded (0) and which ones are not (1).
   */
 
-  for(genvar i=0; i<INFEAT_BUFFER_SIZE_W; i++)begin
+  for(genvar i=0; i<INFEAT_BUFFER_SIZE_H; i++)begin
     assign t_explicit_padding_map_temp[(i+1)*INFEAT_BUFFER_SIZE_W-1:i*INFEAT_BUFFER_SIZE_W] = {INFEAT_BUFFER_SIZE_W{t_explicit_padding_map[i]}};
-    assign b_explicit_padding_map_temp[(i+1)*INFEAT_BUFFER_SIZE_W-1:i*INFEAT_BUFFER_SIZE_W] = {INFEAT_BUFFER_SIZE_W{b_explicit_padding_map[i]}}; 
+    assign b_explicit_padding_map_temp[(i+1)*INFEAT_BUFFER_SIZE_W-1:i*INFEAT_BUFFER_SIZE_W] = {INFEAT_BUFFER_SIZE_W{b_explicit_padding_map[i]}};
   end
 
   always_comb
@@ -887,8 +894,8 @@ module neureka_ctrl #(
       if(next_index.i_major == 0)
         explicit_padding_map[INFEAT_BUFFER_SIZE_HW-1:0] |= t_explicit_padding_map_temp;
       if(next_index.i_major == config_.subtile_nb_ho-1)
-        explicit_padding_map[INFEAT_BUFFER_SIZE_HW-1:0] |= b_explicit_padding_map_temp; 
-    end else begin 
+        explicit_padding_map[INFEAT_BUFFER_SIZE_HW-1:0] |= b_explicit_padding_map_temp;
+    end else begin
       if(index.j_major == 0)
         explicit_padding_map[INFEAT_BUFFER_SIZE_HW-1:0] |= {INFEAT_BUFFER_SIZE_H{l_explicit_padding_map}};
       if(index.j_major == config_.subtile_nb_wo-1)
@@ -897,7 +904,7 @@ module neureka_ctrl #(
         explicit_padding_map[INFEAT_BUFFER_SIZE_HW-1:0] |= t_explicit_padding_map_temp;
       if(index.i_major == config_.subtile_nb_ho-1)
         explicit_padding_map[INFEAT_BUFFER_SIZE_HW-1:0] |= b_explicit_padding_map_temp;
-    end 
+    end
   end : explicit_padding_infeat
 
   /*
@@ -929,19 +936,19 @@ module neureka_ctrl #(
     filter_mask_map |= {{3{b_filter_mask_map[2]}}, {3{b_filter_mask_map[1]}}, {3{b_filter_mask_map[0]}}};
   end
 
-  /* 
+  /*
     binding of datapath control signals
    */
 
   // input buffer goes to its LOAD state together with the ctrl FSM LOAD state
   assign ctrl_engine.ctrl_double_infeat_buffer.write = infeat_buffer_write_sel_q;
-  assign ctrl_engine.ctrl_double_infeat_buffer.read  = infeat_buffer_read_sel_q; 
+  assign ctrl_engine.ctrl_double_infeat_buffer.read  = infeat_buffer_read_sel_q;
 
   assign ctrl_engine.ctrl_double_infeat_buffer.ctrl_odd_infeat_buffer.feat_broadcast = config_.feat_broadcast;
   // assign ctrl_engine.ctrl_double_infeat_buffer.ctrl_even_infeat_buffer.feat_broadcast = config_.feat_broadcast;
 
 
-  assign ctrl_engine.ctrl_double_infeat_buffer.ctrl_odd_infeat_buffer.goto_load    = (infeat_buffer_write_sel_q) & ( config_.prefetch ? ((state==LOAD) & state_change | (uloop_prefetch & (state!=LOAD))): (state==LOAD) & state_change); 
+  assign ctrl_engine.ctrl_double_infeat_buffer.ctrl_odd_infeat_buffer.goto_load    = (infeat_buffer_write_sel_q) & ( config_.prefetch ? ((state==LOAD) & state_change | (uloop_prefetch & (state!=LOAD))): (state==LOAD) & state_change);
   // input buffer goes to its EXTRACT state autonomously, so goto_extract is bound to 0
   assign ctrl_engine.ctrl_double_infeat_buffer.ctrl_odd_infeat_buffer.goto_extract = '0;
   // input buffer goes to its IDLE state when the main FSM enters a state that is not LOAD, WEIGHTOFFS, MATRIXVEC, STREAMIN (or UPDATEIDX, when the 3x3 depthwise mode is used)
@@ -957,25 +964,31 @@ module neureka_ctrl #(
   assign ctrl_engine.ctrl_double_infeat_buffer.ctrl_odd_infeat_buffer.explicit_padding_value_hi = config_.padding_value[7:0];
   assign ctrl_engine.ctrl_double_infeat_buffer.ctrl_odd_infeat_buffer.filter_mode = config_.filter_mode;
 
-  always_comb begin 
+  always_comb begin
     ctrl_engine.ctrl_double_infeat_buffer.ctrl_even_infeat_buffer              = ctrl_engine.ctrl_double_infeat_buffer.ctrl_odd_infeat_buffer;
-    ctrl_engine.ctrl_double_infeat_buffer.ctrl_even_infeat_buffer.goto_load    = (!infeat_buffer_write_sel_q) & ( config_.prefetch ? ((state==LOAD) & state_change | (uloop_prefetch & (state!=LOAD))): (state==LOAD) & state_change);
-    ctrl_engine.ctrl_double_infeat_buffer.ctrl_even_infeat_buffer.goto_idle    = config_.prefetch ? ((infeat_buffer_read_sel_d) & ( config_.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? (state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN && state!=UPDATEIDX) & state_change :
-                                                                                   (state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN) & state_change )):(state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN) & state_change ;
+    ctrl_engine.ctrl_double_infeat_buffer.ctrl_even_infeat_buffer.goto_load    = (!infeat_buffer_write_sel_q) & ( config_.prefetch ? ((state==LOAD) & state_change | (uloop_prefetch & (state!=LOAD))): (state==LOAD) & (state_change | active_datapath_change));
+    ctrl_engine.ctrl_double_infeat_buffer.ctrl_even_infeat_buffer.goto_extract = '0;
+    ctrl_engine.ctrl_double_infeat_buffer.ctrl_even_infeat_buffer.goto_idle    = config_.prefetch ? ((infeat_buffer_read_sel_d) &
+                                                                                                                                  ( config_.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? (state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN && state!=UPDATEIDX) & state_change :
+                                                                                                                                                                                        (state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN) & state_change )):
+                                                                                                                                                                                        (state!=LOAD && state!=WEIGHTOFFS && state!=MATRIXVEC && state!=STREAMIN) & state_change;
   end
 
-  // the NEUREKA array has 36 PEs -- one per each spatial pixel in the output space that it can support (3x3)
-  logic [PE_H-1:0] enable_pe_vert, enable_pe_horiz;
+  logic [PE_H-1:0] enable_pe_h, next_enable_pe_h;
+  logic [PE_W-1:0] enable_pe_w, next_enable_pe_w;
   logic [PE_H*PE_W-1:0] enable_pe_strided, pe_col_strided;
-  logic [PE_H*PE_W-1:0] enable_pe, enable_pe_temp;
+  logic [PE_H*PE_W-1:0] enable_pe, enable_pe_temp, next_enable_pe, next_enable_pe_temp;
 
   // enable pe_cols depending on the subtile size considering residuals in the horizontal & vertical directions
-  assign enable_pe_vert  = (1 << h_size_out) - 1;
-  assign enable_pe_horiz = (1 << w_size_out) - 1;
+  assign enable_pe_h = (1 << h_size_out) - 1;
+  assign enable_pe_w = (1 << w_size_out) - 1;
+
+  assign next_enable_pe_h = (1 << next_h_size_out) - 1;
+  assign next_enable_pe_w = (1 << next_w_size_out) - 1;
 
   for(genvar h=0; h<PE_H; h++) begin : strided_output_height
     for(genvar w=0; w<PE_W; w++) begin : strided_output_width
-      localparam index = h*PE_W + w; 
+      localparam index = h*PE_W + w;
       if((h%2==0)&(w%2==0)) begin
         assign pe_col_strided[index] = 1'b1;
       end else begin
@@ -985,7 +998,7 @@ module neureka_ctrl #(
   end : strided_output_height
 
   // in 2x2 strided mode, apply an explicit mask of pattern
-  //   +---+---+---+ 
+  //   +---+---+---+
   //   | 1 | 0 | 1 |
   //   +---+---+---+
   //   | 0 | 0 | 0 |
@@ -997,9 +1010,11 @@ module neureka_ctrl #(
   // overall column enable takes into account both horizontal and vertical enables, as well as strided mode
 
   for(genvar ii=0; ii<PE_H; ii++) begin
-    assign enable_pe_temp[(ii+1)*PE_W-1:ii*PE_W] = {PE_W{enable_pe_vert[ii]}};  
-  end 
-  assign enable_pe = {PE_H{enable_pe_horiz}} & enable_pe_temp & enable_pe_strided;
+    assign enable_pe_temp[(ii+1)*PE_W-1:ii*PE_W] = {PE_W{enable_pe_h[ii]}};
+    assign next_enable_pe_temp[(ii+1)*PE_W-1:ii*PE_W] = {PE_W{next_enable_pe_h[ii]}};
+  end
+  assign enable_pe = {PE_H{enable_pe_w}} & enable_pe_temp & enable_pe_strided;
+  assign next_enable_pe = double_active_datapath ? ({PE_H{next_enable_pe_w}} & next_enable_pe_temp) : '0; // TODO Adjust for the stride also
 
   // compute last enabled PE
   logic [$clog2(NEUREKA_NUM_PE_MAX)-1:0] last_pe_d, last_pe_q;
@@ -1007,13 +1022,18 @@ module neureka_ctrl #(
   begin : last_pe_comb
     last_pe_d = 0;
     for(int i=0; i<PE_H*PE_W; i++) begin
-      if(enable_pe[i]) begin
-        last_pe_d = i;
+      if (config_.resilience_mode) begin
+        if(enable_pe[i])
+          last_pe_d = i;
+      end else begin
+        if(enable_pe[i] | next_enable_pe[i])
+          last_pe_d = i;
       end
     end
   end
   always_ff @(posedge clk_i or negedge rst_ni)
   begin
+
     if(~rst_ni) begin
       last_pe_q <= '0;
     end
@@ -1024,8 +1044,8 @@ module neureka_ctrl #(
       last_pe_q <= last_pe_d;
     end
   end
-  assign config_.last_pe = last_pe_q;
- 
+  assign config_.last_pe = last_pe_q ; // TODO Look for improvement, workaround solution
+
   // propagate config to NEUREKA binconv array
   assign ctrl_engine.ctrl_binconv_array.weight_offset                   = state==LOAD | state==WEIGHTOFFS;
   assign ctrl_engine.ctrl_binconv_array.filter_mode                     = config_.filter_mode;
@@ -1036,28 +1056,28 @@ module neureka_ctrl #(
   assign ctrl_engine.ctrl_binconv_array.ctrl_pe.ctrl_col.qw             = config_.weight_bits;
   assign ctrl_engine.ctrl_binconv_array.ctrl_pe.ctrl_col.filter_mode    = config_.filter_mode;
   assign ctrl_engine.ctrl_binconv_array.ctrl_pe.ctrl_col.weight_offset  = state==LOAD | state==WEIGHTOFFS;
-  
-  
-  assign ctrl_engine.ctrl_binconv_array.enable_pe = enable_pe;
+
+  // Very workaround solution
+  assign ctrl_engine.ctrl_binconv_array.enable_pe = (config_.resilience_mode) ? enable_pe : {next_enable_pe, enable_pe};
 
   // block-level enables depend on the operating mode -- during WEIGHTOFFS, only 1; in 1x1 mode, as many as the weight_bits are; and in 3x3, all 9 according to the filter_mask_map
   assign ctrl_engine.ctrl_binconv_array.ctrl_pe.ctrl_col.enable_block  = ((state==LOAD || state==WEIGHTOFFS) && config_.filter_mode == NEUREKA_FILTER_MODE_1X1) ? '1 :
-                                                                          (config_.filter_mode == NEUREKA_FILTER_MODE_1X1)                                      ? 9'h0ffffffff :
-                                                                                                                                                                  ~filter_mask_map;
+                                                                            (config_.filter_mode == NEUREKA_FILTER_MODE_1X1)                                      ? '1:
+                                                                            ~filter_mask_map;
 
 
   // clear array state when entering LOAD or MATRIXVEC
   assign ctrl_engine.ctrl_binconv_array.ctrl_pe.ctrl_col.clear = ((state==LOAD) || (state==MATRIXVEC) || (state==UPDATEIDX)) & state_change;
-  
+
   logic [7:0] qw_onehot;
   logic [NEUREKA_BLOCK_SIZE-1:0] fs1_qw_col_mask, fs1_kin_col_mask;
-  
+
 
   logic [35:0] fs1_row_mask;// 4columns each with 9 rows and same thing can be replicated 8 times for the entire core
   logic [NEUREKA_TP_IN-1:0] kin_onehot;
 
 
-  
+
   for(genvar ii=0; ii<8; ii++) begin : pointwise_col_mask
     assign fs1_qw_col_mask[(ii+1)*4-1:ii*4] = {4{qw_onehot[ii]}};
   end : pointwise_col_mask
@@ -1066,20 +1086,22 @@ module neureka_ctrl #(
   assign kin_onehot       = (1<<k_in_lim)-1;
   assign fs1_row_mask     = {{{1'b0}, {kin_onehot[31:24]}},{{1'b0}, {kin_onehot[23:16]}},{{1'b0}, {kin_onehot[15:8]}},{{1'b0}, {kin_onehot[7:0]}}};
   assign fs1_kin_col_mask = {8{((k_in_lim < 8) ? 4'b01 : (k_in_lim < 16) ? 4'b11 : (k_in_lim < 24) ? 4'b111 : 4'b1111)}};
-  
-  assign ctrl_engine.ctrl_binconv_array.ctrl_pe.enable_col    = (config_.filter_mode == NEUREKA_FILTER_MODE_1X1) ? ((state==WEIGHTOFFS) ? 
-                                                                  (fs1_qw_col_mask & 32'h0F & fs1_kin_col_mask) : 
-                                                                  fs1_qw_col_mask & fs1_kin_col_mask) : 
-                                                                  (1 << k_in_lim) - 1;
-  assign ctrl_engine.ctrl_binconv_array.ctrl_pe.enable_col_pw = (config_.filter_mode == NEUREKA_FILTER_MODE_1X1) ?  fs1_row_mask : 
+
+  assign ctrl_engine.ctrl_binconv_array.ctrl_pe.enable_col    = (config_.filter_mode == NEUREKA_FILTER_MODE_1X1) ? fs1_qw_col_mask & fs1_kin_col_mask :
+                                                                                                                   (1 << k_in_lim) - 1;
+  assign ctrl_engine.ctrl_binconv_array.ctrl_pe.dw_weight_offset = (config_.filter_mode == NEUREKA_FILTER_MODE_1X1) ? ((state==WEIGHTOFFS) ?
+                                                                   (fs1_qw_col_mask & 32'h0F & fs1_kin_col_mask) :
+                                                                    fs1_qw_col_mask & fs1_kin_col_mask) :
+                                                                    (1 << k_in_lim) - 1;
+  assign ctrl_engine.ctrl_binconv_array.ctrl_pe.enable_col_pw = (config_.filter_mode == NEUREKA_FILTER_MODE_1X1) ?  fs1_row_mask :
                                                                   '1;
 
   // enable accumulator ICG cells
-  assign ctrl_engine.enable_accumulator = enable_pe;
-  assign ctrl_engine.last_pe = config_.last_pe;
+  assign ctrl_engine.enable_accumulator = (config_.resilience_mode) ? enable_pe : {next_enable_pe, enable_pe};
+  assign ctrl_engine.last_pe = last_pe_q;
 
   // control the accumulator's state or the norm/quant unit's state
-  assign ctrl_engine.ctrl_accumulator.clear          = (state==IDLE && state_change==1'b1) | (state==STREAMOUT_DONE && state_change==1'b1);
+  assign ctrl_engine.ctrl_accumulator.clear          = (state==IDLE && state_change==1'b1) | (state==STREAMOUT_DONE && state_change==1'b1) | (state==ERROR && state_change==1'b1);
   assign ctrl_engine.ctrl_accumulator.clock_gating   = ~(state==LOAD | state==IDLE);
   assign ctrl_engine.ctrl_accumulator.clear_offset   = (state==IDLE) | (state==WEIGHTOFFS && state_change==1'b1);
   assign ctrl_engine.ctrl_accumulator.goto_normquant = ((state==NORMQUANT & ~config_.norm_option_shift) | (state==NORMQUANT_SHIFT)) & state_change;
@@ -1089,7 +1111,7 @@ module neureka_ctrl #(
   assign ctrl_engine.ctrl_accumulator.goto_idle      = (state==DONE)      & state_change;
   assign ctrl_engine.ctrl_accumulator.quant_mode     = config_.quant_mode;
   assign ctrl_engine.ctrl_accumulator.streamin_mode  = config_.streamin_mode;
-  assign ctrl_engine.ctrl_accumulator.dw_accum       = (state==MATRIXVEC) & (config_.filter_mode == NEUREKA_FILTER_MODE_3X3_DW) & (state != WEIGHTOFFS); 
+  assign ctrl_engine.ctrl_accumulator.dw_accum       = (state==MATRIXVEC) & (config_.filter_mode == NEUREKA_FILTER_MODE_3X3_DW) & (state != WEIGHTOFFS);
   assign ctrl_engine.ctrl_accumulator.norm_mode      = config_.norm_mode;
   assign ctrl_engine.ctrl_accumulator.sample_shift   = ((state==NORMQUANT) | (state==NORMQUANT_BIAS)) & state_change;
   assign ctrl_engine.ctrl_accumulator.depthwise      = config_.filter_mode == NEUREKA_FILTER_MODE_3X3_DW;
@@ -1119,13 +1141,13 @@ module neureka_ctrl #(
                                                                                                                    state==WEIGHTOFFS ? 1         : qw_k_out_lim;
   assign ctrl_engine.ctrl_accumulator.streamout_len       = k_out_lim;
   assign ctrl_engine.ctrl_accumulator.scale_len           = config_.norm_mode == NEUREKA_MODE_8B  ? k_out_lim/4+(k_out_lim%4==0 ? 0 : 1) :
-                                                              config_.norm_mode == NEUREKA_MODE_16B ? k_out_lim/2+(k_out_lim%2==0 ? 0 : 1) : 
+                                                              config_.norm_mode == NEUREKA_MODE_16B ? k_out_lim/2+(k_out_lim%2==0 ? 0 : 1) :
                                                               k_out_lim;
   assign ctrl_engine.ctrl_accumulator.bias_len            = k_out_lim;
   assign ctrl_engine.ctrl_accumulator.weight_offset       = (state==WEIGHTOFFS) ? 1'b1 : 1'b0;
-  assign ctrl_engine.ctrl_accumulator.qw                  = config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? '0 : 
+  assign ctrl_engine.ctrl_accumulator.qw                  = config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? '0 :
                                                               config_.weight_bits;
-  assign ctrl_engine.ctrl_accumulator.enable_streamout    = enable_pe;
+  assign ctrl_engine.ctrl_accumulator.enable_streamout    = (config_.resilience_mode) ? enable_pe : {next_enable_pe, enable_pe};
   assign ctrl_engine.ctrl_accumulator.weight_offset_scale = config_.weight_offset_scale;
   assign ctrl_engine.ctrl_accumulator.norm_option_bias    = config_.norm_option_bias;
   assign ctrl_engine.ctrl_accumulator.norm_option_shift   = config_.norm_option_shift;
@@ -1139,22 +1161,30 @@ module neureka_ctrl #(
 
   assign ctrl_engine.ctrl_serialize_streamout.first_stream       = '0;
   assign ctrl_engine.ctrl_serialize_streamout.clear_serdes_state = '0;
-  assign ctrl_engine.ctrl_serialize_streamout.nb_contig_m1       = (config_.quant_mode == NEUREKA_MODE_32B) ? (k_out_lim/(NEUREKA_MEM_BANDWIDTH/NEUREKA_ACCUM_SIZE) + (k_out_lim%(NEUREKA_MEM_BANDWIDTH/NEUREKA_ACCUM_SIZE)==0 ? 0 : 1) )-1 : 
+  assign ctrl_engine.ctrl_serialize_streamout.nb_contig_m1       = (config_.quant_mode == NEUREKA_MODE_32B) ? (k_out_lim/(NEUREKA_MEM_BANDWIDTH/NEUREKA_ACCUM_SIZE) + (k_out_lim%(NEUREKA_MEM_BANDWIDTH/NEUREKA_ACCUM_SIZE)==0 ? 0 : 1) )-1 :
                                                                       0;
   assign ctrl_engine.clear_des                                   = (state == MATRIXVEC || state == STREAMOUT) & state_change;
-  assign ctrl_engine.clear_ser                                   = (state==STREAMOUT_DONE || state==DONE) & state_change;
+  assign ctrl_engine.clear_ser                                   = ((state==STREAMOUT_DONE || state==DONE) & state_change) || (state == STREAMOUT & active_datapath_change);
 
   assign ctrl_engine.mode_linear  = config_.mode_linear;
+
+  assign ctrl_engine.resilience_mode  = config_.resilience_mode;
+
+  assign ctrl_engine.active_datapath  = config_.resilience_mode ? '0 : active_datapath;
+
+  assign ctrl_engine.broadcast = (state==UPDATEIDX) & state_change; // TODO This signal is useful when I want to broadcast control signals to both datapath in perf mode (check if there are other scenarios in which it could be used)
+
+  assign ctrl_engine.enable_outputcheck  = (state==OUTCHECK) & state_change;
 
   // engine and streamer configuration is propagated with one cycle of delay
   always_comb begin
     ctrl_engine_d = ctrl_engine;
     ctrl_streamer_d = ctrl_streamer;
     if(clear_o) begin
-      ctrl_engine_d = '0; 
+      ctrl_engine_d = '0;
       ctrl_streamer_d = '0;
-    end 
-  end 
+    end
+  end
   always_ff @(posedge clk_i or negedge rst_ni)
   begin
     if(~rst_ni) begin
@@ -1180,25 +1210,26 @@ module neureka_ctrl #(
   always_ff @(posedge clk_i or negedge rst_ni)
   begin
     if(~rst_ni) begin
-      infeat_buffer_write_sel_q <= 0; 
-      infeat_buffer_read_sel_q  <= 0; 
-    end else begin 
-      infeat_buffer_write_sel_q <= infeat_buffer_write_sel_d; 
-      infeat_buffer_read_sel_q  <= infeat_buffer_read_sel_d; 
-    end  
-  end 
+      infeat_buffer_write_sel_q <= 0;
+      infeat_buffer_read_sel_q  <= 0;
+    end else begin
+      infeat_buffer_write_sel_q <= infeat_buffer_write_sel_d;
+      infeat_buffer_read_sel_q  <= infeat_buffer_read_sel_d;
+    end
+  end
 
-  always_comb begin 
+  always_comb begin
     infeat_buffer_write_sel_d = infeat_buffer_write_sel_q;
     infeat_buffer_read_sel_d  = infeat_buffer_read_sel_q;
     if(clear_o) begin
       infeat_buffer_write_sel_d = 0;
       infeat_buffer_read_sel_d  = 0;
-    end else if(state==UPDATEIDX && state_change==1'b1) begin 
-      if(config_.prefetch) infeat_buffer_read_sel_d  = (~infeat_buffer_read_sel_q);
-    end 
+    end else if(state==UPDATEIDX && state_change==1'b1) begin
+      if(config_.prefetch)
+        infeat_buffer_read_sel_d  = (~infeat_buffer_read_sel_q);
+    end
     if(config_.prefetch & ((state == WEIGHTOFFS)|(state == MATRIXVEC)))
       infeat_buffer_write_sel_d = infeat_buffer_write_sel_q ^ prefetch_pulse;
-  end 
+  end
 
 endmodule // neureka_ctrl

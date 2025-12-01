@@ -1,3 +1,7 @@
 [submodule "model/deps/pulp-nnx"]
 	path = model/deps/pulp-nnx
 	url = https://github.com/pulp-platform/pulp-nnx
+[submodule "fault_injection_sim"]
+	path = fault_injection_sim
+	url = https://github.com/pulp-platform/InjectaFault.git
+	branch = lg/neureka

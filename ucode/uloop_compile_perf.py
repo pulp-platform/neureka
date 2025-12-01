@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# uloop_compile.sv
+# uloop_compile_perf.sv
 # Francesco Conti <fconti@iis.ee.ethz.ch>
 #
 # Copyright (C) 2017-2019 ETH Zurich, University of Bologna
@@ -21,9 +21,14 @@
 from __future__ import print_function
 from uloop_common import *
 
-loops_ops,code,mnem = uloop_load("code.yml")
+uloops_code = ("code_D0P.yml", "code_D1P.yml")
 
-bytecode = uloop_bytecode(code, loops_ops)
-print (bytecode['code'].length)
-print ("uloop bytecode: %d'h%s" % (bytecode['code'].length, str(bytecode['code'].hex)))
-print ("uloop loops:    %d'b%s" % (bytecode['loops'].length, str(bytecode['loops'].bin)))
+for item in uloops_code:
+    print(item)
+    loops_ops,code,mnem = uloop_load(item)
+
+    bytecode = uloop_bytecode(code, loops_ops)
+    print (bytecode['code'].length)
+    print ("uloop bytecode: %d'h%s" % (bytecode['code'].length, str(bytecode['code'].hex)))
+    print ("uloop loops:    %d'b%s" % (bytecode['loops'].length, str(bytecode['loops'].bin)))
+    print()

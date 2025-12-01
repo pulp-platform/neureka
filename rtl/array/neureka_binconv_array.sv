@@ -278,13 +278,13 @@ module neureka_binconv_array #(
 
         // filter size = 1
         localparam j_fs1  = (ii % PE_W);
-        localparam i_fs1  = ((ii-(ii%PE_H)) / PE_W);
+        localparam i_fs1  = ((ii-(ii%PE_W)) / PE_W);
 
         // filter size = 3
         localparam fj_fs3 = rr % 3;
         localparam fi_fs3 = (rr-fj_fs3)/ 3;
-        localparam j_fs3  = ii % PE_H + fj_fs3;
-        localparam i_fs3  = (ii-(ii%PE_H)) / PE_H + fi_fs3;
+        localparam j_fs3  = ii % PE_W + fj_fs3;
+        localparam i_fs3  = (ii-(ii%PE_W)) / PE_W + fi_fs3;
 
         for(genvar bb=0; bb<BLOCK_SIZE; bb++) begin : act_blk_gen
 
