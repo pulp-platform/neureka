@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1764606117273,
+  "lastUpdate": 1764858020278,
   "repoUrl": "https://github.com/pulp-platform/neureka",
   "entries": {
     "Execution cycles": [
@@ -7381,6 +7381,100 @@ window.BENCHMARK_DATA = {
           {
             "name": "neureka_basic_tests:t13",
             "value": 333,
+            "unit": "cycles"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "f.conti@unibo.it",
+            "name": "Francesco Conti",
+            "username": "FrancescoConti"
+          },
+          "committer": {
+            "email": "f.conti@unibo.it",
+            "name": "Francesco Conti",
+            "username": "FrancescoConti"
+          },
+          "distinct": true,
+          "id": "dfade511ae8ad91cddeba298ee1c5a2ca46a646a",
+          "message": "Small changes to support Questa One",
+          "timestamp": "2025-12-04T15:13:25+01:00",
+          "tree_id": "dd6127705d08124c5bfce41378744102c607c4b1",
+          "url": "https://github.com/pulp-platform/neureka/commit/dfade511ae8ad91cddeba298ee1c5a2ca46a646a"
+        },
+        "date": 1764858019378,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "neureka_basic_tests:t4",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t5",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t3",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t8",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t11",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t13",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t7",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t10",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t6",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t12",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t1",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t9",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t2",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t0",
+            "value": 0,
             "unit": "cycles"
           }
         ]
