@@ -61,7 +61,7 @@ module tb_dummy_memory
 
   logic clk_delayed;
 
-  always_ff @(posedge clk_i)
+  always @(posedge clk_i)
   begin : probs_proc
     for (int i=0; i<MP; i++) begin
       probs[i] = real'($urandom_range(0,1000))/1000.0;
@@ -85,7 +85,7 @@ module tb_dummy_memory
       assign tcdm[ii].r_valid = tcdm_r_valid [ii];
     end
 
-    always_ff @(posedge clk_i)
+    always @(posedge clk_i)
     begin
       if(randomize_i)
         for(int i=0; i<MEMORY_SIZE; i++)
@@ -113,7 +113,7 @@ module tb_dummy_memory
         end
   endgenerate
 
-  always_ff @(posedge clk_i)
+  always @(posedge clk_i)
   begin : dummy_proc
     for (int i=0; i<MP; i++) begin
       if ((tcdm_req[i] & enable_i) == 1'b0) begin
@@ -145,7 +145,7 @@ module tb_dummy_memory
     end
   end
 
-  always_ff @(posedge clk_delayed)
+  always @(posedge clk_delayed)
   begin
     tcdm_r_data  <= tcdm_r_data_int;
     tcdm_r_valid <= tcdm_r_valid_int;
