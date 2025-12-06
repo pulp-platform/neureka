@@ -63,17 +63,17 @@ module neureka_ctrl #(
 
   ctrl_slave_t   slave_ctrl;
   flags_slave_t  slave_flags;
-  ctrl_regfile_t reg_file;
 
   ctrl_engine_t   ctrl_engine, ctrl_engine_d, ctrl_engine_q;
   ctrl_streamer_t ctrl_streamer, ctrl_streamer_d, ctrl_streamer_q;
 
-  /* HWPE controller slave port + register file */
-  hwpe_ctrl_slave #(
-    .N_CORES        ( N_CORES ),
-    .N_CONTEXT      ( 2       ),
-    .N_IO_REGS      ( 25      ),
-    .N_GENERIC_REGS ( 0       ),
+  /* HWPE controller target port */
+  hwpe_ctrl_target #(
+    .NB_CONTEXT     ( 2       ),
+    .hwpe_ctrl_regif_in_t  = logic, // must be overridden!
+    .hwpe_ctrl_regif_out_t = logic, // must be overridden!
+    .hwpe_ctrl_job_indep_t = logic, // must be overridden!
+    .hwpe_ctrl_job_dep_t   = logic  // must be overridden!
     .ID_WIDTH       ( ID      )
   ) i_slave (
     .clk_i    ( clk_i       ),
