@@ -4,96 +4,96 @@
 package neureka_regif_pkg;
 
     localparam NEUREKA_REGIF_DATA_WIDTH = 32;
-    localparam NEUREKA_REGIF_MIN_ADDR_WIDTH = 7;
-    localparam NEUREKA_REGIF_SIZE = 'h80;
+    localparam NEUREKA_REGIF_MIN_ADDR_WIDTH = 32;
+    localparam NEUREKA_REGIF_SIZE = 'h88;
 
-    typedef struct {
+    typedef struct packed {
         logic [31:0] next;
     } neureka_regif__hwpe_acquire__acquire__in_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__hwpe_acquire__acquire__in_t acquire;
     } neureka_regif__hwpe_acquire__in_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [31:0] next;
     } neureka_regif__hwpe_status__status0__in_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__hwpe_status__status0__in_t status0;
     } neureka_regif__hwpe_status__in_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [7:0] next;
     } neureka_regif__hwpe_running_job__running_job__in_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__hwpe_running_job__running_job__in_t running_job;
     } neureka_regif__hwpe_running_job__in_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__hwpe_acquire__in_t acquire;
         neureka_regif__hwpe_status__in_t status;
         neureka_regif__hwpe_running_job__in_t running_job;
     } neureka_regif__hwpe_ctrl_mandatory__in_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__hwpe_ctrl_mandatory__in_t hwpe_ctrl;
     } neureka_regif__in_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [1:0] value;
         logic swacc;
     } neureka_regif__hwpe_commit_trigger__commit_trigger__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [29:0] value;
     } neureka_regif__hwpe_commit_trigger__r0__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__hwpe_commit_trigger__commit_trigger__out_t commit_trigger;
         neureka_regif__hwpe_commit_trigger__r0__out_t r0;
     } neureka_regif__hwpe_commit_trigger__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic swacc;
     } neureka_regif__hwpe_acquire__acquire__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__hwpe_acquire__acquire__out_t acquire;
     } neureka_regif__hwpe_acquire__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [31:0] value;
     } neureka_regif__hwpe_reserved__reserved__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__hwpe_reserved__reserved__out_t reserved;
     } neureka_regif__hwpe_reserved__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [23:0] value;
     } neureka_regif__hwpe_running_job__r0__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__hwpe_running_job__r0__out_t r0;
     } neureka_regif__hwpe_running_job__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [1:0] value;
         logic swacc;
     } neureka_regif__hwpe_soft_clear__soft_clear__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [29:0] value;
     } neureka_regif__hwpe_soft_clear__r0__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__hwpe_soft_clear__soft_clear__out_t soft_clear;
         neureka_regif__hwpe_soft_clear__r0__out_t r0;
     } neureka_regif__hwpe_soft_clear__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__hwpe_commit_trigger__out_t commit_trigger;
         neureka_regif__hwpe_acquire__out_t acquire;
         neureka_regif__hwpe_reserved__out_t reserved0;
@@ -103,212 +103,220 @@ package neureka_regif_pkg;
         neureka_regif__hwpe_reserved__out_t reserved2;
     } neureka_regif__hwpe_ctrl_mandatory__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [31:0] value;
     } neureka_regif__weights_ptr__value__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__weights_ptr__value__out_t value;
     } neureka_regif__weights_ptr__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [31:0] value;
     } neureka_regif__infeat_ptr__value__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__infeat_ptr__value__out_t value;
     } neureka_regif__infeat_ptr__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [31:0] value;
     } neureka_regif__outfeat_ptr__value__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__outfeat_ptr__value__out_t value;
     } neureka_regif__outfeat_ptr__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [31:0] value;
     } neureka_regif__scale_ptr__value__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__scale_ptr__value__out_t value;
     } neureka_regif__scale_ptr__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [31:0] value;
     } neureka_regif__scale_shift_ptr__value__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__scale_shift_ptr__value__out_t value;
     } neureka_regif__scale_shift_ptr__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [31:0] value;
     } neureka_regif__scale_bias_ptr__value__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__scale_bias_ptr__value__out_t value;
     } neureka_regif__scale_bias_ptr__out_t;
 
-    typedef struct {
+    typedef struct packed {
+        logic [31:0] value;
+    } neureka_regif__streamin_ptr__value__out_t;
+
+    typedef struct packed {
+        neureka_regif__streamin_ptr__value__out_t value;
+    } neureka_regif__streamin_ptr__out_t;
+
+    typedef struct packed {
         logic [31:0] value;
     } neureka_regif__infeat_d0_stride__value__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__infeat_d0_stride__value__out_t value;
     } neureka_regif__infeat_d0_stride__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [31:0] value;
     } neureka_regif__infeat_d1_stride__value__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__infeat_d1_stride__value__out_t value;
     } neureka_regif__infeat_d1_stride__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [31:0] value;
     } neureka_regif__infeat_d2_stride__value__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__infeat_d2_stride__value__out_t value;
     } neureka_regif__infeat_d2_stride__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [31:0] value;
     } neureka_regif__outfeat_d0_stride__value__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__outfeat_d0_stride__value__out_t value;
     } neureka_regif__outfeat_d0_stride__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [31:0] value;
     } neureka_regif__outfeat_d1_stride__value__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__outfeat_d1_stride__value__out_t value;
     } neureka_regif__outfeat_d1_stride__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [31:0] value;
     } neureka_regif__outfeat_d2_stride__value__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__outfeat_d2_stride__value__out_t value;
     } neureka_regif__outfeat_d2_stride__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [31:0] value;
     } neureka_regif__weights_d0_stride__value__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__weights_d0_stride__value__out_t value;
     } neureka_regif__weights_d0_stride__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [31:0] value;
     } neureka_regif__weights_d1_stride__value__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__weights_d1_stride__value__out_t value;
     } neureka_regif__weights_d1_stride__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [31:0] value;
     } neureka_regif__weights_d2_stride__value__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__weights_d2_stride__value__out_t value;
     } neureka_regif__weights_d2_stride__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [15:0] value;
     } neureka_regif__subtile_rem0__ki__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [15:0] value;
     } neureka_regif__subtile_rem0__ko__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__subtile_rem0__ki__out_t ki;
         neureka_regif__subtile_rem0__ko__out_t ko;
     } neureka_regif__subtile_rem0__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [15:0] value;
     } neureka_regif__subtile_rem1__wo__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [15:0] value;
     } neureka_regif__subtile_rem1__ho__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__subtile_rem1__wo__out_t wo;
         neureka_regif__subtile_rem1__ho__out_t ho;
     } neureka_regif__subtile_rem1__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [15:0] value;
     } neureka_regif__subtile_rem2__wi__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [15:0] value;
     } neureka_regif__subtile_rem2__hi__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__subtile_rem2__wi__out_t wi;
         neureka_regif__subtile_rem2__hi__out_t hi;
     } neureka_regif__subtile_rem2__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [15:0] value;
     } neureka_regif__subtile_nb0__ki__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [15:0] value;
     } neureka_regif__subtile_nb0__ko__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__subtile_nb0__ki__out_t ki;
         neureka_regif__subtile_nb0__ko__out_t ko;
     } neureka_regif__subtile_nb0__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [15:0] value;
     } neureka_regif__subtile_nb1__wo__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [15:0] value;
     } neureka_regif__subtile_nb1__ho__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__subtile_nb1__wo__out_t wo;
         neureka_regif__subtile_nb1__ho__out_t ho;
     } neureka_regif__subtile_nb1__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [15:0] value;
     } neureka_regif__padding__value__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [3:0] value;
     } neureka_regif__padding__left__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [3:0] value;
     } neureka_regif__padding__bottom__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [3:0] value;
     } neureka_regif__padding__right__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [3:0] value;
     } neureka_regif__padding__top__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__padding__value__out_t value;
         neureka_regif__padding__left__out_t left;
         neureka_regif__padding__bottom__out_t bottom;
@@ -316,106 +324,152 @@ package neureka_regif_pkg;
         neureka_regif__padding__top__out_t top;
     } neureka_regif__padding__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [31:0] value;
     } neureka_regif__weight_offset__value__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__weight_offset__value__out_t value;
     } neureka_regif__weight_offset__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [7:0] value;
     } neureka_regif__filter_mask__left__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [7:0] value;
     } neureka_regif__filter_mask__bottom__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [7:0] value;
     } neureka_regif__filter_mask__right__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [7:0] value;
     } neureka_regif__filter_mask__top__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__filter_mask__left__out_t left;
         neureka_regif__filter_mask__bottom__out_t bottom;
         neureka_regif__filter_mask__right__out_t right;
         neureka_regif__filter_mask__top__out_t top;
     } neureka_regif__filter_mask__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [2:0] value;
     } neureka_regif__config0__wbits__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic value;
     } neureka_regif__config0__reserved2__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic value;
     } neureka_regif__config0__streamout_quant__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [1:0] value;
     } neureka_regif__config0__filter_mode__out_t;
 
-    typedef struct {
-        logic [3:0] value;
-    } neureka_regif__config0__padding__out_t;
+    typedef struct packed {
+        logic value;
+    } neureka_regif__config0__mode_linear__out_t;
 
-    typedef struct {
+    typedef struct packed {
+        logic value;
+    } neureka_regif__config0__mode_strided__out_t;
+
+    typedef struct packed {
+        logic value;
+    } neureka_regif__config0__wmem__out_t;
+
+    typedef struct packed {
+        logic value;
+    } neureka_regif__config0__prefetch__out_t;
+
+    typedef struct packed {
         logic value;
     } neureka_regif__config0__rounding__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic [1:0] value;
-    } neureka_regif__config0__norm_bits__out_t;
+    } neureka_regif__config0__norm_mode__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic value;
     } neureka_regif__config0__streamin__out_t;
 
-    typedef struct {
+    typedef struct packed {
         logic value;
-    } neureka_regif__config0__woffs__out_t;
+    } neureka_regif__config0__streamin_mode__out_t;
 
-    typedef struct {
-        logic [15:0] value;
+    typedef struct packed {
+        logic [4:0] value;
+    } neureka_regif__config0__shift_reqnt__out_t;
+
+    typedef struct packed {
+        logic [1:0] value;
+    } neureka_regif__config0__quant_mode__out_t;
+
+    typedef struct packed {
+        logic value;
+    } neureka_regif__config0__relu__out_t;
+
+    typedef struct packed {
+        logic value;
+    } neureka_regif__config0__norm_option_shift__out_t;
+
+    typedef struct packed {
+        logic value;
+    } neureka_regif__config0__norm_option_bias__out_t;
+
+    typedef struct packed {
+        logic value;
+    } neureka_regif__config0__feat_broadcast__out_t;
+
+    typedef struct packed {
+        logic [4:0] value;
     } neureka_regif__config0__reserved__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__config0__wbits__out_t wbits;
         neureka_regif__config0__reserved2__out_t reserved2;
         neureka_regif__config0__streamout_quant__out_t streamout_quant;
         neureka_regif__config0__filter_mode__out_t filter_mode;
-        neureka_regif__config0__padding__out_t padding;
+        neureka_regif__config0__mode_linear__out_t mode_linear;
+        neureka_regif__config0__mode_strided__out_t mode_strided;
+        neureka_regif__config0__wmem__out_t wmem;
+        neureka_regif__config0__prefetch__out_t prefetch;
         neureka_regif__config0__rounding__out_t rounding;
-        neureka_regif__config0__norm_bits__out_t norm_bits;
+        neureka_regif__config0__norm_mode__out_t norm_mode;
         neureka_regif__config0__streamin__out_t streamin;
-        neureka_regif__config0__woffs__out_t woffs;
+        neureka_regif__config0__streamin_mode__out_t streamin_mode;
+        neureka_regif__config0__shift_reqnt__out_t shift_reqnt;
+        neureka_regif__config0__quant_mode__out_t quant_mode;
+        neureka_regif__config0__relu__out_t relu;
+        neureka_regif__config0__norm_option_shift__out_t norm_option_shift;
+        neureka_regif__config0__norm_option_bias__out_t norm_option_bias;
+        neureka_regif__config0__feat_broadcast__out_t feat_broadcast;
         neureka_regif__config0__reserved__out_t reserved;
     } neureka_regif__config0__out_t;
 
-    typedef struct {
+    typedef struct packed {
         neureka_regif__weights_ptr__out_t weights_ptr;
         neureka_regif__infeat_ptr__out_t infeat_ptr;
         neureka_regif__outfeat_ptr__out_t outfeat_ptr;
         neureka_regif__scale_ptr__out_t scale_ptr;
         neureka_regif__scale_shift_ptr__out_t scale_shift_ptr;
         neureka_regif__scale_bias_ptr__out_t scale_bias_ptr;
-        neureka_regif__infeat_d0_stride__out_t infeat_d0_stride;
-        neureka_regif__infeat_d1_stride__out_t infeat_d1_stride;
-        neureka_regif__infeat_d2_stride__out_t infeat_d2_stride;
-        neureka_regif__outfeat_d0_stride__out_t outfeat_d0_stride;
-        neureka_regif__outfeat_d1_stride__out_t outfeat_d1_stride;
-        neureka_regif__outfeat_d2_stride__out_t outfeat_d2_stride;
-        neureka_regif__weights_d0_stride__out_t weights_d0_stride;
-        neureka_regif__weights_d1_stride__out_t weights_d1_stride;
-        neureka_regif__weights_d2_stride__out_t weights_d2_stride;
+        neureka_regif__streamin_ptr__out_t streamin_ptr;
+        neureka_regif__infeat_d0_stride__out_t infeat_d0_str;
+        neureka_regif__infeat_d1_stride__out_t infeat_d1_str;
+        neureka_regif__infeat_d2_stride__out_t infeat_d2_str;
+        neureka_regif__outfeat_d0_stride__out_t outfeat_d0_st;
+        neureka_regif__outfeat_d1_stride__out_t outfeat_d1_st;
+        neureka_regif__outfeat_d2_stride__out_t outfeat_d2_st;
+        neureka_regif__weights_d0_stride__out_t weights_d0_st;
+        neureka_regif__weights_d1_stride__out_t weights_d1_st;
+        neureka_regif__weights_d2_stride__out_t weights_d2_st;
         neureka_regif__subtile_rem0__out_t subtile_rem0;
         neureka_regif__subtile_rem1__out_t subtile_rem1;
         neureka_regif__subtile_rem2__out_t subtile_rem2;
@@ -427,8 +481,13 @@ package neureka_regif_pkg;
         neureka_regif__config0__out_t config0;
     } neureka_regif__hwpe_ctrl_job_dep__out_t;
 
-    typedef struct {
+    typedef struct packed {
+        neureka_regif__hwpe_reserved__out_t reserved;
+    } neureka_regif__hwpe_ctrl_job_indep__out_t;
+
+    typedef struct packed {
         neureka_regif__hwpe_ctrl_mandatory__out_t hwpe_ctrl;
         neureka_regif__hwpe_ctrl_job_dep__out_t hwpe_job_dep;
+        neureka_regif__hwpe_ctrl_job_indep__out_t hwpe_job_indep;
     } neureka_regif__out_t;
 endpackage

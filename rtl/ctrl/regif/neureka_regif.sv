@@ -9,7 +9,7 @@ module neureka_regif #(
 
         input wire s_obi_req,
         output logic s_obi_gnt,
-        input wire [6:0] s_obi_addr,
+        input wire [31:0] s_obi_addr,
         input wire s_obi_we,
         input wire [3:0] s_obi_be,
         input wire [31:0] s_obi_wdata,
@@ -29,7 +29,7 @@ module neureka_regif #(
     //--------------------------------------------------------------------------
     logic cpuif_req;
     logic cpuif_req_is_wr;
-    logic [6:0] cpuif_addr;
+    logic [31:0] cpuif_addr;
     logic [31:0] cpuif_wr_data;
     logic [31:0] cpuif_wr_biten;
     logic cpuif_req_stall_wr;
@@ -76,7 +76,7 @@ module neureka_regif #(
                     is_active <= 1'b1;
                     cpuif_req <= 1'b1;
                     cpuif_req_is_wr <= s_obi_we;
-                    cpuif_addr <= {s_obi_addr[6:2], 2'b0};
+                    cpuif_addr <= {s_obi_addr[31:2], 2'b0};
                     cpuif_wr_data <= s_obi_wdata;
                     rid_q <= s_obi_aid;
                     for (int i = 0; i < 4; i++) begin
@@ -140,15 +140,16 @@ module neureka_regif #(
             logic scale_ptr;
             logic scale_shift_ptr;
             logic scale_bias_ptr;
-            logic infeat_d0_stride;
-            logic infeat_d1_stride;
-            logic infeat_d2_stride;
-            logic outfeat_d0_stride;
-            logic outfeat_d1_stride;
-            logic outfeat_d2_stride;
-            logic weights_d0_stride;
-            logic weights_d1_stride;
-            logic weights_d2_stride;
+            logic streamin_ptr;
+            logic infeat_d0_str;
+            logic infeat_d1_str;
+            logic infeat_d2_str;
+            logic outfeat_d0_st;
+            logic outfeat_d1_st;
+            logic outfeat_d2_st;
+            logic weights_d0_st;
+            logic weights_d1_st;
+            logic weights_d2_st;
             logic subtile_rem0;
             logic subtile_rem1;
             logic subtile_rem2;
@@ -159,6 +160,9 @@ module neureka_regif #(
             logic filter_mask;
             logic config0;
         } hwpe_job_dep;
+        struct {
+            logic reserved;
+        } hwpe_job_indep;
     } decoded_reg_strb_t;
     decoded_reg_strb_t decoded_reg_strb;
     logic decoded_err;
@@ -172,38 +176,40 @@ module neureka_regif #(
         automatic logic is_invalid_rw;
         is_valid_addr = '1; // No error checking on valid address access
         is_invalid_rw = '0;
-        decoded_reg_strb.hwpe_ctrl.commit_trigger = cpuif_req_masked & (cpuif_addr == 7'h0);
-        decoded_reg_strb.hwpe_ctrl.acquire = cpuif_req_masked & (cpuif_addr == 7'h4) & !cpuif_req_is_wr;
-        decoded_reg_strb.hwpe_ctrl.reserved0 = cpuif_req_masked & (cpuif_addr == 7'h8) & !cpuif_req_is_wr;
-        decoded_reg_strb.hwpe_ctrl.status = cpuif_req_masked & (cpuif_addr == 7'hc) & !cpuif_req_is_wr;
-        decoded_reg_strb.hwpe_ctrl.running_job = cpuif_req_masked & (cpuif_addr == 7'h10) & !cpuif_req_is_wr;
-        decoded_reg_strb.hwpe_ctrl.soft_clear = cpuif_req_masked & (cpuif_addr == 7'h14);
-        decoded_reg_strb.hwpe_ctrl.reserved1 = cpuif_req_masked & (cpuif_addr == 7'h18) & !cpuif_req_is_wr;
-        decoded_reg_strb.hwpe_ctrl.reserved2 = cpuif_req_masked & (cpuif_addr == 7'h1c) & !cpuif_req_is_wr;
-        decoded_reg_strb.hwpe_job_dep.weights_ptr = cpuif_req_masked & (cpuif_addr == 7'h20);
-        decoded_reg_strb.hwpe_job_dep.infeat_ptr = cpuif_req_masked & (cpuif_addr == 7'h24);
-        decoded_reg_strb.hwpe_job_dep.outfeat_ptr = cpuif_req_masked & (cpuif_addr == 7'h28);
-        decoded_reg_strb.hwpe_job_dep.scale_ptr = cpuif_req_masked & (cpuif_addr == 7'h2c);
-        decoded_reg_strb.hwpe_job_dep.scale_shift_ptr = cpuif_req_masked & (cpuif_addr == 7'h30);
-        decoded_reg_strb.hwpe_job_dep.scale_bias_ptr = cpuif_req_masked & (cpuif_addr == 7'h34);
-        decoded_reg_strb.hwpe_job_dep.infeat_d0_stride = cpuif_req_masked & (cpuif_addr == 7'h38);
-        decoded_reg_strb.hwpe_job_dep.infeat_d1_stride = cpuif_req_masked & (cpuif_addr == 7'h3c);
-        decoded_reg_strb.hwpe_job_dep.infeat_d2_stride = cpuif_req_masked & (cpuif_addr == 7'h40);
-        decoded_reg_strb.hwpe_job_dep.outfeat_d0_stride = cpuif_req_masked & (cpuif_addr == 7'h44);
-        decoded_reg_strb.hwpe_job_dep.outfeat_d1_stride = cpuif_req_masked & (cpuif_addr == 7'h48);
-        decoded_reg_strb.hwpe_job_dep.outfeat_d2_stride = cpuif_req_masked & (cpuif_addr == 7'h4c);
-        decoded_reg_strb.hwpe_job_dep.weights_d0_stride = cpuif_req_masked & (cpuif_addr == 7'h50);
-        decoded_reg_strb.hwpe_job_dep.weights_d1_stride = cpuif_req_masked & (cpuif_addr == 7'h54);
-        decoded_reg_strb.hwpe_job_dep.weights_d2_stride = cpuif_req_masked & (cpuif_addr == 7'h58);
-        decoded_reg_strb.hwpe_job_dep.subtile_rem0 = cpuif_req_masked & (cpuif_addr == 7'h5c);
-        decoded_reg_strb.hwpe_job_dep.subtile_rem1 = cpuif_req_masked & (cpuif_addr == 7'h60);
-        decoded_reg_strb.hwpe_job_dep.subtile_rem2 = cpuif_req_masked & (cpuif_addr == 7'h64);
-        decoded_reg_strb.hwpe_job_dep.subtile_nb0 = cpuif_req_masked & (cpuif_addr == 7'h68);
-        decoded_reg_strb.hwpe_job_dep.subtile_nb1 = cpuif_req_masked & (cpuif_addr == 7'h6c);
-        decoded_reg_strb.hwpe_job_dep.padding = cpuif_req_masked & (cpuif_addr == 7'h70);
-        decoded_reg_strb.hwpe_job_dep.weight_offset = cpuif_req_masked & (cpuif_addr == 7'h74);
-        decoded_reg_strb.hwpe_job_dep.filter_mask = cpuif_req_masked & (cpuif_addr == 7'h78);
-        decoded_reg_strb.hwpe_job_dep.config0 = cpuif_req_masked & (cpuif_addr == 7'h7c);
+        decoded_reg_strb.hwpe_ctrl.commit_trigger = cpuif_req_masked & (cpuif_addr == 32'h0);
+        decoded_reg_strb.hwpe_ctrl.acquire = cpuif_req_masked & (cpuif_addr == 32'h4) & !cpuif_req_is_wr;
+        decoded_reg_strb.hwpe_ctrl.reserved0 = cpuif_req_masked & (cpuif_addr == 32'h8) & !cpuif_req_is_wr;
+        decoded_reg_strb.hwpe_ctrl.status = cpuif_req_masked & (cpuif_addr == 32'hc) & !cpuif_req_is_wr;
+        decoded_reg_strb.hwpe_ctrl.running_job = cpuif_req_masked & (cpuif_addr == 32'h10) & !cpuif_req_is_wr;
+        decoded_reg_strb.hwpe_ctrl.soft_clear = cpuif_req_masked & (cpuif_addr == 32'h14);
+        decoded_reg_strb.hwpe_ctrl.reserved1 = cpuif_req_masked & (cpuif_addr == 32'h18) & !cpuif_req_is_wr;
+        decoded_reg_strb.hwpe_ctrl.reserved2 = cpuif_req_masked & (cpuif_addr == 32'h1c) & !cpuif_req_is_wr;
+        decoded_reg_strb.hwpe_job_dep.weights_ptr = cpuif_req_masked & (cpuif_addr == 32'h20);
+        decoded_reg_strb.hwpe_job_dep.infeat_ptr = cpuif_req_masked & (cpuif_addr == 32'h24);
+        decoded_reg_strb.hwpe_job_dep.outfeat_ptr = cpuif_req_masked & (cpuif_addr == 32'h28);
+        decoded_reg_strb.hwpe_job_dep.scale_ptr = cpuif_req_masked & (cpuif_addr == 32'h2c);
+        decoded_reg_strb.hwpe_job_dep.scale_shift_ptr = cpuif_req_masked & (cpuif_addr == 32'h30);
+        decoded_reg_strb.hwpe_job_dep.scale_bias_ptr = cpuif_req_masked & (cpuif_addr == 32'h34);
+        decoded_reg_strb.hwpe_job_dep.streamin_ptr = cpuif_req_masked & (cpuif_addr == 32'h38);
+        decoded_reg_strb.hwpe_job_dep.infeat_d0_str = cpuif_req_masked & (cpuif_addr == 32'h3c);
+        decoded_reg_strb.hwpe_job_dep.infeat_d1_str = cpuif_req_masked & (cpuif_addr == 32'h40);
+        decoded_reg_strb.hwpe_job_dep.infeat_d2_str = cpuif_req_masked & (cpuif_addr == 32'h44);
+        decoded_reg_strb.hwpe_job_dep.outfeat_d0_st = cpuif_req_masked & (cpuif_addr == 32'h48);
+        decoded_reg_strb.hwpe_job_dep.outfeat_d1_st = cpuif_req_masked & (cpuif_addr == 32'h4c);
+        decoded_reg_strb.hwpe_job_dep.outfeat_d2_st = cpuif_req_masked & (cpuif_addr == 32'h50);
+        decoded_reg_strb.hwpe_job_dep.weights_d0_st = cpuif_req_masked & (cpuif_addr == 32'h54);
+        decoded_reg_strb.hwpe_job_dep.weights_d1_st = cpuif_req_masked & (cpuif_addr == 32'h58);
+        decoded_reg_strb.hwpe_job_dep.weights_d2_st = cpuif_req_masked & (cpuif_addr == 32'h5c);
+        decoded_reg_strb.hwpe_job_dep.subtile_rem0 = cpuif_req_masked & (cpuif_addr == 32'h60);
+        decoded_reg_strb.hwpe_job_dep.subtile_rem1 = cpuif_req_masked & (cpuif_addr == 32'h64);
+        decoded_reg_strb.hwpe_job_dep.subtile_rem2 = cpuif_req_masked & (cpuif_addr == 32'h68);
+        decoded_reg_strb.hwpe_job_dep.subtile_nb0 = cpuif_req_masked & (cpuif_addr == 32'h6c);
+        decoded_reg_strb.hwpe_job_dep.subtile_nb1 = cpuif_req_masked & (cpuif_addr == 32'h70);
+        decoded_reg_strb.hwpe_job_dep.padding = cpuif_req_masked & (cpuif_addr == 32'h74);
+        decoded_reg_strb.hwpe_job_dep.weight_offset = cpuif_req_masked & (cpuif_addr == 32'h78);
+        decoded_reg_strb.hwpe_job_dep.filter_mask = cpuif_req_masked & (cpuif_addr == 32'h7c);
+        decoded_reg_strb.hwpe_job_dep.config0 = cpuif_req_masked & (cpuif_addr == 32'h80);
+        decoded_reg_strb.hwpe_job_indep.reserved = cpuif_req_masked & (cpuif_addr == 32'h84) & !cpuif_req_is_wr;
         decoded_err = (~is_valid_addr | is_invalid_rw) & decoded_req;
     end
 
@@ -273,55 +279,61 @@ module neureka_regif #(
                     logic [31:0] next;
                     logic load_next;
                 } value;
-            } infeat_d0_stride;
+            } streamin_ptr;
             struct {
                 struct {
                     logic [31:0] next;
                     logic load_next;
                 } value;
-            } infeat_d1_stride;
+            } infeat_d0_str;
             struct {
                 struct {
                     logic [31:0] next;
                     logic load_next;
                 } value;
-            } infeat_d2_stride;
+            } infeat_d1_str;
             struct {
                 struct {
                     logic [31:0] next;
                     logic load_next;
                 } value;
-            } outfeat_d0_stride;
+            } infeat_d2_str;
             struct {
                 struct {
                     logic [31:0] next;
                     logic load_next;
                 } value;
-            } outfeat_d1_stride;
+            } outfeat_d0_st;
             struct {
                 struct {
                     logic [31:0] next;
                     logic load_next;
                 } value;
-            } outfeat_d2_stride;
+            } outfeat_d1_st;
             struct {
                 struct {
                     logic [31:0] next;
                     logic load_next;
                 } value;
-            } weights_d0_stride;
+            } outfeat_d2_st;
             struct {
                 struct {
                     logic [31:0] next;
                     logic load_next;
                 } value;
-            } weights_d1_stride;
+            } weights_d0_st;
             struct {
                 struct {
                     logic [31:0] next;
                     logic load_next;
                 } value;
-            } weights_d2_stride;
+            } weights_d1_st;
+            struct {
+                struct {
+                    logic [31:0] next;
+                    logic load_next;
+                } value;
+            } weights_d2_st;
             struct {
                 struct {
                     logic [15:0] next;
@@ -436,9 +448,21 @@ module neureka_regif #(
                     logic load_next;
                 } filter_mode;
                 struct {
-                    logic [3:0] next;
+                    logic next;
                     logic load_next;
-                } padding;
+                } mode_linear;
+                struct {
+                    logic next;
+                    logic load_next;
+                } mode_strided;
+                struct {
+                    logic next;
+                    logic load_next;
+                } wmem;
+                struct {
+                    logic next;
+                    logic load_next;
+                } prefetch;
                 struct {
                     logic next;
                     logic load_next;
@@ -446,7 +470,7 @@ module neureka_regif #(
                 struct {
                     logic [1:0] next;
                     logic load_next;
-                } norm_bits;
+                } norm_mode;
                 struct {
                     logic next;
                     logic load_next;
@@ -454,9 +478,33 @@ module neureka_regif #(
                 struct {
                     logic next;
                     logic load_next;
-                } woffs;
+                } streamin_mode;
                 struct {
-                    logic [15:0] next;
+                    logic [4:0] next;
+                    logic load_next;
+                } shift_reqnt;
+                struct {
+                    logic [1:0] next;
+                    logic load_next;
+                } quant_mode;
+                struct {
+                    logic next;
+                    logic load_next;
+                } relu;
+                struct {
+                    logic next;
+                    logic load_next;
+                } norm_option_shift;
+                struct {
+                    logic next;
+                    logic load_next;
+                } norm_option_bias;
+                struct {
+                    logic next;
+                    logic load_next;
+                } feat_broadcast;
+                struct {
+                    logic [4:0] next;
                     logic load_next;
                 } reserved;
             } config0;
@@ -512,47 +560,52 @@ module neureka_regif #(
                 struct {
                     logic [31:0] value;
                 } value;
-            } infeat_d0_stride;
+            } streamin_ptr;
             struct {
                 struct {
                     logic [31:0] value;
                 } value;
-            } infeat_d1_stride;
+            } infeat_d0_str;
             struct {
                 struct {
                     logic [31:0] value;
                 } value;
-            } infeat_d2_stride;
+            } infeat_d1_str;
             struct {
                 struct {
                     logic [31:0] value;
                 } value;
-            } outfeat_d0_stride;
+            } infeat_d2_str;
             struct {
                 struct {
                     logic [31:0] value;
                 } value;
-            } outfeat_d1_stride;
+            } outfeat_d0_st;
             struct {
                 struct {
                     logic [31:0] value;
                 } value;
-            } outfeat_d2_stride;
+            } outfeat_d1_st;
             struct {
                 struct {
                     logic [31:0] value;
                 } value;
-            } weights_d0_stride;
+            } outfeat_d2_st;
             struct {
                 struct {
                     logic [31:0] value;
                 } value;
-            } weights_d1_stride;
+            } weights_d0_st;
             struct {
                 struct {
                     logic [31:0] value;
                 } value;
-            } weights_d2_stride;
+            } weights_d1_st;
+            struct {
+                struct {
+                    logic [31:0] value;
+                } value;
+            } weights_d2_st;
             struct {
                 struct {
                     logic [15:0] value;
@@ -643,22 +696,49 @@ module neureka_regif #(
                     logic [1:0] value;
                 } filter_mode;
                 struct {
-                    logic [3:0] value;
-                } padding;
+                    logic value;
+                } mode_linear;
+                struct {
+                    logic value;
+                } mode_strided;
+                struct {
+                    logic value;
+                } wmem;
+                struct {
+                    logic value;
+                } prefetch;
                 struct {
                     logic value;
                 } rounding;
                 struct {
                     logic [1:0] value;
-                } norm_bits;
+                } norm_mode;
                 struct {
                     logic value;
                 } streamin;
                 struct {
                     logic value;
-                } woffs;
+                } streamin_mode;
                 struct {
-                    logic [15:0] value;
+                    logic [4:0] value;
+                } shift_reqnt;
+                struct {
+                    logic [1:0] value;
+                } quant_mode;
+                struct {
+                    logic value;
+                } relu;
+                struct {
+                    logic value;
+                } norm_option_shift;
+                struct {
+                    logic value;
+                } norm_option_bias;
+                struct {
+                    logic value;
+                } feat_broadcast;
+                struct {
+                    logic [4:0] value;
                 } reserved;
             } config0;
         } hwpe_job_dep;
@@ -858,213 +938,236 @@ module neureka_regif #(
         end
     end
     assign hwif_out.hwpe_job_dep.scale_bias_ptr.value.value = field_storage.hwpe_job_dep.scale_bias_ptr.value.value;
-    // Field: neureka_regif.hwpe_job_dep.infeat_d0_stride.value
+    // Field: neureka_regif.hwpe_job_dep.streamin_ptr.value
     always_comb begin
         automatic logic [31:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.hwpe_job_dep.infeat_d0_stride.value.value;
+        next_c = field_storage.hwpe_job_dep.streamin_ptr.value.value;
         load_next_c = '0;
-        if(decoded_reg_strb.hwpe_job_dep.infeat_d0_stride && decoded_req_is_wr) begin // SW write
-            next_c = (field_storage.hwpe_job_dep.infeat_d0_stride.value.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+        if(decoded_reg_strb.hwpe_job_dep.streamin_ptr && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.hwpe_job_dep.streamin_ptr.value.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
             load_next_c = '1;
         end
-        field_combo.hwpe_job_dep.infeat_d0_stride.value.next = next_c;
-        field_combo.hwpe_job_dep.infeat_d0_stride.value.load_next = load_next_c;
+        field_combo.hwpe_job_dep.streamin_ptr.value.next = next_c;
+        field_combo.hwpe_job_dep.streamin_ptr.value.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge arst_n) begin
         if(~arst_n) begin
-            field_storage.hwpe_job_dep.infeat_d0_stride.value.value <= 32'h0;
+            field_storage.hwpe_job_dep.streamin_ptr.value.value <= 32'h0;
         end else begin
-            if(field_combo.hwpe_job_dep.infeat_d0_stride.value.load_next) begin
-                field_storage.hwpe_job_dep.infeat_d0_stride.value.value <= field_combo.hwpe_job_dep.infeat_d0_stride.value.next;
+            if(field_combo.hwpe_job_dep.streamin_ptr.value.load_next) begin
+                field_storage.hwpe_job_dep.streamin_ptr.value.value <= field_combo.hwpe_job_dep.streamin_ptr.value.next;
             end
         end
     end
-    assign hwif_out.hwpe_job_dep.infeat_d0_stride.value.value = field_storage.hwpe_job_dep.infeat_d0_stride.value.value;
-    // Field: neureka_regif.hwpe_job_dep.infeat_d1_stride.value
+    assign hwif_out.hwpe_job_dep.streamin_ptr.value.value = field_storage.hwpe_job_dep.streamin_ptr.value.value;
+    // Field: neureka_regif.hwpe_job_dep.infeat_d0_str.value
     always_comb begin
         automatic logic [31:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.hwpe_job_dep.infeat_d1_stride.value.value;
+        next_c = field_storage.hwpe_job_dep.infeat_d0_str.value.value;
         load_next_c = '0;
-        if(decoded_reg_strb.hwpe_job_dep.infeat_d1_stride && decoded_req_is_wr) begin // SW write
-            next_c = (field_storage.hwpe_job_dep.infeat_d1_stride.value.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+        if(decoded_reg_strb.hwpe_job_dep.infeat_d0_str && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.hwpe_job_dep.infeat_d0_str.value.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
             load_next_c = '1;
         end
-        field_combo.hwpe_job_dep.infeat_d1_stride.value.next = next_c;
-        field_combo.hwpe_job_dep.infeat_d1_stride.value.load_next = load_next_c;
+        field_combo.hwpe_job_dep.infeat_d0_str.value.next = next_c;
+        field_combo.hwpe_job_dep.infeat_d0_str.value.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge arst_n) begin
         if(~arst_n) begin
-            field_storage.hwpe_job_dep.infeat_d1_stride.value.value <= 32'h0;
+            field_storage.hwpe_job_dep.infeat_d0_str.value.value <= 32'h0;
         end else begin
-            if(field_combo.hwpe_job_dep.infeat_d1_stride.value.load_next) begin
-                field_storage.hwpe_job_dep.infeat_d1_stride.value.value <= field_combo.hwpe_job_dep.infeat_d1_stride.value.next;
+            if(field_combo.hwpe_job_dep.infeat_d0_str.value.load_next) begin
+                field_storage.hwpe_job_dep.infeat_d0_str.value.value <= field_combo.hwpe_job_dep.infeat_d0_str.value.next;
             end
         end
     end
-    assign hwif_out.hwpe_job_dep.infeat_d1_stride.value.value = field_storage.hwpe_job_dep.infeat_d1_stride.value.value;
-    // Field: neureka_regif.hwpe_job_dep.infeat_d2_stride.value
+    assign hwif_out.hwpe_job_dep.infeat_d0_str.value.value = field_storage.hwpe_job_dep.infeat_d0_str.value.value;
+    // Field: neureka_regif.hwpe_job_dep.infeat_d1_str.value
     always_comb begin
         automatic logic [31:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.hwpe_job_dep.infeat_d2_stride.value.value;
+        next_c = field_storage.hwpe_job_dep.infeat_d1_str.value.value;
         load_next_c = '0;
-        if(decoded_reg_strb.hwpe_job_dep.infeat_d2_stride && decoded_req_is_wr) begin // SW write
-            next_c = (field_storage.hwpe_job_dep.infeat_d2_stride.value.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+        if(decoded_reg_strb.hwpe_job_dep.infeat_d1_str && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.hwpe_job_dep.infeat_d1_str.value.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
             load_next_c = '1;
         end
-        field_combo.hwpe_job_dep.infeat_d2_stride.value.next = next_c;
-        field_combo.hwpe_job_dep.infeat_d2_stride.value.load_next = load_next_c;
+        field_combo.hwpe_job_dep.infeat_d1_str.value.next = next_c;
+        field_combo.hwpe_job_dep.infeat_d1_str.value.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge arst_n) begin
         if(~arst_n) begin
-            field_storage.hwpe_job_dep.infeat_d2_stride.value.value <= 32'h0;
+            field_storage.hwpe_job_dep.infeat_d1_str.value.value <= 32'h0;
         end else begin
-            if(field_combo.hwpe_job_dep.infeat_d2_stride.value.load_next) begin
-                field_storage.hwpe_job_dep.infeat_d2_stride.value.value <= field_combo.hwpe_job_dep.infeat_d2_stride.value.next;
+            if(field_combo.hwpe_job_dep.infeat_d1_str.value.load_next) begin
+                field_storage.hwpe_job_dep.infeat_d1_str.value.value <= field_combo.hwpe_job_dep.infeat_d1_str.value.next;
             end
         end
     end
-    assign hwif_out.hwpe_job_dep.infeat_d2_stride.value.value = field_storage.hwpe_job_dep.infeat_d2_stride.value.value;
-    // Field: neureka_regif.hwpe_job_dep.outfeat_d0_stride.value
+    assign hwif_out.hwpe_job_dep.infeat_d1_str.value.value = field_storage.hwpe_job_dep.infeat_d1_str.value.value;
+    // Field: neureka_regif.hwpe_job_dep.infeat_d2_str.value
     always_comb begin
         automatic logic [31:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.hwpe_job_dep.outfeat_d0_stride.value.value;
+        next_c = field_storage.hwpe_job_dep.infeat_d2_str.value.value;
         load_next_c = '0;
-        if(decoded_reg_strb.hwpe_job_dep.outfeat_d0_stride && decoded_req_is_wr) begin // SW write
-            next_c = (field_storage.hwpe_job_dep.outfeat_d0_stride.value.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+        if(decoded_reg_strb.hwpe_job_dep.infeat_d2_str && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.hwpe_job_dep.infeat_d2_str.value.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
             load_next_c = '1;
         end
-        field_combo.hwpe_job_dep.outfeat_d0_stride.value.next = next_c;
-        field_combo.hwpe_job_dep.outfeat_d0_stride.value.load_next = load_next_c;
+        field_combo.hwpe_job_dep.infeat_d2_str.value.next = next_c;
+        field_combo.hwpe_job_dep.infeat_d2_str.value.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge arst_n) begin
         if(~arst_n) begin
-            field_storage.hwpe_job_dep.outfeat_d0_stride.value.value <= 32'h0;
+            field_storage.hwpe_job_dep.infeat_d2_str.value.value <= 32'h0;
         end else begin
-            if(field_combo.hwpe_job_dep.outfeat_d0_stride.value.load_next) begin
-                field_storage.hwpe_job_dep.outfeat_d0_stride.value.value <= field_combo.hwpe_job_dep.outfeat_d0_stride.value.next;
+            if(field_combo.hwpe_job_dep.infeat_d2_str.value.load_next) begin
+                field_storage.hwpe_job_dep.infeat_d2_str.value.value <= field_combo.hwpe_job_dep.infeat_d2_str.value.next;
             end
         end
     end
-    assign hwif_out.hwpe_job_dep.outfeat_d0_stride.value.value = field_storage.hwpe_job_dep.outfeat_d0_stride.value.value;
-    // Field: neureka_regif.hwpe_job_dep.outfeat_d1_stride.value
+    assign hwif_out.hwpe_job_dep.infeat_d2_str.value.value = field_storage.hwpe_job_dep.infeat_d2_str.value.value;
+    // Field: neureka_regif.hwpe_job_dep.outfeat_d0_st.value
     always_comb begin
         automatic logic [31:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.hwpe_job_dep.outfeat_d1_stride.value.value;
+        next_c = field_storage.hwpe_job_dep.outfeat_d0_st.value.value;
         load_next_c = '0;
-        if(decoded_reg_strb.hwpe_job_dep.outfeat_d1_stride && decoded_req_is_wr) begin // SW write
-            next_c = (field_storage.hwpe_job_dep.outfeat_d1_stride.value.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+        if(decoded_reg_strb.hwpe_job_dep.outfeat_d0_st && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.hwpe_job_dep.outfeat_d0_st.value.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
             load_next_c = '1;
         end
-        field_combo.hwpe_job_dep.outfeat_d1_stride.value.next = next_c;
-        field_combo.hwpe_job_dep.outfeat_d1_stride.value.load_next = load_next_c;
+        field_combo.hwpe_job_dep.outfeat_d0_st.value.next = next_c;
+        field_combo.hwpe_job_dep.outfeat_d0_st.value.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge arst_n) begin
         if(~arst_n) begin
-            field_storage.hwpe_job_dep.outfeat_d1_stride.value.value <= 32'h0;
+            field_storage.hwpe_job_dep.outfeat_d0_st.value.value <= 32'h0;
         end else begin
-            if(field_combo.hwpe_job_dep.outfeat_d1_stride.value.load_next) begin
-                field_storage.hwpe_job_dep.outfeat_d1_stride.value.value <= field_combo.hwpe_job_dep.outfeat_d1_stride.value.next;
+            if(field_combo.hwpe_job_dep.outfeat_d0_st.value.load_next) begin
+                field_storage.hwpe_job_dep.outfeat_d0_st.value.value <= field_combo.hwpe_job_dep.outfeat_d0_st.value.next;
             end
         end
     end
-    assign hwif_out.hwpe_job_dep.outfeat_d1_stride.value.value = field_storage.hwpe_job_dep.outfeat_d1_stride.value.value;
-    // Field: neureka_regif.hwpe_job_dep.outfeat_d2_stride.value
+    assign hwif_out.hwpe_job_dep.outfeat_d0_st.value.value = field_storage.hwpe_job_dep.outfeat_d0_st.value.value;
+    // Field: neureka_regif.hwpe_job_dep.outfeat_d1_st.value
     always_comb begin
         automatic logic [31:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.hwpe_job_dep.outfeat_d2_stride.value.value;
+        next_c = field_storage.hwpe_job_dep.outfeat_d1_st.value.value;
         load_next_c = '0;
-        if(decoded_reg_strb.hwpe_job_dep.outfeat_d2_stride && decoded_req_is_wr) begin // SW write
-            next_c = (field_storage.hwpe_job_dep.outfeat_d2_stride.value.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+        if(decoded_reg_strb.hwpe_job_dep.outfeat_d1_st && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.hwpe_job_dep.outfeat_d1_st.value.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
             load_next_c = '1;
         end
-        field_combo.hwpe_job_dep.outfeat_d2_stride.value.next = next_c;
-        field_combo.hwpe_job_dep.outfeat_d2_stride.value.load_next = load_next_c;
+        field_combo.hwpe_job_dep.outfeat_d1_st.value.next = next_c;
+        field_combo.hwpe_job_dep.outfeat_d1_st.value.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge arst_n) begin
         if(~arst_n) begin
-            field_storage.hwpe_job_dep.outfeat_d2_stride.value.value <= 32'h0;
+            field_storage.hwpe_job_dep.outfeat_d1_st.value.value <= 32'h0;
         end else begin
-            if(field_combo.hwpe_job_dep.outfeat_d2_stride.value.load_next) begin
-                field_storage.hwpe_job_dep.outfeat_d2_stride.value.value <= field_combo.hwpe_job_dep.outfeat_d2_stride.value.next;
+            if(field_combo.hwpe_job_dep.outfeat_d1_st.value.load_next) begin
+                field_storage.hwpe_job_dep.outfeat_d1_st.value.value <= field_combo.hwpe_job_dep.outfeat_d1_st.value.next;
             end
         end
     end
-    assign hwif_out.hwpe_job_dep.outfeat_d2_stride.value.value = field_storage.hwpe_job_dep.outfeat_d2_stride.value.value;
-    // Field: neureka_regif.hwpe_job_dep.weights_d0_stride.value
+    assign hwif_out.hwpe_job_dep.outfeat_d1_st.value.value = field_storage.hwpe_job_dep.outfeat_d1_st.value.value;
+    // Field: neureka_regif.hwpe_job_dep.outfeat_d2_st.value
     always_comb begin
         automatic logic [31:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.hwpe_job_dep.weights_d0_stride.value.value;
+        next_c = field_storage.hwpe_job_dep.outfeat_d2_st.value.value;
         load_next_c = '0;
-        if(decoded_reg_strb.hwpe_job_dep.weights_d0_stride && decoded_req_is_wr) begin // SW write
-            next_c = (field_storage.hwpe_job_dep.weights_d0_stride.value.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+        if(decoded_reg_strb.hwpe_job_dep.outfeat_d2_st && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.hwpe_job_dep.outfeat_d2_st.value.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
             load_next_c = '1;
         end
-        field_combo.hwpe_job_dep.weights_d0_stride.value.next = next_c;
-        field_combo.hwpe_job_dep.weights_d0_stride.value.load_next = load_next_c;
+        field_combo.hwpe_job_dep.outfeat_d2_st.value.next = next_c;
+        field_combo.hwpe_job_dep.outfeat_d2_st.value.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge arst_n) begin
         if(~arst_n) begin
-            field_storage.hwpe_job_dep.weights_d0_stride.value.value <= 32'h0;
+            field_storage.hwpe_job_dep.outfeat_d2_st.value.value <= 32'h0;
         end else begin
-            if(field_combo.hwpe_job_dep.weights_d0_stride.value.load_next) begin
-                field_storage.hwpe_job_dep.weights_d0_stride.value.value <= field_combo.hwpe_job_dep.weights_d0_stride.value.next;
+            if(field_combo.hwpe_job_dep.outfeat_d2_st.value.load_next) begin
+                field_storage.hwpe_job_dep.outfeat_d2_st.value.value <= field_combo.hwpe_job_dep.outfeat_d2_st.value.next;
             end
         end
     end
-    assign hwif_out.hwpe_job_dep.weights_d0_stride.value.value = field_storage.hwpe_job_dep.weights_d0_stride.value.value;
-    // Field: neureka_regif.hwpe_job_dep.weights_d1_stride.value
+    assign hwif_out.hwpe_job_dep.outfeat_d2_st.value.value = field_storage.hwpe_job_dep.outfeat_d2_st.value.value;
+    // Field: neureka_regif.hwpe_job_dep.weights_d0_st.value
     always_comb begin
         automatic logic [31:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.hwpe_job_dep.weights_d1_stride.value.value;
+        next_c = field_storage.hwpe_job_dep.weights_d0_st.value.value;
         load_next_c = '0;
-        if(decoded_reg_strb.hwpe_job_dep.weights_d1_stride && decoded_req_is_wr) begin // SW write
-            next_c = (field_storage.hwpe_job_dep.weights_d1_stride.value.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+        if(decoded_reg_strb.hwpe_job_dep.weights_d0_st && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.hwpe_job_dep.weights_d0_st.value.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
             load_next_c = '1;
         end
-        field_combo.hwpe_job_dep.weights_d1_stride.value.next = next_c;
-        field_combo.hwpe_job_dep.weights_d1_stride.value.load_next = load_next_c;
+        field_combo.hwpe_job_dep.weights_d0_st.value.next = next_c;
+        field_combo.hwpe_job_dep.weights_d0_st.value.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge arst_n) begin
         if(~arst_n) begin
-            field_storage.hwpe_job_dep.weights_d1_stride.value.value <= 32'h0;
+            field_storage.hwpe_job_dep.weights_d0_st.value.value <= 32'h0;
         end else begin
-            if(field_combo.hwpe_job_dep.weights_d1_stride.value.load_next) begin
-                field_storage.hwpe_job_dep.weights_d1_stride.value.value <= field_combo.hwpe_job_dep.weights_d1_stride.value.next;
+            if(field_combo.hwpe_job_dep.weights_d0_st.value.load_next) begin
+                field_storage.hwpe_job_dep.weights_d0_st.value.value <= field_combo.hwpe_job_dep.weights_d0_st.value.next;
             end
         end
     end
-    assign hwif_out.hwpe_job_dep.weights_d1_stride.value.value = field_storage.hwpe_job_dep.weights_d1_stride.value.value;
-    // Field: neureka_regif.hwpe_job_dep.weights_d2_stride.value
+    assign hwif_out.hwpe_job_dep.weights_d0_st.value.value = field_storage.hwpe_job_dep.weights_d0_st.value.value;
+    // Field: neureka_regif.hwpe_job_dep.weights_d1_st.value
     always_comb begin
         automatic logic [31:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.hwpe_job_dep.weights_d2_stride.value.value;
+        next_c = field_storage.hwpe_job_dep.weights_d1_st.value.value;
         load_next_c = '0;
-        if(decoded_reg_strb.hwpe_job_dep.weights_d2_stride && decoded_req_is_wr) begin // SW write
-            next_c = (field_storage.hwpe_job_dep.weights_d2_stride.value.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+        if(decoded_reg_strb.hwpe_job_dep.weights_d1_st && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.hwpe_job_dep.weights_d1_st.value.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
             load_next_c = '1;
         end
-        field_combo.hwpe_job_dep.weights_d2_stride.value.next = next_c;
-        field_combo.hwpe_job_dep.weights_d2_stride.value.load_next = load_next_c;
+        field_combo.hwpe_job_dep.weights_d1_st.value.next = next_c;
+        field_combo.hwpe_job_dep.weights_d1_st.value.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge arst_n) begin
         if(~arst_n) begin
-            field_storage.hwpe_job_dep.weights_d2_stride.value.value <= 32'h0;
+            field_storage.hwpe_job_dep.weights_d1_st.value.value <= 32'h0;
         end else begin
-            if(field_combo.hwpe_job_dep.weights_d2_stride.value.load_next) begin
-                field_storage.hwpe_job_dep.weights_d2_stride.value.value <= field_combo.hwpe_job_dep.weights_d2_stride.value.next;
+            if(field_combo.hwpe_job_dep.weights_d1_st.value.load_next) begin
+                field_storage.hwpe_job_dep.weights_d1_st.value.value <= field_combo.hwpe_job_dep.weights_d1_st.value.next;
             end
         end
     end
-    assign hwif_out.hwpe_job_dep.weights_d2_stride.value.value = field_storage.hwpe_job_dep.weights_d2_stride.value.value;
+    assign hwif_out.hwpe_job_dep.weights_d1_st.value.value = field_storage.hwpe_job_dep.weights_d1_st.value.value;
+    // Field: neureka_regif.hwpe_job_dep.weights_d2_st.value
+    always_comb begin
+        automatic logic [31:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.hwpe_job_dep.weights_d2_st.value.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.hwpe_job_dep.weights_d2_st && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.hwpe_job_dep.weights_d2_st.value.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+            load_next_c = '1;
+        end
+        field_combo.hwpe_job_dep.weights_d2_st.value.next = next_c;
+        field_combo.hwpe_job_dep.weights_d2_st.value.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge arst_n) begin
+        if(~arst_n) begin
+            field_storage.hwpe_job_dep.weights_d2_st.value.value <= 32'h0;
+        end else begin
+            if(field_combo.hwpe_job_dep.weights_d2_st.value.load_next) begin
+                field_storage.hwpe_job_dep.weights_d2_st.value.value <= field_combo.hwpe_job_dep.weights_d2_st.value.next;
+            end
+        end
+    end
+    assign hwif_out.hwpe_job_dep.weights_d2_st.value.value = field_storage.hwpe_job_dep.weights_d2_st.value.value;
     // Field: neureka_regif.hwpe_job_dep.subtile_rem0.ki
     always_comb begin
         automatic logic [15:0] next_c;
@@ -1617,29 +1720,98 @@ module neureka_regif #(
         end
     end
     assign hwif_out.hwpe_job_dep.config0.filter_mode.value = field_storage.hwpe_job_dep.config0.filter_mode.value;
-    // Field: neureka_regif.hwpe_job_dep.config0.padding
+    // Field: neureka_regif.hwpe_job_dep.config0.mode_linear
     always_comb begin
-        automatic logic [3:0] next_c;
+        automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.hwpe_job_dep.config0.padding.value;
+        next_c = field_storage.hwpe_job_dep.config0.mode_linear.value;
         load_next_c = '0;
         if(decoded_reg_strb.hwpe_job_dep.config0 && decoded_req_is_wr) begin // SW write
-            next_c = (field_storage.hwpe_job_dep.config0.padding.value & ~decoded_wr_biten[10:7]) | (decoded_wr_data[10:7] & decoded_wr_biten[10:7]);
+            next_c = (field_storage.hwpe_job_dep.config0.mode_linear.value & ~decoded_wr_biten[7:7]) | (decoded_wr_data[7:7] & decoded_wr_biten[7:7]);
             load_next_c = '1;
         end
-        field_combo.hwpe_job_dep.config0.padding.next = next_c;
-        field_combo.hwpe_job_dep.config0.padding.load_next = load_next_c;
+        field_combo.hwpe_job_dep.config0.mode_linear.next = next_c;
+        field_combo.hwpe_job_dep.config0.mode_linear.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge arst_n) begin
         if(~arst_n) begin
-            field_storage.hwpe_job_dep.config0.padding.value <= 4'h0;
+            field_storage.hwpe_job_dep.config0.mode_linear.value <= 1'h0;
         end else begin
-            if(field_combo.hwpe_job_dep.config0.padding.load_next) begin
-                field_storage.hwpe_job_dep.config0.padding.value <= field_combo.hwpe_job_dep.config0.padding.next;
+            if(field_combo.hwpe_job_dep.config0.mode_linear.load_next) begin
+                field_storage.hwpe_job_dep.config0.mode_linear.value <= field_combo.hwpe_job_dep.config0.mode_linear.next;
             end
         end
     end
-    assign hwif_out.hwpe_job_dep.config0.padding.value = field_storage.hwpe_job_dep.config0.padding.value;
+    assign hwif_out.hwpe_job_dep.config0.mode_linear.value = field_storage.hwpe_job_dep.config0.mode_linear.value;
+    // Field: neureka_regif.hwpe_job_dep.config0.mode_strided
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.hwpe_job_dep.config0.mode_strided.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.hwpe_job_dep.config0 && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.hwpe_job_dep.config0.mode_strided.value & ~decoded_wr_biten[8:8]) | (decoded_wr_data[8:8] & decoded_wr_biten[8:8]);
+            load_next_c = '1;
+        end
+        field_combo.hwpe_job_dep.config0.mode_strided.next = next_c;
+        field_combo.hwpe_job_dep.config0.mode_strided.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge arst_n) begin
+        if(~arst_n) begin
+            field_storage.hwpe_job_dep.config0.mode_strided.value <= 1'h0;
+        end else begin
+            if(field_combo.hwpe_job_dep.config0.mode_strided.load_next) begin
+                field_storage.hwpe_job_dep.config0.mode_strided.value <= field_combo.hwpe_job_dep.config0.mode_strided.next;
+            end
+        end
+    end
+    assign hwif_out.hwpe_job_dep.config0.mode_strided.value = field_storage.hwpe_job_dep.config0.mode_strided.value;
+    // Field: neureka_regif.hwpe_job_dep.config0.wmem
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.hwpe_job_dep.config0.wmem.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.hwpe_job_dep.config0 && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.hwpe_job_dep.config0.wmem.value & ~decoded_wr_biten[9:9]) | (decoded_wr_data[9:9] & decoded_wr_biten[9:9]);
+            load_next_c = '1;
+        end
+        field_combo.hwpe_job_dep.config0.wmem.next = next_c;
+        field_combo.hwpe_job_dep.config0.wmem.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge arst_n) begin
+        if(~arst_n) begin
+            field_storage.hwpe_job_dep.config0.wmem.value <= 1'h0;
+        end else begin
+            if(field_combo.hwpe_job_dep.config0.wmem.load_next) begin
+                field_storage.hwpe_job_dep.config0.wmem.value <= field_combo.hwpe_job_dep.config0.wmem.next;
+            end
+        end
+    end
+    assign hwif_out.hwpe_job_dep.config0.wmem.value = field_storage.hwpe_job_dep.config0.wmem.value;
+    // Field: neureka_regif.hwpe_job_dep.config0.prefetch
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.hwpe_job_dep.config0.prefetch.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.hwpe_job_dep.config0 && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.hwpe_job_dep.config0.prefetch.value & ~decoded_wr_biten[10:10]) | (decoded_wr_data[10:10] & decoded_wr_biten[10:10]);
+            load_next_c = '1;
+        end
+        field_combo.hwpe_job_dep.config0.prefetch.next = next_c;
+        field_combo.hwpe_job_dep.config0.prefetch.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge arst_n) begin
+        if(~arst_n) begin
+            field_storage.hwpe_job_dep.config0.prefetch.value <= 1'h0;
+        end else begin
+            if(field_combo.hwpe_job_dep.config0.prefetch.load_next) begin
+                field_storage.hwpe_job_dep.config0.prefetch.value <= field_combo.hwpe_job_dep.config0.prefetch.next;
+            end
+        end
+    end
+    assign hwif_out.hwpe_job_dep.config0.prefetch.value = field_storage.hwpe_job_dep.config0.prefetch.value;
     // Field: neureka_regif.hwpe_job_dep.config0.rounding
     always_comb begin
         automatic logic [0:0] next_c;
@@ -1663,29 +1835,29 @@ module neureka_regif #(
         end
     end
     assign hwif_out.hwpe_job_dep.config0.rounding.value = field_storage.hwpe_job_dep.config0.rounding.value;
-    // Field: neureka_regif.hwpe_job_dep.config0.norm_bits
+    // Field: neureka_regif.hwpe_job_dep.config0.norm_mode
     always_comb begin
         automatic logic [1:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.hwpe_job_dep.config0.norm_bits.value;
+        next_c = field_storage.hwpe_job_dep.config0.norm_mode.value;
         load_next_c = '0;
         if(decoded_reg_strb.hwpe_job_dep.config0 && decoded_req_is_wr) begin // SW write
-            next_c = (field_storage.hwpe_job_dep.config0.norm_bits.value & ~decoded_wr_biten[13:12]) | (decoded_wr_data[13:12] & decoded_wr_biten[13:12]);
+            next_c = (field_storage.hwpe_job_dep.config0.norm_mode.value & ~decoded_wr_biten[13:12]) | (decoded_wr_data[13:12] & decoded_wr_biten[13:12]);
             load_next_c = '1;
         end
-        field_combo.hwpe_job_dep.config0.norm_bits.next = next_c;
-        field_combo.hwpe_job_dep.config0.norm_bits.load_next = load_next_c;
+        field_combo.hwpe_job_dep.config0.norm_mode.next = next_c;
+        field_combo.hwpe_job_dep.config0.norm_mode.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge arst_n) begin
         if(~arst_n) begin
-            field_storage.hwpe_job_dep.config0.norm_bits.value <= 2'h0;
+            field_storage.hwpe_job_dep.config0.norm_mode.value <= 2'h0;
         end else begin
-            if(field_combo.hwpe_job_dep.config0.norm_bits.load_next) begin
-                field_storage.hwpe_job_dep.config0.norm_bits.value <= field_combo.hwpe_job_dep.config0.norm_bits.next;
+            if(field_combo.hwpe_job_dep.config0.norm_mode.load_next) begin
+                field_storage.hwpe_job_dep.config0.norm_mode.value <= field_combo.hwpe_job_dep.config0.norm_mode.next;
             end
         end
     end
-    assign hwif_out.hwpe_job_dep.config0.norm_bits.value = field_storage.hwpe_job_dep.config0.norm_bits.value;
+    assign hwif_out.hwpe_job_dep.config0.norm_mode.value = field_storage.hwpe_job_dep.config0.norm_mode.value;
     // Field: neureka_regif.hwpe_job_dep.config0.streamin
     always_comb begin
         automatic logic [0:0] next_c;
@@ -1709,37 +1881,175 @@ module neureka_regif #(
         end
     end
     assign hwif_out.hwpe_job_dep.config0.streamin.value = field_storage.hwpe_job_dep.config0.streamin.value;
-    // Field: neureka_regif.hwpe_job_dep.config0.woffs
+    // Field: neureka_regif.hwpe_job_dep.config0.streamin_mode
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.hwpe_job_dep.config0.woffs.value;
+        next_c = field_storage.hwpe_job_dep.config0.streamin_mode.value;
         load_next_c = '0;
         if(decoded_reg_strb.hwpe_job_dep.config0 && decoded_req_is_wr) begin // SW write
-            next_c = (field_storage.hwpe_job_dep.config0.woffs.value & ~decoded_wr_biten[15:15]) | (decoded_wr_data[15:15] & decoded_wr_biten[15:15]);
+            next_c = (field_storage.hwpe_job_dep.config0.streamin_mode.value & ~decoded_wr_biten[15:15]) | (decoded_wr_data[15:15] & decoded_wr_biten[15:15]);
             load_next_c = '1;
         end
-        field_combo.hwpe_job_dep.config0.woffs.next = next_c;
-        field_combo.hwpe_job_dep.config0.woffs.load_next = load_next_c;
+        field_combo.hwpe_job_dep.config0.streamin_mode.next = next_c;
+        field_combo.hwpe_job_dep.config0.streamin_mode.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge arst_n) begin
         if(~arst_n) begin
-            field_storage.hwpe_job_dep.config0.woffs.value <= 1'h0;
+            field_storage.hwpe_job_dep.config0.streamin_mode.value <= 1'h0;
         end else begin
-            if(field_combo.hwpe_job_dep.config0.woffs.load_next) begin
-                field_storage.hwpe_job_dep.config0.woffs.value <= field_combo.hwpe_job_dep.config0.woffs.next;
+            if(field_combo.hwpe_job_dep.config0.streamin_mode.load_next) begin
+                field_storage.hwpe_job_dep.config0.streamin_mode.value <= field_combo.hwpe_job_dep.config0.streamin_mode.next;
             end
         end
     end
-    assign hwif_out.hwpe_job_dep.config0.woffs.value = field_storage.hwpe_job_dep.config0.woffs.value;
+    assign hwif_out.hwpe_job_dep.config0.streamin_mode.value = field_storage.hwpe_job_dep.config0.streamin_mode.value;
+    // Field: neureka_regif.hwpe_job_dep.config0.shift_reqnt
+    always_comb begin
+        automatic logic [4:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.hwpe_job_dep.config0.shift_reqnt.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.hwpe_job_dep.config0 && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.hwpe_job_dep.config0.shift_reqnt.value & ~decoded_wr_biten[20:16]) | (decoded_wr_data[20:16] & decoded_wr_biten[20:16]);
+            load_next_c = '1;
+        end
+        field_combo.hwpe_job_dep.config0.shift_reqnt.next = next_c;
+        field_combo.hwpe_job_dep.config0.shift_reqnt.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge arst_n) begin
+        if(~arst_n) begin
+            field_storage.hwpe_job_dep.config0.shift_reqnt.value <= 5'h0;
+        end else begin
+            if(field_combo.hwpe_job_dep.config0.shift_reqnt.load_next) begin
+                field_storage.hwpe_job_dep.config0.shift_reqnt.value <= field_combo.hwpe_job_dep.config0.shift_reqnt.next;
+            end
+        end
+    end
+    assign hwif_out.hwpe_job_dep.config0.shift_reqnt.value = field_storage.hwpe_job_dep.config0.shift_reqnt.value;
+    // Field: neureka_regif.hwpe_job_dep.config0.quant_mode
+    always_comb begin
+        automatic logic [1:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.hwpe_job_dep.config0.quant_mode.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.hwpe_job_dep.config0 && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.hwpe_job_dep.config0.quant_mode.value & ~decoded_wr_biten[22:21]) | (decoded_wr_data[22:21] & decoded_wr_biten[22:21]);
+            load_next_c = '1;
+        end
+        field_combo.hwpe_job_dep.config0.quant_mode.next = next_c;
+        field_combo.hwpe_job_dep.config0.quant_mode.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge arst_n) begin
+        if(~arst_n) begin
+            field_storage.hwpe_job_dep.config0.quant_mode.value <= 2'h0;
+        end else begin
+            if(field_combo.hwpe_job_dep.config0.quant_mode.load_next) begin
+                field_storage.hwpe_job_dep.config0.quant_mode.value <= field_combo.hwpe_job_dep.config0.quant_mode.next;
+            end
+        end
+    end
+    assign hwif_out.hwpe_job_dep.config0.quant_mode.value = field_storage.hwpe_job_dep.config0.quant_mode.value;
+    // Field: neureka_regif.hwpe_job_dep.config0.relu
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.hwpe_job_dep.config0.relu.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.hwpe_job_dep.config0 && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.hwpe_job_dep.config0.relu.value & ~decoded_wr_biten[23:23]) | (decoded_wr_data[23:23] & decoded_wr_biten[23:23]);
+            load_next_c = '1;
+        end
+        field_combo.hwpe_job_dep.config0.relu.next = next_c;
+        field_combo.hwpe_job_dep.config0.relu.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge arst_n) begin
+        if(~arst_n) begin
+            field_storage.hwpe_job_dep.config0.relu.value <= 1'h0;
+        end else begin
+            if(field_combo.hwpe_job_dep.config0.relu.load_next) begin
+                field_storage.hwpe_job_dep.config0.relu.value <= field_combo.hwpe_job_dep.config0.relu.next;
+            end
+        end
+    end
+    assign hwif_out.hwpe_job_dep.config0.relu.value = field_storage.hwpe_job_dep.config0.relu.value;
+    // Field: neureka_regif.hwpe_job_dep.config0.norm_option_shift
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.hwpe_job_dep.config0.norm_option_shift.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.hwpe_job_dep.config0 && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.hwpe_job_dep.config0.norm_option_shift.value & ~decoded_wr_biten[24:24]) | (decoded_wr_data[24:24] & decoded_wr_biten[24:24]);
+            load_next_c = '1;
+        end
+        field_combo.hwpe_job_dep.config0.norm_option_shift.next = next_c;
+        field_combo.hwpe_job_dep.config0.norm_option_shift.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge arst_n) begin
+        if(~arst_n) begin
+            field_storage.hwpe_job_dep.config0.norm_option_shift.value <= 1'h0;
+        end else begin
+            if(field_combo.hwpe_job_dep.config0.norm_option_shift.load_next) begin
+                field_storage.hwpe_job_dep.config0.norm_option_shift.value <= field_combo.hwpe_job_dep.config0.norm_option_shift.next;
+            end
+        end
+    end
+    assign hwif_out.hwpe_job_dep.config0.norm_option_shift.value = field_storage.hwpe_job_dep.config0.norm_option_shift.value;
+    // Field: neureka_regif.hwpe_job_dep.config0.norm_option_bias
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.hwpe_job_dep.config0.norm_option_bias.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.hwpe_job_dep.config0 && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.hwpe_job_dep.config0.norm_option_bias.value & ~decoded_wr_biten[25:25]) | (decoded_wr_data[25:25] & decoded_wr_biten[25:25]);
+            load_next_c = '1;
+        end
+        field_combo.hwpe_job_dep.config0.norm_option_bias.next = next_c;
+        field_combo.hwpe_job_dep.config0.norm_option_bias.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge arst_n) begin
+        if(~arst_n) begin
+            field_storage.hwpe_job_dep.config0.norm_option_bias.value <= 1'h0;
+        end else begin
+            if(field_combo.hwpe_job_dep.config0.norm_option_bias.load_next) begin
+                field_storage.hwpe_job_dep.config0.norm_option_bias.value <= field_combo.hwpe_job_dep.config0.norm_option_bias.next;
+            end
+        end
+    end
+    assign hwif_out.hwpe_job_dep.config0.norm_option_bias.value = field_storage.hwpe_job_dep.config0.norm_option_bias.value;
+    // Field: neureka_regif.hwpe_job_dep.config0.feat_broadcast
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.hwpe_job_dep.config0.feat_broadcast.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.hwpe_job_dep.config0 && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.hwpe_job_dep.config0.feat_broadcast.value & ~decoded_wr_biten[26:26]) | (decoded_wr_data[26:26] & decoded_wr_biten[26:26]);
+            load_next_c = '1;
+        end
+        field_combo.hwpe_job_dep.config0.feat_broadcast.next = next_c;
+        field_combo.hwpe_job_dep.config0.feat_broadcast.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge arst_n) begin
+        if(~arst_n) begin
+            field_storage.hwpe_job_dep.config0.feat_broadcast.value <= 1'h0;
+        end else begin
+            if(field_combo.hwpe_job_dep.config0.feat_broadcast.load_next) begin
+                field_storage.hwpe_job_dep.config0.feat_broadcast.value <= field_combo.hwpe_job_dep.config0.feat_broadcast.next;
+            end
+        end
+    end
+    assign hwif_out.hwpe_job_dep.config0.feat_broadcast.value = field_storage.hwpe_job_dep.config0.feat_broadcast.value;
     // Field: neureka_regif.hwpe_job_dep.config0.reserved
     always_comb begin
-        automatic logic [15:0] next_c;
+        automatic logic [4:0] next_c;
         automatic logic load_next_c;
         next_c = field_storage.hwpe_job_dep.config0.reserved.value;
         load_next_c = '0;
         if(decoded_reg_strb.hwpe_job_dep.config0 && decoded_req_is_wr) begin // SW write
-            next_c = (field_storage.hwpe_job_dep.config0.reserved.value & ~decoded_wr_biten[31:16]) | (decoded_wr_data[31:16] & decoded_wr_biten[31:16]);
+            next_c = (field_storage.hwpe_job_dep.config0.reserved.value & ~decoded_wr_biten[31:27]) | (decoded_wr_data[31:27] & decoded_wr_biten[31:27]);
             load_next_c = '1;
         end
         field_combo.hwpe_job_dep.config0.reserved.next = next_c;
@@ -1747,7 +2057,7 @@ module neureka_regif #(
     end
     always_ff @(posedge clk or negedge arst_n) begin
         if(~arst_n) begin
-            field_storage.hwpe_job_dep.config0.reserved.value <= 16'h0;
+            field_storage.hwpe_job_dep.config0.reserved.value <= 5'h0;
         end else begin
             if(field_combo.hwpe_job_dep.config0.reserved.load_next) begin
                 field_storage.hwpe_job_dep.config0.reserved.value <= field_combo.hwpe_job_dep.config0.reserved.next;
@@ -1755,6 +2065,7 @@ module neureka_regif #(
         end
     end
     assign hwif_out.hwpe_job_dep.config0.reserved.value = field_storage.hwpe_job_dep.config0.reserved.value;
+    assign hwif_out.hwpe_job_indep.reserved.reserved.value = 32'h0;
 
     //--------------------------------------------------------------------------
     // Write response
@@ -1772,7 +2083,7 @@ module neureka_regif #(
     logic [31:0] readback_data;
 
     // Assign readback values to a flattened array
-    logic [31:0] readback_array[32];
+    logic [31:0] readback_array[34];
     assign readback_array[0][1:0] = '0;
     assign readback_array[0][31:2] = (decoded_reg_strb.hwpe_ctrl.commit_trigger && !decoded_req_is_wr) ? 30'h0 : '0;
     assign readback_array[1][31:0] = (decoded_reg_strb.hwpe_ctrl.acquire && !decoded_req_is_wr) ? hwif_in.hwpe_ctrl.acquire.acquire.next : '0;
@@ -1790,45 +2101,56 @@ module neureka_regif #(
     assign readback_array[11][31:0] = (decoded_reg_strb.hwpe_job_dep.scale_ptr && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.scale_ptr.value.value : '0;
     assign readback_array[12][31:0] = (decoded_reg_strb.hwpe_job_dep.scale_shift_ptr && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.scale_shift_ptr.value.value : '0;
     assign readback_array[13][31:0] = (decoded_reg_strb.hwpe_job_dep.scale_bias_ptr && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.scale_bias_ptr.value.value : '0;
-    assign readback_array[14][31:0] = (decoded_reg_strb.hwpe_job_dep.infeat_d0_stride && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.infeat_d0_stride.value.value : '0;
-    assign readback_array[15][31:0] = (decoded_reg_strb.hwpe_job_dep.infeat_d1_stride && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.infeat_d1_stride.value.value : '0;
-    assign readback_array[16][31:0] = (decoded_reg_strb.hwpe_job_dep.infeat_d2_stride && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.infeat_d2_stride.value.value : '0;
-    assign readback_array[17][31:0] = (decoded_reg_strb.hwpe_job_dep.outfeat_d0_stride && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.outfeat_d0_stride.value.value : '0;
-    assign readback_array[18][31:0] = (decoded_reg_strb.hwpe_job_dep.outfeat_d1_stride && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.outfeat_d1_stride.value.value : '0;
-    assign readback_array[19][31:0] = (decoded_reg_strb.hwpe_job_dep.outfeat_d2_stride && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.outfeat_d2_stride.value.value : '0;
-    assign readback_array[20][31:0] = (decoded_reg_strb.hwpe_job_dep.weights_d0_stride && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.weights_d0_stride.value.value : '0;
-    assign readback_array[21][31:0] = (decoded_reg_strb.hwpe_job_dep.weights_d1_stride && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.weights_d1_stride.value.value : '0;
-    assign readback_array[22][31:0] = (decoded_reg_strb.hwpe_job_dep.weights_d2_stride && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.weights_d2_stride.value.value : '0;
-    assign readback_array[23][15:0] = (decoded_reg_strb.hwpe_job_dep.subtile_rem0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_rem0.ki.value : '0;
-    assign readback_array[23][31:16] = (decoded_reg_strb.hwpe_job_dep.subtile_rem0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_rem0.ko.value : '0;
-    assign readback_array[24][15:0] = (decoded_reg_strb.hwpe_job_dep.subtile_rem1 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_rem1.wo.value : '0;
-    assign readback_array[24][31:16] = (decoded_reg_strb.hwpe_job_dep.subtile_rem1 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_rem1.ho.value : '0;
-    assign readback_array[25][15:0] = (decoded_reg_strb.hwpe_job_dep.subtile_rem2 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_rem2.wi.value : '0;
-    assign readback_array[25][31:16] = (decoded_reg_strb.hwpe_job_dep.subtile_rem2 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_rem2.hi.value : '0;
-    assign readback_array[26][15:0] = (decoded_reg_strb.hwpe_job_dep.subtile_nb0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_nb0.ki.value : '0;
-    assign readback_array[26][31:16] = (decoded_reg_strb.hwpe_job_dep.subtile_nb0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_nb0.ko.value : '0;
-    assign readback_array[27][15:0] = (decoded_reg_strb.hwpe_job_dep.subtile_nb1 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_nb1.wo.value : '0;
-    assign readback_array[27][31:16] = (decoded_reg_strb.hwpe_job_dep.subtile_nb1 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_nb1.ho.value : '0;
-    assign readback_array[28][15:0] = (decoded_reg_strb.hwpe_job_dep.padding && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.padding.value.value : '0;
-    assign readback_array[28][19:16] = (decoded_reg_strb.hwpe_job_dep.padding && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.padding.left.value : '0;
-    assign readback_array[28][23:20] = (decoded_reg_strb.hwpe_job_dep.padding && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.padding.bottom.value : '0;
-    assign readback_array[28][27:24] = (decoded_reg_strb.hwpe_job_dep.padding && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.padding.right.value : '0;
-    assign readback_array[28][31:28] = (decoded_reg_strb.hwpe_job_dep.padding && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.padding.top.value : '0;
-    assign readback_array[29][31:0] = (decoded_reg_strb.hwpe_job_dep.weight_offset && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.weight_offset.value.value : '0;
-    assign readback_array[30][7:0] = (decoded_reg_strb.hwpe_job_dep.filter_mask && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.filter_mask.left.value : '0;
-    assign readback_array[30][15:8] = (decoded_reg_strb.hwpe_job_dep.filter_mask && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.filter_mask.bottom.value : '0;
-    assign readback_array[30][23:16] = (decoded_reg_strb.hwpe_job_dep.filter_mask && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.filter_mask.right.value : '0;
-    assign readback_array[30][31:24] = (decoded_reg_strb.hwpe_job_dep.filter_mask && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.filter_mask.top.value : '0;
-    assign readback_array[31][2:0] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.wbits.value : '0;
-    assign readback_array[31][3:3] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.reserved2.value : '0;
-    assign readback_array[31][4:4] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.streamout_quant.value : '0;
-    assign readback_array[31][6:5] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.filter_mode.value : '0;
-    assign readback_array[31][10:7] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.padding.value : '0;
-    assign readback_array[31][11:11] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.rounding.value : '0;
-    assign readback_array[31][13:12] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.norm_bits.value : '0;
-    assign readback_array[31][14:14] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.streamin.value : '0;
-    assign readback_array[31][15:15] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.woffs.value : '0;
-    assign readback_array[31][31:16] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.reserved.value : '0;
+    assign readback_array[14][31:0] = (decoded_reg_strb.hwpe_job_dep.streamin_ptr && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.streamin_ptr.value.value : '0;
+    assign readback_array[15][31:0] = (decoded_reg_strb.hwpe_job_dep.infeat_d0_str && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.infeat_d0_str.value.value : '0;
+    assign readback_array[16][31:0] = (decoded_reg_strb.hwpe_job_dep.infeat_d1_str && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.infeat_d1_str.value.value : '0;
+    assign readback_array[17][31:0] = (decoded_reg_strb.hwpe_job_dep.infeat_d2_str && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.infeat_d2_str.value.value : '0;
+    assign readback_array[18][31:0] = (decoded_reg_strb.hwpe_job_dep.outfeat_d0_st && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.outfeat_d0_st.value.value : '0;
+    assign readback_array[19][31:0] = (decoded_reg_strb.hwpe_job_dep.outfeat_d1_st && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.outfeat_d1_st.value.value : '0;
+    assign readback_array[20][31:0] = (decoded_reg_strb.hwpe_job_dep.outfeat_d2_st && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.outfeat_d2_st.value.value : '0;
+    assign readback_array[21][31:0] = (decoded_reg_strb.hwpe_job_dep.weights_d0_st && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.weights_d0_st.value.value : '0;
+    assign readback_array[22][31:0] = (decoded_reg_strb.hwpe_job_dep.weights_d1_st && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.weights_d1_st.value.value : '0;
+    assign readback_array[23][31:0] = (decoded_reg_strb.hwpe_job_dep.weights_d2_st && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.weights_d2_st.value.value : '0;
+    assign readback_array[24][15:0] = (decoded_reg_strb.hwpe_job_dep.subtile_rem0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_rem0.ki.value : '0;
+    assign readback_array[24][31:16] = (decoded_reg_strb.hwpe_job_dep.subtile_rem0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_rem0.ko.value : '0;
+    assign readback_array[25][15:0] = (decoded_reg_strb.hwpe_job_dep.subtile_rem1 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_rem1.wo.value : '0;
+    assign readback_array[25][31:16] = (decoded_reg_strb.hwpe_job_dep.subtile_rem1 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_rem1.ho.value : '0;
+    assign readback_array[26][15:0] = (decoded_reg_strb.hwpe_job_dep.subtile_rem2 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_rem2.wi.value : '0;
+    assign readback_array[26][31:16] = (decoded_reg_strb.hwpe_job_dep.subtile_rem2 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_rem2.hi.value : '0;
+    assign readback_array[27][15:0] = (decoded_reg_strb.hwpe_job_dep.subtile_nb0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_nb0.ki.value : '0;
+    assign readback_array[27][31:16] = (decoded_reg_strb.hwpe_job_dep.subtile_nb0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_nb0.ko.value : '0;
+    assign readback_array[28][15:0] = (decoded_reg_strb.hwpe_job_dep.subtile_nb1 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_nb1.wo.value : '0;
+    assign readback_array[28][31:16] = (decoded_reg_strb.hwpe_job_dep.subtile_nb1 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_nb1.ho.value : '0;
+    assign readback_array[29][15:0] = (decoded_reg_strb.hwpe_job_dep.padding && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.padding.value.value : '0;
+    assign readback_array[29][19:16] = (decoded_reg_strb.hwpe_job_dep.padding && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.padding.left.value : '0;
+    assign readback_array[29][23:20] = (decoded_reg_strb.hwpe_job_dep.padding && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.padding.bottom.value : '0;
+    assign readback_array[29][27:24] = (decoded_reg_strb.hwpe_job_dep.padding && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.padding.right.value : '0;
+    assign readback_array[29][31:28] = (decoded_reg_strb.hwpe_job_dep.padding && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.padding.top.value : '0;
+    assign readback_array[30][31:0] = (decoded_reg_strb.hwpe_job_dep.weight_offset && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.weight_offset.value.value : '0;
+    assign readback_array[31][7:0] = (decoded_reg_strb.hwpe_job_dep.filter_mask && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.filter_mask.left.value : '0;
+    assign readback_array[31][15:8] = (decoded_reg_strb.hwpe_job_dep.filter_mask && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.filter_mask.bottom.value : '0;
+    assign readback_array[31][23:16] = (decoded_reg_strb.hwpe_job_dep.filter_mask && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.filter_mask.right.value : '0;
+    assign readback_array[31][31:24] = (decoded_reg_strb.hwpe_job_dep.filter_mask && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.filter_mask.top.value : '0;
+    assign readback_array[32][2:0] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.wbits.value : '0;
+    assign readback_array[32][3:3] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.reserved2.value : '0;
+    assign readback_array[32][4:4] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.streamout_quant.value : '0;
+    assign readback_array[32][6:5] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.filter_mode.value : '0;
+    assign readback_array[32][7:7] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.mode_linear.value : '0;
+    assign readback_array[32][8:8] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.mode_strided.value : '0;
+    assign readback_array[32][9:9] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.wmem.value : '0;
+    assign readback_array[32][10:10] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.prefetch.value : '0;
+    assign readback_array[32][11:11] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.rounding.value : '0;
+    assign readback_array[32][13:12] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.norm_mode.value : '0;
+    assign readback_array[32][14:14] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.streamin.value : '0;
+    assign readback_array[32][15:15] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.streamin_mode.value : '0;
+    assign readback_array[32][20:16] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.shift_reqnt.value : '0;
+    assign readback_array[32][22:21] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.quant_mode.value : '0;
+    assign readback_array[32][23:23] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.relu.value : '0;
+    assign readback_array[32][24:24] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.norm_option_shift.value : '0;
+    assign readback_array[32][25:25] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.norm_option_bias.value : '0;
+    assign readback_array[32][26:26] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.feat_broadcast.value : '0;
+    assign readback_array[32][31:27] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.reserved.value : '0;
+    assign readback_array[33][31:0] = (decoded_reg_strb.hwpe_job_indep.reserved && !decoded_req_is_wr) ? 32'h0 : '0;
 
     // Reduce the array
     always_comb begin
@@ -1836,7 +2158,7 @@ module neureka_regif #(
         readback_done = decoded_req & ~decoded_req_is_wr;
         readback_err = '0;
         readback_data_var = '0;
-        for(int i=0; i<32; i++) readback_data_var |= readback_array[i];
+        for(int i=0; i<34; i++) readback_data_var |= readback_array[i];
         readback_data = readback_data_var;
     end
 

@@ -159,6 +159,14 @@ addrmap neureka_regif {
             sw = rw;
         } value[31:0] = 0;
     };
+    reg streamin_ptr {
+        field {
+            name = "StreamIn pointer";
+            desc = "Pointer to StreamIn parameters in memory (d2=Ho, d1=Wo, d0=Ko).";
+            hw = r;
+            sw = rw;
+        } value[31:0] = 0;
+    };
     reg infeat_d0_stride {
         field {
             name = "InFeat d0 stride";
@@ -381,13 +389,49 @@ addrmap neureka_regif {
             desc = "Reserved.";
             hw = r;
             sw = rw;
-        } reserved[31:16] = 0;
+        } reserved[31:27] = 0;
         field {
-            name = "Weight Offset enable";
-            desc = "Enable weight offseting.";
+            name = "Feature broadcast";
+            desc = "Feature broadcast.";
             hw = r;
             sw = rw;
-        } woffs[15:15] = 0;
+        } feat_broadcast[26:26] = 0;
+        field {
+            name = "Use bias in scaling";
+            desc = "Use bias in scaling.";
+            hw = r;
+            sw = rw;
+        } norm_option_bias[25:25] = 0;
+        field {
+            name = "Use shift in scaling";
+            desc = "Use shift in scaling.";
+            hw = r;
+            sw = rw;
+        } norm_option_shift[24:24] = 0;
+        field {
+            name = "Deactivate relu";
+            desc = "Deactivate relu.";
+            hw = r;
+            sw = rw;
+        } relu[23:23] = 0;
+        field {
+            name = "Quantization mode";
+            desc = "Quantization mode.";
+            hw = r;
+            sw = rw;
+        } quant_mode[22:21] = 0;
+        field {
+            name = "Shift requant";
+            desc = "Shift requant.";
+            hw = r;
+            sw = rw;
+        } shift_reqnt[20:16] = 0;
+        field {
+            name = "Streamin mode";
+            desc = "Streamin mode.";
+            hw = r;
+            sw = rw;
+        } streamin_mode[15:15] = 0;
         field {
             name = "Streamin";
             desc = "Streamin.";
@@ -399,7 +443,7 @@ addrmap neureka_regif {
             desc = "Normalization bits (00=8, 01=16, 10=32).";
             hw = r;
             sw = rw;
-        } norm_bits[13:12] = 0;
+        } norm_mode[13:12] = 0;
         field {
             name = "Rounding";
             desc = "Rounding (0=round, 1=do not round).";
@@ -407,11 +451,27 @@ addrmap neureka_regif {
             sw = rw;
         } rounding[11:11] = 0;
         field {
-            name = "Padding enable";
-            desc = "Padding enable (top/right/bottom/left).";
+            name = "Prefetch";
+            desc = "Prefetch next inputs to minimize idle time (only with 1x1).";
             hw = r;
             sw = rw;
-        } padding[10:7] = 0;
+        } prefetch[10:10] = 0;
+        field {
+            name = "Weight memory";
+            desc = "Use dedicated weight memory port for weights.";
+            hw = r;
+            sw = rw;
+        } wmem[9:9] = 0;
+        field {
+            name = "Mode strided";
+            hw = r;
+            sw = rw;
+        } mode_strided[8:8] = 0;
+        field {
+            name = "Mode linear";
+            hw = r;
+            sw = rw;
+        } mode_linear[7:7] = 0;
         field {
             name = "Filter Mode";
             desc = "Filter Mode (11=linear, 10=1x1, 01=3x3 depthwise, 00=3x3).";
@@ -438,6 +498,11 @@ addrmap neureka_regif {
         } wbits[2:0] = 0;
     };
 
+    // no "job-independent" registers in NEUREKA
+    regfile hwpe_ctrl_job_indep {
+        hwpe_reserved reserved;
+    };
+
     // "job-dependent" set of HWPE registers. Update inside HWPEs.
     regfile hwpe_ctrl_job_dep {
         weights_ptr       weights_ptr       @ 0x00;
@@ -446,28 +511,30 @@ addrmap neureka_regif {
         scale_ptr         scale_ptr         @ 0x0c;
         scale_shift_ptr   scale_shift_ptr   @ 0x10;
         scale_bias_ptr    scale_bias_ptr    @ 0x14;
-        infeat_d0_stride  infeat_d0_stride  @ 0x18;
-        infeat_d1_stride  infeat_d1_stride  @ 0x1c;
-        infeat_d2_stride  infeat_d2_stride  @ 0x20;
-        outfeat_d0_stride outfeat_d0_stride @ 0x24;
-        outfeat_d1_stride outfeat_d1_stride @ 0x28;
-        outfeat_d2_stride outfeat_d2_stride @ 0x2c;
-        weights_d0_stride weights_d0_stride @ 0x30;
-        weights_d1_stride weights_d1_stride @ 0x34;
-        weights_d2_stride weights_d2_stride @ 0x38;
-        subtile_rem0      subtile_rem0      @ 0x3c;
-        subtile_rem1      subtile_rem1      @ 0x40;
-        subtile_rem2      subtile_rem2      @ 0x44;
-        subtile_nb0       subtile_nb0       @ 0x48;
-        subtile_nb1       subtile_nb1       @ 0x4c;
-        padding           padding           @ 0x50;
-        weight_offset     weight_offset     @ 0x54;
-        filter_mask       filter_mask       @ 0x58;
-        config0           config0           @ 0x5c;
+        streamin_ptr      streamin_ptr      @ 0x18;
+        infeat_d0_stride  infeat_d0_str     @ 0x1c;
+        infeat_d1_stride  infeat_d1_str     @ 0x20;
+        infeat_d2_stride  infeat_d2_str     @ 0x24;
+        outfeat_d0_stride outfeat_d0_st     @ 0x28;
+        outfeat_d1_stride outfeat_d1_st     @ 0x2c;
+        outfeat_d2_stride outfeat_d2_st     @ 0x30;
+        weights_d0_stride weights_d0_st     @ 0x34;
+        weights_d1_stride weights_d1_st     @ 0x38;
+        weights_d2_stride weights_d2_st     @ 0x3c;
+        subtile_rem0      subtile_rem0      @ 0x40;
+        subtile_rem1      subtile_rem1      @ 0x44;
+        subtile_rem2      subtile_rem2      @ 0x48;
+        subtile_nb0       subtile_nb0       @ 0x4c;
+        subtile_nb1       subtile_nb1       @ 0x50;
+        padding           padding           @ 0x54;
+        weight_offset     weight_offset     @ 0x58;
+        filter_mask       filter_mask       @ 0x5c;
+        config0           config0           @ 0x60;
     };
 
     // HWPE control address map. Update inside HWPEs
     hwpe_ctrl_mandatory hwpe_ctrl    @ 0x00;
     hwpe_ctrl_job_dep   hwpe_job_dep @ 0x20;
+    hwpe_ctrl_job_indep hwpe_job_indep;
 
 };

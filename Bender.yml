@@ -27,6 +27,8 @@ sources:
   - rtl/array/neureka_binconv_col.sv
   - rtl/array/neureka_binconv_pe.sv
   - rtl/array/neureka_binconv_array.sv
+  - rtl/ctrl/regif/neureka_regif_pkg.sv
+  - rtl/ctrl/regif/neureka_regif.sv
   - rtl/ctrl/neureka_ctrl_fsm.sv
   - rtl/ctrl/neureka_ctrl.sv
   - rtl/neureka_engine.sv

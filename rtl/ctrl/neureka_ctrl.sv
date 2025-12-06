@@ -24,7 +24,9 @@ import neureka_package::*;
 import hwpe_ctrl_package::*;
 import hci_package::*;
 
-module neureka_ctrl #(
+module neureka_ctrl 
+  import neureka_regif_pkg::*;
+#(
   parameter int unsigned N_CORES = NR_CORES,
   parameter int unsigned ID      = ID_WIDTH,
   parameter int unsigned PE_H    = NEUREKA_PE_H_DEFAULT,
@@ -61,36 +63,103 @@ module neureka_ctrl #(
   base_addr_neureka_t base_addr, next_base_addr;
   logic uloop_prefetch, uloop_prefetch_pulse;
 
-  ctrl_slave_t   slave_ctrl;
-  flags_slave_t  slave_flags;
-
   ctrl_engine_t   ctrl_engine, ctrl_engine_d, ctrl_engine_q;
   ctrl_streamer_t ctrl_streamer, ctrl_streamer_d, ctrl_streamer_q;
 
+  // target signals
+  logic                                     job_trigger;
+  logic                                     job_done, job_done_q;
+  logic [31:0]                              job_status;
+  neureka_regif__hwpe_ctrl_job_indep__out_t job_indep_regs;
+  logic                                     job_dep_regs_valid;
+  neureka_regif__hwpe_ctrl_job_dep__out_t   job_dep_regs;
+
+  // OBI plug target <-> regif
+  logic                 target_obi_req;
+  logic                 target_obi_gnt;
+  logic [31:0]          target_obi_addr;
+  logic                 target_obi_we;
+  logic [3:0]           target_obi_be;
+  logic [31:0]          target_obi_wdata;
+  logic [ID_WIDTH-1:0]  target_obi_aid;
+  logic                 target_obi_rvalid;
+  logic                 target_obi_rready;
+  logic [31:0]          target_obi_rdata;
+  logic                 target_obi_err;
+  logic [ID_WIDTH-1:0]  target_obi_rid;
+
+  neureka_regif__in_t  hwif_in;
+  neureka_regif__out_t hwif_out;
+
   /* HWPE controller target port */
   hwpe_ctrl_target #(
-    .NB_CONTEXT     ( 2       ),
-    .hwpe_ctrl_regif_in_t  = logic, // must be overridden!
-    .hwpe_ctrl_regif_out_t = logic, // must be overridden!
-    .hwpe_ctrl_job_indep_t = logic, // must be overridden!
-    .hwpe_ctrl_job_dep_t   = logic  // must be overridden!
-    .ID_WIDTH       ( ID      )
-  ) i_slave (
-    .clk_i    ( clk_i       ),
-    .rst_ni   ( rst_ni      ),
-    .clear_o  ( clear_o     ),
-    .cfg      ( periph      ),
-    .ctrl_i   ( slave_ctrl  ),
-    .flags_o  ( slave_flags ),
-    .reg_file ( reg_file    )
+    .NB_CONTEXT            ( 2                                         ),
+    .ID_WIDTH              ( ID                                        ),
+    .hwpe_ctrl_regif_in_t  ( neureka_regif__in_t                       ),
+    .hwpe_ctrl_regif_out_t ( neureka_regif__out_t                      ),
+    .hwpe_ctrl_job_indep_t ( neureka_regif__hwpe_ctrl_job_indep__out_t ),
+    .hwpe_ctrl_job_dep_t   ( neureka_regif__hwpe_ctrl_job_dep__out_t   )
+  ) i_target (
+    .clk_i                ( clk_i              ),
+    .rst_ni               ( rst_ni             ),
+    .clear_o              ( clear_o            ),
+    .target               ( periph             ),
+    .job_trigger_o        ( job_trigger        ),
+    .job_done_i           ( job_done           ),
+    .job_status_i         ( job_status         ),
+    .job_indep_regs_o     ( job_indep_regs     ),
+    .job_dep_regs_valid_o ( job_dep_regs_valid ),
+    .job_dep_regs_o       ( job_dep_regs       ),
+    .target_obi_req_o     ( target_obi_req     ),
+    .target_obi_gnt_i     ( target_obi_gnt     ),
+    .target_obi_addr_o    ( target_obi_addr    ),
+    .target_obi_we_o      ( target_obi_we      ),
+    .target_obi_be_o      ( target_obi_be      ),
+    .target_obi_wdata_o   ( target_obi_wdata   ),
+    .target_obi_aid_o     ( target_obi_aid     ),
+    .target_obi_rvalid_i  ( target_obi_rvalid  ),
+    .target_obi_rready_o  ( target_obi_rready  ),
+    .target_obi_rdata_i   ( target_obi_rdata   ),
+    .target_obi_err_i     ( target_obi_err     ),
+    .target_obi_rid_i     ( target_obi_rid     ),
+    .hwif_in              ( hwif_in            ),
+    .hwif_out             ( hwif_out           )
   );
-  assign evt_o = slave_flags.evt;
-  always_comb
+
+  /* NEureka SystemRDL-generated register interface */
+  neureka_regif #(
+    .ID_WIDTH ( ID_WIDTH )
+  ) i_regif (
+    .clk          ( clk_i             ),
+    .arst_n       ( rst_ni            ),
+    .s_obi_req    ( target_obi_req    ),
+    .s_obi_gnt    ( target_obi_gnt    ),
+    .s_obi_addr   ( target_obi_addr   ),
+    .s_obi_we     ( target_obi_we     ),
+    .s_obi_be     ( target_obi_be     ),
+    .s_obi_wdata  ( target_obi_wdata  ),
+    .s_obi_aid    ( target_obi_aid    ),
+    .s_obi_rvalid ( target_obi_rvalid ),
+    .s_obi_rready ( target_obi_rready ),
+    .s_obi_rdata  ( target_obi_rdata  ),
+    .s_obi_err    ( target_obi_err    ),
+    .s_obi_rid    ( target_obi_rid    ),
+    .hwif_in      ( hwif_in           ),
+    .hwif_out     ( hwif_out          )
+  );
+
+  always_ff @(posedge clk_i or negedge rst_ni)
   begin
-    slave_ctrl = '0;
-    slave_ctrl.done = (state==DONE) & state_change;
+    if(~rst_ni) begin
+      job_done_q <= '0;
+    end
+    else begin
+      job_done_q <= job_done;
+    end
   end
-  assign busy_o = slave_flags.is_working;
+  assign evt_o = job_done_q;
+  assign job_done = (state==DONE) & state_change;
+  assign busy_o = state!=IDLE;
 
   /* Main FSM driving the NEUREKA */
   neureka_ctrl_fsm #(
@@ -116,60 +185,60 @@ module neureka_ctrl #(
   );
 
   /* Binding register file <-> configuration */
-  assign config_.weights_ptr         = reg_file.hwpe_params[NEUREKA_REG_WEIGHTS_PTR];
-  assign config_.infeat_ptr          = reg_file.hwpe_params[NEUREKA_REG_INFEAT_PTR];
-  assign config_.outfeat_ptr         = reg_file.hwpe_params[NEUREKA_REG_OUTFEAT_PTR];
-  assign config_.scale_ptr           = reg_file.hwpe_params[NEUREKA_REG_SCALE_PTR];
-  assign config_.scale_shift_ptr     = reg_file.hwpe_params[NEUREKA_REG_SCALE_SHIFT_PTR];
-  assign config_.scale_bias_ptr      = reg_file.hwpe_params[NEUREKA_REG_SCALE_BIAS_PTR];
-  assign config_.streamin_ptr        = reg_file.hwpe_params[NEUREKA_REG_STREAMIN_PTR];
-  assign config_.subtile_nb_ko       = reg_file.hwpe_params[NEUREKA_REG_SUBTILE_NB0] [31:16];
-  assign config_.subtile_rem_ko      = reg_file.hwpe_params[NEUREKA_REG_SUBTILE_REM0][31:16];
-  assign config_.subtile_nb_ki       = reg_file.hwpe_params[NEUREKA_REG_SUBTILE_NB0] [15: 0];
-  assign config_.subtile_rem_ki      = reg_file.hwpe_params[NEUREKA_REG_SUBTILE_REM0][15: 0];
-  assign config_.subtile_nb_ho       = reg_file.hwpe_params[NEUREKA_REG_SUBTILE_NB1] [31:16];
-  assign config_.subtile_rem_ho      = reg_file.hwpe_params[NEUREKA_REG_SUBTILE_REM1][31:16];
-  assign config_.subtile_nb_wo       = reg_file.hwpe_params[NEUREKA_REG_SUBTILE_NB1] [15: 0];
-  assign config_.subtile_rem_wo      = reg_file.hwpe_params[NEUREKA_REG_SUBTILE_REM1][15: 0];
-  assign config_.subtile_rem_hi      = reg_file.hwpe_params[NEUREKA_REG_SUBTILE_REM2][31:16];
-  assign config_.subtile_rem_wi      = reg_file.hwpe_params[NEUREKA_REG_SUBTILE_REM2][15: 0];
-  assign config_.infeat_d0_stride    = reg_file.hwpe_params[NEUREKA_REG_INFEAT_D0_STRIDE];
-  assign config_.infeat_d1_stride    = reg_file.hwpe_params[NEUREKA_REG_INFEAT_D1_STRIDE];
-  assign config_.infeat_d2_stride    = reg_file.hwpe_params[NEUREKA_REG_INFEAT_D2_STRIDE];
-  assign config_.weights_d0_stride   = reg_file.hwpe_params[NEUREKA_REG_WEIGHTS_D0_STRIDE];
-  assign config_.weights_d1_stride   = reg_file.hwpe_params[NEUREKA_REG_WEIGHTS_D1_STRIDE];
-  assign config_.weights_d2_stride   = reg_file.hwpe_params[NEUREKA_REG_WEIGHTS_D2_STRIDE];
-  assign config_.outfeat_d0_stride   = reg_file.hwpe_params[NEUREKA_REG_OUTFEAT_D0_STRIDE];
-  assign config_.outfeat_d1_stride   = reg_file.hwpe_params[NEUREKA_REG_OUTFEAT_D1_STRIDE];
-  assign config_.outfeat_d2_stride   = reg_file.hwpe_params[NEUREKA_REG_OUTFEAT_D2_STRIDE];
-  assign config_.padding_top         = reg_file.hwpe_params[NEUREKA_REG_PADDING][31:28];
-  assign config_.padding_right       = reg_file.hwpe_params[NEUREKA_REG_PADDING][27:24];
-  assign config_.padding_bottom      = reg_file.hwpe_params[NEUREKA_REG_PADDING][23:20];
-  assign config_.padding_left        = reg_file.hwpe_params[NEUREKA_REG_PADDING][19:16];
-  assign config_.padding_value       = reg_file.hwpe_params[NEUREKA_REG_PADDING][15:0];
-  assign config_.weight_offset_scale = reg_file.hwpe_params[NEUREKA_REG_WEIGHT_OFFSET];
-  assign config_.filter_mask_top     = reg_file.hwpe_params[NEUREKA_REG_FILTER_MASK][31:24];
-  assign config_.filter_mask_right   = reg_file.hwpe_params[NEUREKA_REG_FILTER_MASK][23:16];
-  assign config_.filter_mask_bottom  = reg_file.hwpe_params[NEUREKA_REG_FILTER_MASK][15: 8];
-  assign config_.filter_mask_left    = reg_file.hwpe_params[NEUREKA_REG_FILTER_MASK][ 7: 0];
-  assign config_.feat_broadcast      = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][26];
-  assign config_.norm_option_bias    = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][25];
-  assign config_.norm_option_shift   = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][24];
-  assign config_.relu                = ~reg_file.hwpe_params[NEUREKA_REG_CONFIG0][23];
-  assign config_.quant_mode          = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][22:21];
-  assign config_.shift_reqnt         = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][20:16];
-  assign config_.streamin_mode       = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][15];
-  assign config_.streamin            = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][14];
-  assign config_.norm_mode           = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][13:12];
-  assign config_.use_rounding        = ~reg_file.hwpe_params[NEUREKA_REG_CONFIG0][11];
-  assign config_.prefetch            = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][10];
-  assign config_.wmem_sel            = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][9];
-  assign config_.mode_strided        = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][8]; 
-  assign config_.mode_linear         = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][7]; // Not supported in this version. Use PW mode instead
-  assign config_.filter_mode         = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][6:5];
-  assign config_.streamout_quant     = reg_file.hwpe_params[NEUREKA_REG_CONFIG0][4];
-  assign config_.weight_bits         = {1'b0, reg_file.hwpe_params[NEUREKA_REG_CONFIG0][2:0]} + 1;
-  assign start = slave_flags.start;
+  assign config_.weights_ptr         = job_dep_regs.weights_ptr.value.value;
+  assign config_.infeat_ptr          = job_dep_regs.infeat_ptr.value.value;
+  assign config_.outfeat_ptr         = job_dep_regs.outfeat_ptr.value.value;
+  assign config_.scale_ptr           = job_dep_regs.scale_ptr.value.value;
+  assign config_.scale_shift_ptr     = job_dep_regs.scale_shift_ptr.value.value;
+  assign config_.scale_bias_ptr      = job_dep_regs.scale_bias_ptr.value.value;
+  assign config_.streamin_ptr        = job_dep_regs.streamin_ptr.value.value;
+  assign config_.subtile_nb_ko       = job_dep_regs.subtile_nb0.ko.value;
+  assign config_.subtile_rem_ko      = job_dep_regs.subtile_rem0.ko.value;
+  assign config_.subtile_nb_ki       = job_dep_regs.subtile_nb0.ki.value;
+  assign config_.subtile_rem_ki      = job_dep_regs.subtile_rem0.ki.value;
+  assign config_.subtile_nb_ho       = job_dep_regs.subtile_nb1.ho.value;
+  assign config_.subtile_rem_ho      = job_dep_regs.subtile_rem1.ho.value;
+  assign config_.subtile_nb_wo       = job_dep_regs.subtile_nb1.wo.value;
+  assign config_.subtile_rem_wo      = job_dep_regs.subtile_rem1.wo.value;
+  assign config_.subtile_rem_hi      = job_dep_regs.subtile_rem2.hi.value;
+  assign config_.subtile_rem_wi      = job_dep_regs.subtile_rem2.wi.value;
+  assign config_.infeat_d0_stride    = job_dep_regs.infeat_d0_str.value.value;
+  assign config_.infeat_d1_stride    = job_dep_regs.infeat_d1_str.value.value;
+  assign config_.infeat_d2_stride    = job_dep_regs.infeat_d2_str.value.value;
+  assign config_.weights_d0_stride   = job_dep_regs.weights_d0_st.value.value;
+  assign config_.weights_d1_stride   = job_dep_regs.weights_d1_st.value.value;
+  assign config_.weights_d2_stride   = job_dep_regs.weights_d2_st.value.value;
+  assign config_.outfeat_d0_stride   = job_dep_regs.outfeat_d0_st.value.value;
+  assign config_.outfeat_d1_stride   = job_dep_regs.outfeat_d1_st.value.value;
+  assign config_.outfeat_d2_stride   = job_dep_regs.outfeat_d2_st.value.value;
+  assign config_.padding_top         = job_dep_regs.padding.top.value;
+  assign config_.padding_right       = job_dep_regs.padding.right.value;
+  assign config_.padding_bottom      = job_dep_regs.padding.bottom.value;
+  assign config_.padding_left        = job_dep_regs.padding.left.value;
+  assign config_.padding_value       = job_dep_regs.padding.value.value;
+  assign config_.weight_offset_scale = job_dep_regs.weight_offset.value.value;
+  assign config_.filter_mask_top     = job_dep_regs.filter_mask.top.value;
+  assign config_.filter_mask_right   = job_dep_regs.filter_mask.right.value;
+  assign config_.filter_mask_bottom  = job_dep_regs.filter_mask.bottom.value;
+  assign config_.filter_mask_left    = job_dep_regs.filter_mask.left.value;
+  assign config_.feat_broadcast      = job_dep_regs.config0.feat_broadcast.value;
+  assign config_.norm_option_bias    = job_dep_regs.config0.norm_option_bias.value;
+  assign config_.norm_option_shift   = job_dep_regs.config0.norm_option_shift.value;
+  assign config_.relu                = ~job_dep_regs.config0.relu.value;
+  assign config_.quant_mode          = job_dep_regs.config0.quant_mode.value;
+  assign config_.shift_reqnt         = job_dep_regs.config0.shift_reqnt.value;
+  assign config_.streamin_mode       = job_dep_regs.config0.streamin_mode.value;
+  assign config_.streamin            = job_dep_regs.config0.streamin.value;
+  assign config_.norm_mode           = job_dep_regs.config0.norm_mode.value;
+  assign config_.use_rounding        = ~job_dep_regs.config0.rounding.value;
+  assign config_.prefetch            = job_dep_regs.config0.prefetch.value;
+  assign config_.wmem_sel            = job_dep_regs.config0.wmem.value;
+  assign config_.mode_strided        = job_dep_regs.config0.mode_strided.value; 
+  assign config_.mode_linear         = job_dep_regs.config0.mode_linear.value; // Not supported in this version. Use PW mode instead
+  assign config_.filter_mode         = job_dep_regs.config0.filter_mode.value;
+  assign config_.streamout_quant     = job_dep_regs.config0.streamout_quant.value;
+  assign config_.weight_bits         = {1'b0, job_dep_regs.config0.wbits.value} + 1;
+  assign start = job_trigger | job_done_q & job_dep_regs_valid;
 
   /* norm variables */
   logic [15:0] norm_len;
