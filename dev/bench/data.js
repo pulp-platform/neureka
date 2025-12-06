@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1764858020278,
+  "lastUpdate": 1765011677841,
   "repoUrl": "https://github.com/pulp-platform/neureka",
   "entries": {
     "Execution cycles": [
@@ -7474,6 +7474,100 @@ window.BENCHMARK_DATA = {
           },
           {
             "name": "neureka_basic_tests:t0",
+            "value": 0,
+            "unit": "cycles"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "f.conti@unibo.it",
+            "name": "Francesco Conti",
+            "username": "FrancescoConti"
+          },
+          "committer": {
+            "email": "f.conti@unibo.it",
+            "name": "Francesco Conti",
+            "username": "FrancescoConti"
+          },
+          "distinct": true,
+          "id": "32346890a4f59039c98896f39e535c3ec200e077",
+          "message": "Early draft of SystemRDL target for NE",
+          "timestamp": "2025-12-06T09:51:33+01:00",
+          "tree_id": "e46ea0e85a70374c18a6411b73c6d96060c10e23",
+          "url": "https://github.com/pulp-platform/neureka/commit/32346890a4f59039c98896f39e535c3ec200e077"
+        },
+        "date": 1765011677307,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "neureka_basic_tests:t3",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t7",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t9",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t12",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t13",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t4",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t10",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t1",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t0",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t11",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t6",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t2",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t8",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t5",
             "value": 0,
             "unit": "cycles"
           }
