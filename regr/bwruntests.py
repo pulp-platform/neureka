@@ -115,6 +115,8 @@ runtest.add_argument('-o,', '--output', type=str,
                      help="""Write junit.xml to file instead of stdout""")
 runtest.add_argument('-P,', '--perf', type=str, default=None,
                      help="""Write performance results to JSON file""")
+runtest.add_argument('--shuffle', action='store_true',
+                     help="""Randomly shuffle test for execution""")
 stdout_lock = Lock()
 
 shared_total = 0
@@ -300,8 +302,9 @@ the pyyaml library which is not installed.""",
     pool = multiprocessing.Pool(processes=args.max_procs, initializer=poolInit, initargs=(shared_total, len_total, lock ))
     # Restore SIGINT handler
     signal.signal(signal.SIGINT, original_sigint_handler)
-    # Shuffle tests
-    random.shuffle(tests)
+    if args.shuffle:
+        # Shuffle tests
+        random.shuffle(tests)
     try:
         procresults = pool.starmap(fork, tests)
     except KeyboardInterrupt:
