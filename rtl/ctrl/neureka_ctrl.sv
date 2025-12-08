@@ -95,6 +95,7 @@ module neureka_ctrl
   hwpe_ctrl_target #(
     .NB_CONTEXT            ( 2                                         ),
     .ID_WIDTH              ( ID                                        ),
+    .ADDR_WIDTH            ( 10                                        ),
     .hwpe_ctrl_regif_in_t  ( neureka_regif__in_t                       ),
     .hwpe_ctrl_regif_out_t ( neureka_regif__out_t                      ),
     .hwpe_ctrl_job_indep_t ( neureka_regif__hwpe_ctrl_job_indep__out_t ),
@@ -159,6 +160,7 @@ module neureka_ctrl
   end
   assign evt_o = job_done_q;
   assign job_done = (state==DONE) & state_change;
+  assign job_status = state == IDLE ? '0 : 1;
   assign busy_o = state!=IDLE;
 
   /* Main FSM driving the NEUREKA */
