@@ -42,7 +42,7 @@ gui      ?= 0
 P_STALL  ?= 0.0
 
 # Setup build object dirs
-VSIM_INI=$(HW_BUILD_DIR)/modelsim.ini
+VSIM_INI=$(HW_BUILD_DIR)/../modelsim.ini
 VSIM_LIBS=$(HW_BUILD_DIR)/work
 VSIM_DESIGNBIN=$(HW_BUILD_DIR)/design.bin
 
