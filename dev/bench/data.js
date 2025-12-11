@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1765490604980,
+  "lastUpdate": 1765490815663,
   "repoUrl": "https://github.com/pulp-platform/neureka",
   "entries": {
     "Execution cycles": [
@@ -8038,6 +8038,100 @@ window.BENCHMARK_DATA = {
           },
           {
             "name": "neureka_basic_tests:t7",
+            "value": 0,
+            "unit": "cycles"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "f.conti@unibo.it",
+            "name": "Francesco Conti",
+            "username": "FrancescoConti"
+          },
+          "committer": {
+            "email": "f.conti@unibo.it",
+            "name": "Francesco Conti",
+            "username": "FrancescoConti"
+          },
+          "distinct": true,
+          "id": "e8a4c0bfb9ec6221d607b127ad4fa4abf3980283",
+          "message": "Update Bender.yml with experimental RDL version of hwpe-ctrl",
+          "timestamp": "2025-12-11T22:56:21+01:00",
+          "tree_id": "35738a9cd91fac48baf07683444351dbdc939123",
+          "url": "https://github.com/pulp-platform/neureka/commit/e8a4c0bfb9ec6221d607b127ad4fa4abf3980283"
+        },
+        "date": 1765490814704,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "neureka_basic_tests:t7",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t10",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t6",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t12",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t3",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t5",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t11",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t13",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t0",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t2",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t9",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t4",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t8",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t1",
             "value": 0,
             "unit": "cycles"
           }
