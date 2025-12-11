@@ -14,8 +14,7 @@
  */
 
  /*
-  * This file contains a sample address map for a HWPE with mandatory registers
-  * (not to be changed) and sample job-independent and job-dependent registers.
+  * This file contains the address map for NEureka, expressed in SystemRDL.
   */
 
 addrmap neureka_regif {
@@ -511,25 +510,25 @@ addrmap neureka_regif {
         scale_ptr         scale_ptr         @ 0x0c;
         scale_shift_ptr   scale_shift_ptr   @ 0x10;
         scale_bias_ptr    scale_bias_ptr    @ 0x14;
-        streamin_ptr      streamin_ptr      @ 0x18;
-        infeat_d0_stride  infeat_d0_str     @ 0x1c;
-        infeat_d1_stride  infeat_d1_str     @ 0x20;
-        infeat_d2_stride  infeat_d2_str     @ 0x24;
-        outfeat_d0_stride outfeat_d0_st     @ 0x28;
-        outfeat_d1_stride outfeat_d1_st     @ 0x2c;
-        outfeat_d2_stride outfeat_d2_st     @ 0x30;
-        weights_d0_stride weights_d0_st     @ 0x34;
-        weights_d1_stride weights_d1_st     @ 0x38;
-        weights_d2_stride weights_d2_st     @ 0x3c;
-        subtile_rem0      subtile_rem0      @ 0x40;
-        subtile_rem1      subtile_rem1      @ 0x44;
-        subtile_rem2      subtile_rem2      @ 0x48;
-        subtile_nb0       subtile_nb0       @ 0x4c;
-        subtile_nb1       subtile_nb1       @ 0x50;
-        padding           padding           @ 0x54;
-        weight_offset     weight_offset     @ 0x58;
-        filter_mask       filter_mask       @ 0x5c;
-        config0           config0           @ 0x60;
+        infeat_d0_stride  infeat_d0_str     @ 0x18;
+        infeat_d1_stride  infeat_d1_str     @ 0x1c;
+        infeat_d2_stride  infeat_d2_str     @ 0x20;
+        outfeat_d0_stride outfeat_d0_st     @ 0x24;
+        outfeat_d1_stride outfeat_d1_st     @ 0x28;
+        outfeat_d2_stride outfeat_d2_st     @ 0x2c;
+        weights_d0_stride weights_d0_st     @ 0x30;
+        weights_d1_stride weights_d1_st     @ 0x34;
+        weights_d2_stride weights_d2_st     @ 0x38;
+        subtile_rem0      subtile_rem0      @ 0x3c;
+        subtile_rem1      subtile_rem1      @ 0x40;
+        subtile_rem2      subtile_rem2      @ 0x44;
+        subtile_nb0       subtile_nb0       @ 0x48;
+        subtile_nb1       subtile_nb1       @ 0x4c;
+        padding           padding           @ 0x50;
+        weight_offset     weight_offset     @ 0x54;
+        filter_mask       filter_mask       @ 0x58;
+        config0           config0           @ 0x5c;
+        streamin_ptr      streamin_ptr      @ 0x60;
     };
 
     // HWPE control address map. Update inside HWPEs

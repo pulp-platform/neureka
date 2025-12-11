@@ -140,7 +140,6 @@ module neureka_regif #(
             logic scale_ptr;
             logic scale_shift_ptr;
             logic scale_bias_ptr;
-            logic streamin_ptr;
             logic infeat_d0_str;
             logic infeat_d1_str;
             logic infeat_d2_str;
@@ -159,6 +158,7 @@ module neureka_regif #(
             logic weight_offset;
             logic filter_mask;
             logic config0;
+            logic streamin_ptr;
         } hwpe_job_dep;
         struct {
             logic reserved;
@@ -190,25 +190,25 @@ module neureka_regif #(
         decoded_reg_strb.hwpe_job_dep.scale_ptr = cpuif_req_masked & (cpuif_addr == 32'h2c);
         decoded_reg_strb.hwpe_job_dep.scale_shift_ptr = cpuif_req_masked & (cpuif_addr == 32'h30);
         decoded_reg_strb.hwpe_job_dep.scale_bias_ptr = cpuif_req_masked & (cpuif_addr == 32'h34);
-        decoded_reg_strb.hwpe_job_dep.streamin_ptr = cpuif_req_masked & (cpuif_addr == 32'h38);
-        decoded_reg_strb.hwpe_job_dep.infeat_d0_str = cpuif_req_masked & (cpuif_addr == 32'h3c);
-        decoded_reg_strb.hwpe_job_dep.infeat_d1_str = cpuif_req_masked & (cpuif_addr == 32'h40);
-        decoded_reg_strb.hwpe_job_dep.infeat_d2_str = cpuif_req_masked & (cpuif_addr == 32'h44);
-        decoded_reg_strb.hwpe_job_dep.outfeat_d0_st = cpuif_req_masked & (cpuif_addr == 32'h48);
-        decoded_reg_strb.hwpe_job_dep.outfeat_d1_st = cpuif_req_masked & (cpuif_addr == 32'h4c);
-        decoded_reg_strb.hwpe_job_dep.outfeat_d2_st = cpuif_req_masked & (cpuif_addr == 32'h50);
-        decoded_reg_strb.hwpe_job_dep.weights_d0_st = cpuif_req_masked & (cpuif_addr == 32'h54);
-        decoded_reg_strb.hwpe_job_dep.weights_d1_st = cpuif_req_masked & (cpuif_addr == 32'h58);
-        decoded_reg_strb.hwpe_job_dep.weights_d2_st = cpuif_req_masked & (cpuif_addr == 32'h5c);
-        decoded_reg_strb.hwpe_job_dep.subtile_rem0 = cpuif_req_masked & (cpuif_addr == 32'h60);
-        decoded_reg_strb.hwpe_job_dep.subtile_rem1 = cpuif_req_masked & (cpuif_addr == 32'h64);
-        decoded_reg_strb.hwpe_job_dep.subtile_rem2 = cpuif_req_masked & (cpuif_addr == 32'h68);
-        decoded_reg_strb.hwpe_job_dep.subtile_nb0 = cpuif_req_masked & (cpuif_addr == 32'h6c);
-        decoded_reg_strb.hwpe_job_dep.subtile_nb1 = cpuif_req_masked & (cpuif_addr == 32'h70);
-        decoded_reg_strb.hwpe_job_dep.padding = cpuif_req_masked & (cpuif_addr == 32'h74);
-        decoded_reg_strb.hwpe_job_dep.weight_offset = cpuif_req_masked & (cpuif_addr == 32'h78);
-        decoded_reg_strb.hwpe_job_dep.filter_mask = cpuif_req_masked & (cpuif_addr == 32'h7c);
-        decoded_reg_strb.hwpe_job_dep.config0 = cpuif_req_masked & (cpuif_addr == 32'h80);
+        decoded_reg_strb.hwpe_job_dep.infeat_d0_str = cpuif_req_masked & (cpuif_addr == 32'h38);
+        decoded_reg_strb.hwpe_job_dep.infeat_d1_str = cpuif_req_masked & (cpuif_addr == 32'h3c);
+        decoded_reg_strb.hwpe_job_dep.infeat_d2_str = cpuif_req_masked & (cpuif_addr == 32'h40);
+        decoded_reg_strb.hwpe_job_dep.outfeat_d0_st = cpuif_req_masked & (cpuif_addr == 32'h44);
+        decoded_reg_strb.hwpe_job_dep.outfeat_d1_st = cpuif_req_masked & (cpuif_addr == 32'h48);
+        decoded_reg_strb.hwpe_job_dep.outfeat_d2_st = cpuif_req_masked & (cpuif_addr == 32'h4c);
+        decoded_reg_strb.hwpe_job_dep.weights_d0_st = cpuif_req_masked & (cpuif_addr == 32'h50);
+        decoded_reg_strb.hwpe_job_dep.weights_d1_st = cpuif_req_masked & (cpuif_addr == 32'h54);
+        decoded_reg_strb.hwpe_job_dep.weights_d2_st = cpuif_req_masked & (cpuif_addr == 32'h58);
+        decoded_reg_strb.hwpe_job_dep.subtile_rem0 = cpuif_req_masked & (cpuif_addr == 32'h5c);
+        decoded_reg_strb.hwpe_job_dep.subtile_rem1 = cpuif_req_masked & (cpuif_addr == 32'h60);
+        decoded_reg_strb.hwpe_job_dep.subtile_rem2 = cpuif_req_masked & (cpuif_addr == 32'h64);
+        decoded_reg_strb.hwpe_job_dep.subtile_nb0 = cpuif_req_masked & (cpuif_addr == 32'h68);
+        decoded_reg_strb.hwpe_job_dep.subtile_nb1 = cpuif_req_masked & (cpuif_addr == 32'h6c);
+        decoded_reg_strb.hwpe_job_dep.padding = cpuif_req_masked & (cpuif_addr == 32'h70);
+        decoded_reg_strb.hwpe_job_dep.weight_offset = cpuif_req_masked & (cpuif_addr == 32'h74);
+        decoded_reg_strb.hwpe_job_dep.filter_mask = cpuif_req_masked & (cpuif_addr == 32'h78);
+        decoded_reg_strb.hwpe_job_dep.config0 = cpuif_req_masked & (cpuif_addr == 32'h7c);
+        decoded_reg_strb.hwpe_job_dep.streamin_ptr = cpuif_req_masked & (cpuif_addr == 32'h80);
         decoded_reg_strb.hwpe_job_indep.reserved = cpuif_req_masked & (cpuif_addr == 32'h84) & !cpuif_req_is_wr;
         decoded_err = (~is_valid_addr | is_invalid_rw) & decoded_req;
     end
@@ -274,12 +274,6 @@ module neureka_regif #(
                     logic load_next;
                 } value;
             } scale_bias_ptr;
-            struct {
-                struct {
-                    logic [31:0] next;
-                    logic load_next;
-                } value;
-            } streamin_ptr;
             struct {
                 struct {
                     logic [31:0] next;
@@ -508,6 +502,12 @@ module neureka_regif #(
                     logic load_next;
                 } reserved;
             } config0;
+            struct {
+                struct {
+                    logic [31:0] next;
+                    logic load_next;
+                } value;
+            } streamin_ptr;
         } hwpe_job_dep;
     } field_combo_t;
     field_combo_t field_combo;
@@ -556,11 +556,6 @@ module neureka_regif #(
                     logic [31:0] value;
                 } value;
             } scale_bias_ptr;
-            struct {
-                struct {
-                    logic [31:0] value;
-                } value;
-            } streamin_ptr;
             struct {
                 struct {
                     logic [31:0] value;
@@ -741,6 +736,11 @@ module neureka_regif #(
                     logic [4:0] value;
                 } reserved;
             } config0;
+            struct {
+                struct {
+                    logic [31:0] value;
+                } value;
+            } streamin_ptr;
         } hwpe_job_dep;
     } field_storage_t;
     field_storage_t field_storage;
@@ -938,29 +938,6 @@ module neureka_regif #(
         end
     end
     assign hwif_out.hwpe_job_dep.scale_bias_ptr.value.value = field_storage.hwpe_job_dep.scale_bias_ptr.value.value;
-    // Field: neureka_regif.hwpe_job_dep.streamin_ptr.value
-    always_comb begin
-        automatic logic [31:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.hwpe_job_dep.streamin_ptr.value.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.hwpe_job_dep.streamin_ptr && decoded_req_is_wr) begin // SW write
-            next_c = (field_storage.hwpe_job_dep.streamin_ptr.value.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
-            load_next_c = '1;
-        end
-        field_combo.hwpe_job_dep.streamin_ptr.value.next = next_c;
-        field_combo.hwpe_job_dep.streamin_ptr.value.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge arst_n) begin
-        if(~arst_n) begin
-            field_storage.hwpe_job_dep.streamin_ptr.value.value <= 32'h0;
-        end else begin
-            if(field_combo.hwpe_job_dep.streamin_ptr.value.load_next) begin
-                field_storage.hwpe_job_dep.streamin_ptr.value.value <= field_combo.hwpe_job_dep.streamin_ptr.value.next;
-            end
-        end
-    end
-    assign hwif_out.hwpe_job_dep.streamin_ptr.value.value = field_storage.hwpe_job_dep.streamin_ptr.value.value;
     // Field: neureka_regif.hwpe_job_dep.infeat_d0_str.value
     always_comb begin
         automatic logic [31:0] next_c;
@@ -2065,6 +2042,29 @@ module neureka_regif #(
         end
     end
     assign hwif_out.hwpe_job_dep.config0.reserved.value = field_storage.hwpe_job_dep.config0.reserved.value;
+    // Field: neureka_regif.hwpe_job_dep.streamin_ptr.value
+    always_comb begin
+        automatic logic [31:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.hwpe_job_dep.streamin_ptr.value.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.hwpe_job_dep.streamin_ptr && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.hwpe_job_dep.streamin_ptr.value.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+            load_next_c = '1;
+        end
+        field_combo.hwpe_job_dep.streamin_ptr.value.next = next_c;
+        field_combo.hwpe_job_dep.streamin_ptr.value.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge arst_n) begin
+        if(~arst_n) begin
+            field_storage.hwpe_job_dep.streamin_ptr.value.value <= 32'h0;
+        end else begin
+            if(field_combo.hwpe_job_dep.streamin_ptr.value.load_next) begin
+                field_storage.hwpe_job_dep.streamin_ptr.value.value <= field_combo.hwpe_job_dep.streamin_ptr.value.next;
+            end
+        end
+    end
+    assign hwif_out.hwpe_job_dep.streamin_ptr.value.value = field_storage.hwpe_job_dep.streamin_ptr.value.value;
     assign hwif_out.hwpe_job_indep.reserved.reserved.value = 32'h0;
 
     //--------------------------------------------------------------------------
@@ -2101,55 +2101,55 @@ module neureka_regif #(
     assign readback_array[11][31:0] = (decoded_reg_strb.hwpe_job_dep.scale_ptr && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.scale_ptr.value.value : '0;
     assign readback_array[12][31:0] = (decoded_reg_strb.hwpe_job_dep.scale_shift_ptr && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.scale_shift_ptr.value.value : '0;
     assign readback_array[13][31:0] = (decoded_reg_strb.hwpe_job_dep.scale_bias_ptr && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.scale_bias_ptr.value.value : '0;
-    assign readback_array[14][31:0] = (decoded_reg_strb.hwpe_job_dep.streamin_ptr && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.streamin_ptr.value.value : '0;
-    assign readback_array[15][31:0] = (decoded_reg_strb.hwpe_job_dep.infeat_d0_str && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.infeat_d0_str.value.value : '0;
-    assign readback_array[16][31:0] = (decoded_reg_strb.hwpe_job_dep.infeat_d1_str && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.infeat_d1_str.value.value : '0;
-    assign readback_array[17][31:0] = (decoded_reg_strb.hwpe_job_dep.infeat_d2_str && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.infeat_d2_str.value.value : '0;
-    assign readback_array[18][31:0] = (decoded_reg_strb.hwpe_job_dep.outfeat_d0_st && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.outfeat_d0_st.value.value : '0;
-    assign readback_array[19][31:0] = (decoded_reg_strb.hwpe_job_dep.outfeat_d1_st && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.outfeat_d1_st.value.value : '0;
-    assign readback_array[20][31:0] = (decoded_reg_strb.hwpe_job_dep.outfeat_d2_st && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.outfeat_d2_st.value.value : '0;
-    assign readback_array[21][31:0] = (decoded_reg_strb.hwpe_job_dep.weights_d0_st && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.weights_d0_st.value.value : '0;
-    assign readback_array[22][31:0] = (decoded_reg_strb.hwpe_job_dep.weights_d1_st && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.weights_d1_st.value.value : '0;
-    assign readback_array[23][31:0] = (decoded_reg_strb.hwpe_job_dep.weights_d2_st && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.weights_d2_st.value.value : '0;
-    assign readback_array[24][15:0] = (decoded_reg_strb.hwpe_job_dep.subtile_rem0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_rem0.ki.value : '0;
-    assign readback_array[24][31:16] = (decoded_reg_strb.hwpe_job_dep.subtile_rem0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_rem0.ko.value : '0;
-    assign readback_array[25][15:0] = (decoded_reg_strb.hwpe_job_dep.subtile_rem1 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_rem1.wo.value : '0;
-    assign readback_array[25][31:16] = (decoded_reg_strb.hwpe_job_dep.subtile_rem1 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_rem1.ho.value : '0;
-    assign readback_array[26][15:0] = (decoded_reg_strb.hwpe_job_dep.subtile_rem2 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_rem2.wi.value : '0;
-    assign readback_array[26][31:16] = (decoded_reg_strb.hwpe_job_dep.subtile_rem2 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_rem2.hi.value : '0;
-    assign readback_array[27][15:0] = (decoded_reg_strb.hwpe_job_dep.subtile_nb0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_nb0.ki.value : '0;
-    assign readback_array[27][31:16] = (decoded_reg_strb.hwpe_job_dep.subtile_nb0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_nb0.ko.value : '0;
-    assign readback_array[28][15:0] = (decoded_reg_strb.hwpe_job_dep.subtile_nb1 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_nb1.wo.value : '0;
-    assign readback_array[28][31:16] = (decoded_reg_strb.hwpe_job_dep.subtile_nb1 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_nb1.ho.value : '0;
-    assign readback_array[29][15:0] = (decoded_reg_strb.hwpe_job_dep.padding && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.padding.value.value : '0;
-    assign readback_array[29][19:16] = (decoded_reg_strb.hwpe_job_dep.padding && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.padding.left.value : '0;
-    assign readback_array[29][23:20] = (decoded_reg_strb.hwpe_job_dep.padding && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.padding.bottom.value : '0;
-    assign readback_array[29][27:24] = (decoded_reg_strb.hwpe_job_dep.padding && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.padding.right.value : '0;
-    assign readback_array[29][31:28] = (decoded_reg_strb.hwpe_job_dep.padding && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.padding.top.value : '0;
-    assign readback_array[30][31:0] = (decoded_reg_strb.hwpe_job_dep.weight_offset && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.weight_offset.value.value : '0;
-    assign readback_array[31][7:0] = (decoded_reg_strb.hwpe_job_dep.filter_mask && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.filter_mask.left.value : '0;
-    assign readback_array[31][15:8] = (decoded_reg_strb.hwpe_job_dep.filter_mask && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.filter_mask.bottom.value : '0;
-    assign readback_array[31][23:16] = (decoded_reg_strb.hwpe_job_dep.filter_mask && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.filter_mask.right.value : '0;
-    assign readback_array[31][31:24] = (decoded_reg_strb.hwpe_job_dep.filter_mask && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.filter_mask.top.value : '0;
-    assign readback_array[32][2:0] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.wbits.value : '0;
-    assign readback_array[32][3:3] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.reserved2.value : '0;
-    assign readback_array[32][4:4] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.streamout_quant.value : '0;
-    assign readback_array[32][6:5] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.filter_mode.value : '0;
-    assign readback_array[32][7:7] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.mode_linear.value : '0;
-    assign readback_array[32][8:8] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.mode_strided.value : '0;
-    assign readback_array[32][9:9] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.wmem.value : '0;
-    assign readback_array[32][10:10] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.prefetch.value : '0;
-    assign readback_array[32][11:11] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.rounding.value : '0;
-    assign readback_array[32][13:12] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.norm_mode.value : '0;
-    assign readback_array[32][14:14] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.streamin.value : '0;
-    assign readback_array[32][15:15] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.streamin_mode.value : '0;
-    assign readback_array[32][20:16] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.shift_reqnt.value : '0;
-    assign readback_array[32][22:21] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.quant_mode.value : '0;
-    assign readback_array[32][23:23] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.relu.value : '0;
-    assign readback_array[32][24:24] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.norm_option_shift.value : '0;
-    assign readback_array[32][25:25] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.norm_option_bias.value : '0;
-    assign readback_array[32][26:26] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.feat_broadcast.value : '0;
-    assign readback_array[32][31:27] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.reserved.value : '0;
+    assign readback_array[14][31:0] = (decoded_reg_strb.hwpe_job_dep.infeat_d0_str && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.infeat_d0_str.value.value : '0;
+    assign readback_array[15][31:0] = (decoded_reg_strb.hwpe_job_dep.infeat_d1_str && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.infeat_d1_str.value.value : '0;
+    assign readback_array[16][31:0] = (decoded_reg_strb.hwpe_job_dep.infeat_d2_str && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.infeat_d2_str.value.value : '0;
+    assign readback_array[17][31:0] = (decoded_reg_strb.hwpe_job_dep.outfeat_d0_st && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.outfeat_d0_st.value.value : '0;
+    assign readback_array[18][31:0] = (decoded_reg_strb.hwpe_job_dep.outfeat_d1_st && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.outfeat_d1_st.value.value : '0;
+    assign readback_array[19][31:0] = (decoded_reg_strb.hwpe_job_dep.outfeat_d2_st && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.outfeat_d2_st.value.value : '0;
+    assign readback_array[20][31:0] = (decoded_reg_strb.hwpe_job_dep.weights_d0_st && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.weights_d0_st.value.value : '0;
+    assign readback_array[21][31:0] = (decoded_reg_strb.hwpe_job_dep.weights_d1_st && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.weights_d1_st.value.value : '0;
+    assign readback_array[22][31:0] = (decoded_reg_strb.hwpe_job_dep.weights_d2_st && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.weights_d2_st.value.value : '0;
+    assign readback_array[23][15:0] = (decoded_reg_strb.hwpe_job_dep.subtile_rem0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_rem0.ki.value : '0;
+    assign readback_array[23][31:16] = (decoded_reg_strb.hwpe_job_dep.subtile_rem0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_rem0.ko.value : '0;
+    assign readback_array[24][15:0] = (decoded_reg_strb.hwpe_job_dep.subtile_rem1 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_rem1.wo.value : '0;
+    assign readback_array[24][31:16] = (decoded_reg_strb.hwpe_job_dep.subtile_rem1 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_rem1.ho.value : '0;
+    assign readback_array[25][15:0] = (decoded_reg_strb.hwpe_job_dep.subtile_rem2 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_rem2.wi.value : '0;
+    assign readback_array[25][31:16] = (decoded_reg_strb.hwpe_job_dep.subtile_rem2 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_rem2.hi.value : '0;
+    assign readback_array[26][15:0] = (decoded_reg_strb.hwpe_job_dep.subtile_nb0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_nb0.ki.value : '0;
+    assign readback_array[26][31:16] = (decoded_reg_strb.hwpe_job_dep.subtile_nb0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_nb0.ko.value : '0;
+    assign readback_array[27][15:0] = (decoded_reg_strb.hwpe_job_dep.subtile_nb1 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_nb1.wo.value : '0;
+    assign readback_array[27][31:16] = (decoded_reg_strb.hwpe_job_dep.subtile_nb1 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.subtile_nb1.ho.value : '0;
+    assign readback_array[28][15:0] = (decoded_reg_strb.hwpe_job_dep.padding && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.padding.value.value : '0;
+    assign readback_array[28][19:16] = (decoded_reg_strb.hwpe_job_dep.padding && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.padding.left.value : '0;
+    assign readback_array[28][23:20] = (decoded_reg_strb.hwpe_job_dep.padding && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.padding.bottom.value : '0;
+    assign readback_array[28][27:24] = (decoded_reg_strb.hwpe_job_dep.padding && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.padding.right.value : '0;
+    assign readback_array[28][31:28] = (decoded_reg_strb.hwpe_job_dep.padding && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.padding.top.value : '0;
+    assign readback_array[29][31:0] = (decoded_reg_strb.hwpe_job_dep.weight_offset && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.weight_offset.value.value : '0;
+    assign readback_array[30][7:0] = (decoded_reg_strb.hwpe_job_dep.filter_mask && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.filter_mask.left.value : '0;
+    assign readback_array[30][15:8] = (decoded_reg_strb.hwpe_job_dep.filter_mask && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.filter_mask.bottom.value : '0;
+    assign readback_array[30][23:16] = (decoded_reg_strb.hwpe_job_dep.filter_mask && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.filter_mask.right.value : '0;
+    assign readback_array[30][31:24] = (decoded_reg_strb.hwpe_job_dep.filter_mask && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.filter_mask.top.value : '0;
+    assign readback_array[31][2:0] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.wbits.value : '0;
+    assign readback_array[31][3:3] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.reserved2.value : '0;
+    assign readback_array[31][4:4] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.streamout_quant.value : '0;
+    assign readback_array[31][6:5] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.filter_mode.value : '0;
+    assign readback_array[31][7:7] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.mode_linear.value : '0;
+    assign readback_array[31][8:8] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.mode_strided.value : '0;
+    assign readback_array[31][9:9] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.wmem.value : '0;
+    assign readback_array[31][10:10] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.prefetch.value : '0;
+    assign readback_array[31][11:11] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.rounding.value : '0;
+    assign readback_array[31][13:12] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.norm_mode.value : '0;
+    assign readback_array[31][14:14] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.streamin.value : '0;
+    assign readback_array[31][15:15] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.streamin_mode.value : '0;
+    assign readback_array[31][20:16] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.shift_reqnt.value : '0;
+    assign readback_array[31][22:21] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.quant_mode.value : '0;
+    assign readback_array[31][23:23] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.relu.value : '0;
+    assign readback_array[31][24:24] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.norm_option_shift.value : '0;
+    assign readback_array[31][25:25] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.norm_option_bias.value : '0;
+    assign readback_array[31][26:26] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.feat_broadcast.value : '0;
+    assign readback_array[31][31:27] = (decoded_reg_strb.hwpe_job_dep.config0 && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.config0.reserved.value : '0;
+    assign readback_array[32][31:0] = (decoded_reg_strb.hwpe_job_dep.streamin_ptr && !decoded_req_is_wr) ? field_storage.hwpe_job_dep.streamin_ptr.value.value : '0;
     assign readback_array[33][31:0] = (decoded_reg_strb.hwpe_job_indep.reserved && !decoded_req_is_wr) ? 32'h0 : '0;
 
     // Reduce the array

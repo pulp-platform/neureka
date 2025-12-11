@@ -153,14 +153,6 @@ package neureka_regif_pkg;
 
     typedef struct packed {
         logic [31:0] value;
-    } neureka_regif__streamin_ptr__value__out_t;
-
-    typedef struct packed {
-        neureka_regif__streamin_ptr__value__out_t value;
-    } neureka_regif__streamin_ptr__out_t;
-
-    typedef struct packed {
-        logic [31:0] value;
     } neureka_regif__infeat_d0_stride__value__out_t;
 
     typedef struct packed {
@@ -454,13 +446,20 @@ package neureka_regif_pkg;
     } neureka_regif__config0__out_t;
 
     typedef struct packed {
+        logic [31:0] value;
+    } neureka_regif__streamin_ptr__value__out_t;
+
+    typedef struct packed {
+        neureka_regif__streamin_ptr__value__out_t value;
+    } neureka_regif__streamin_ptr__out_t;
+
+    typedef struct packed {
         neureka_regif__weights_ptr__out_t weights_ptr;
         neureka_regif__infeat_ptr__out_t infeat_ptr;
         neureka_regif__outfeat_ptr__out_t outfeat_ptr;
         neureka_regif__scale_ptr__out_t scale_ptr;
         neureka_regif__scale_shift_ptr__out_t scale_shift_ptr;
         neureka_regif__scale_bias_ptr__out_t scale_bias_ptr;
-        neureka_regif__streamin_ptr__out_t streamin_ptr;
         neureka_regif__infeat_d0_stride__out_t infeat_d0_str;
         neureka_regif__infeat_d1_stride__out_t infeat_d1_str;
         neureka_regif__infeat_d2_stride__out_t infeat_d2_str;
@@ -479,6 +478,7 @@ package neureka_regif_pkg;
         neureka_regif__weight_offset__out_t weight_offset;
         neureka_regif__filter_mask__out_t filter_mask;
         neureka_regif__config0__out_t config0;
+        neureka_regif__streamin_ptr__out_t streamin_ptr;
     } neureka_regif__hwpe_ctrl_job_dep__out_t;
 
     typedef struct packed {
