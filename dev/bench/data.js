@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1765452728685,
+  "lastUpdate": 1765490604980,
   "repoUrl": "https://github.com/pulp-platform/neureka",
   "entries": {
     "Execution cycles": [
@@ -7944,6 +7944,100 @@ window.BENCHMARK_DATA = {
           },
           {
             "name": "neureka_basic_tests:t12",
+            "value": 0,
+            "unit": "cycles"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "f.conti@unibo.it",
+            "name": "Francesco Conti",
+            "username": "FrancescoConti"
+          },
+          "committer": {
+            "email": "f.conti@unibo.it",
+            "name": "Francesco Conti",
+            "username": "FrancescoConti"
+          },
+          "distinct": true,
+          "id": "4bf69c89e7ed1f130e285dbff0f3dc4617a65f08",
+          "message": "Fix register memory map. Now it works at least on 1 test!",
+          "timestamp": "2025-12-11T22:53:06+01:00",
+          "tree_id": "c0fda15d289fe522c75b5e16d0ae3c392ae24317",
+          "url": "https://github.com/pulp-platform/neureka/commit/4bf69c89e7ed1f130e285dbff0f3dc4617a65f08"
+        },
+        "date": 1765490604676,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "neureka_basic_tests:t13",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t10",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t8",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t5",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t12",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t2",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t11",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t6",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t9",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t4",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t0",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t1",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t3",
+            "value": 0,
+            "unit": "cycles"
+          },
+          {
+            "name": "neureka_basic_tests:t7",
             "value": 0,
             "unit": "cycles"
           }
