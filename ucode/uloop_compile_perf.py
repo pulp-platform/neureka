@@ -21,14 +21,9 @@
 from __future__ import print_function
 from uloop_common import *
 
-uloops_code = ("code_D0P.yml", "code_D1P.yml")
+loops_ops,code,mnem = uloop_load("code_perf.yml")
 
-for item in uloops_code:
-    print(item)
-    loops_ops,code,mnem = uloop_load(item)
-
-    bytecode = uloop_bytecode(code, loops_ops)
-    print (bytecode['code'].length)
-    print ("uloop bytecode: %d'h%s" % (bytecode['code'].length, str(bytecode['code'].hex)))
-    print ("uloop loops:    %d'b%s" % (bytecode['loops'].length, str(bytecode['loops'].bin)))
-    print()
+bytecode = uloop_bytecode(code, loops_ops)
+print (bytecode['code'].length)
+print ("uloop bytecode: %d'h%s" % (bytecode['code'].length, str(bytecode['code'].hex)))
+print ("uloop loops:    %d'b%s" % (bytecode['loops'].length, str(bytecode['loops'].bin)))

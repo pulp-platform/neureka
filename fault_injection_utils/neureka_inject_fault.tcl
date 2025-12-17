@@ -4,6 +4,7 @@
 
 transcript quietly
 
+# General Settings
 set verbosity            2
 set log_injections       1
 # Easy way to generate a variable seed
@@ -11,13 +12,13 @@ set log_injections       1
 # Default value
 set seed                 12345
 set print_statistics     1
-set script_base_path [file join /scratch2/lghionda/neureka fault_injection_sim scripts]
+set script_base_path [file join ${ROOT} fault_injection_sim scripts]
 append script_base_path /
 set use_netlist    0
 set netlist_from_file    0
 
-set inject_start_time 2139000
-set inject_stop_time  4668000
+set inject_start_time 2250000
+set inject_stop_time  2340000
 set injection_clock "tb_neureka/i_dut/clk_i"
 set injection_clock_trigger 0
 set fault_period 10
@@ -42,7 +43,7 @@ set output_netlist []
 set next_state_netlist []
 set assertion_disable_list []
 
-set utils_base_path  [file join /scratch2/lghionda/neureka fault_injection_utils]
+set utils_base_path  [file join ${ROOT} fault_injection_utils]
 source [file join $utils_base_path neureka_extract_nets.tcl]
 
 # for {set idx 0} {$idx < 12} {incr idx} {
@@ -53,6 +54,7 @@ source [file join $utils_base_path neureka_extract_nets.tcl]
 # set inject_register_netlist [list {*}$inject_register_netlist {*}[get_neureka_registers]]
 # set inject_signals_netlist [list {*}$inject_signals_netlist {*}[get_neureka_signals]]
 
+# By default fault_injection_test_signals provides input buffer signal as candidates
 set inject_register_netlist [list {*}$inject_register_netlist {*}[fault_injection_test_signals]]
 
 source [file join $script_base_path inject_fault.tcl]

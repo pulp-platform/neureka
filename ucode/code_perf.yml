@@ -42,7 +42,7 @@ mnemonics:
     scale_kom_iter:         20
     zero:                   21
 
-# D0 PERFORMANCE code
+# PERFORMANCE code
 code:
   k_in_major:
     - { op : add,  a: base_addr_W, b: weights_kim_iter  }

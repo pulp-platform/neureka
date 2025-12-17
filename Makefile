@@ -352,25 +352,27 @@ ifeq ($(vulnerability),0)
 else
 	cd $(BUILD_DIR); \
 	$(QUESTA) vsim $(vsim_flags) -c vopt_tb \
-	-do "source $(VULNERABILITY_ANALYSIS_SCRIPT)"  \
+	-do "set ROOT $(ROOT); source $(VULNERABILITY_ANALYSIS_SCRIPT)"  \
 	-do "run -a" \
 	$(VSIM_PARAMS)
 endif
 else
 	cd $(BUILD_DIR); $(QUESTA) vsim  $(vsim_flags) -c vopt_tb \
-	-do "source $(FAULT_INJECTION_SCRIPT)"  \
+	-do "set ROOT $(ROOT); source $(FAULT_INJECTION_SCRIPT)"  \
 	-do "run -a" \
 	$(VSIM_PARAMS)
 endif
 else
 ifeq ($(fault_inject), 1)
 	cd $(BUILD_DIR); $(QUESTA) vsim $(vsim_flags) vopt_tb \
-	-do "source $(FAULT_INJECTION_SCRIPT)"  \
-	-do "add log -r /$(TESTBENCH)/*"    \
+	-do "set ROOT $(ROOT); source $(FAULT_INJECTION_SCRIPT)"  \
+	-do "add log -r /$(TESTBENCH)/i_dut/*"    \
 	-do "run -a" \
 	$(VSIM_PARAMS)
 else
 	cd $(BUILD_DIR); $(QUESTA) vsim $(vsim_flags) vopt_tb \
+	-do "add log -r /$(TESTBENCH)/i_dut/*"    \
+	-do "run -a" \
 	$(VSIM_PARAMS)
 endif
 endif

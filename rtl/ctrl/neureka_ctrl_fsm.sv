@@ -324,7 +324,7 @@ module neureka_ctrl_fsm
     end 
   end
 
-  logic not_init_loop, init_set, init_set_d, init_set_q; // TODO Take another name
+  logic init_set, init_set_d, init_set_q;
   logic degenerate_case;
   logic switch_range_d, switch_range_q;
   logic [31:0] uloop_0_range_j_major, uloop_1_range_j_major;
@@ -375,15 +375,15 @@ module neureka_ctrl_fsm
       code_uloop_1.loops    = config_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? ULOOP_LOOPS_DEPTHWISE  : ULOOP_LOOPS_NORMAL_LCS;
       code_uloop_1.range    = code_uloop_0.range;
     end else begin
-      code_uloop_0.code     = config_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? ULOOP_CODE_DEPTHWISE   : ULOOP_CODE_NORMAL_PERF_D0;
-      code_uloop_0.loops    = config_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? ULOOP_LOOPS_DEPTHWISE  : ULOOP_LOOPS_NORMAL_PERF_D0;
+      code_uloop_0.code     = config_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? ULOOP_CODE_DEPTHWISE   : ULOOP_CODE_NORMAL_PERF;
+      code_uloop_0.loops    = config_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? ULOOP_LOOPS_DEPTHWISE  : ULOOP_LOOPS_NORMAL_PERF;
       code_uloop_0.range[0] = config_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? config_i.subtile_nb_wo : config_i.subtile_nb_ki;
       code_uloop_0.range[1] = config_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? config_i.subtile_nb_ho : config_i.subtile_nb_wo >> 1;
       code_uloop_0.range[2] = config_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? config_i.subtile_nb_ko : config_i.subtile_nb_ho;
       code_uloop_0.range[3] = config_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? 1                      : config_i.subtile_nb_ko;
       code_uloop_1 = code_uloop_0;
-      code_uloop_1.code     = config_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? ULOOP_CODE_DEPTHWISE   : ULOOP_CODE_NORMAL_PERF_D0;
-      code_uloop_1.loops    = config_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? ULOOP_LOOPS_DEPTHWISE  : ULOOP_LOOPS_NORMAL_PERF_D0;
+      code_uloop_1.code     = config_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? ULOOP_CODE_DEPTHWISE   : ULOOP_CODE_NORMAL_PERF;
+      code_uloop_1.loops    = config_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? ULOOP_LOOPS_DEPTHWISE  : ULOOP_LOOPS_NORMAL_PERF;
       // code_uloop_1.range    = code_uloop_0.range;
       if (config_i.subtile_nb_wo[0] == 1) begin
         code_uloop_0.range[1] = config_i.filter_mode == NEUREKA_FILTER_MODE_3X3_DW ? config_i.subtile_nb_ho : uloop_0_range_j_major;
@@ -705,14 +705,6 @@ module neureka_ctrl_fsm
       init_set_q <= 1'b0;
     else if(~config_i.resilience_mode)
       init_set_q <= init_set_d;
-  end
-
-  always_ff @(posedge clk_i or negedge rst_ni)
-  begin
-    if(~rst_ni)
-      not_init_loop  <= 1'b0;
-    else if((flags_uloop_1.idx[0]==1))
-      not_init_loop <= 1'b1;
   end
 
   /* FSM output binding */
