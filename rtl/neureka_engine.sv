@@ -30,8 +30,9 @@ module neureka_engine #(
   parameter int unsigned TP_OUT         = NEUREKA_TP_OUT,
   parameter int unsigned PE_H           = NEUREKA_PE_H_DEFAULT,
   parameter int unsigned PE_W           = NEUREKA_PE_W_DEFAULT,
-  parameter bit          FAULT_TOLERANCE = 1,
-  parameter int unsigned N_COPIES       = FAULT_TOLERANCE ? 2 : 1
+  parameter bit          HMR            = 1,
+  parameter int unsigned HMR_DELAY      = 1, // cycles
+  parameter int unsigned N_COPIES       = HMR ? 2 : 1
 ) (
   // global signals
   input  logic                   clk_i,
@@ -310,10 +311,7 @@ module neureka_engine #(
   localparam int INFEAT_BUFFER_SIZE_H  = PE_H+2; // Input Feature buffer size across height.
   localparam int INFEAT_BUFFER_SIZE_W  = PE_W+2; // Input Feature buffer size across width
   localparam int INFEAT_BUFFER_SIZE_HW = INFEAT_BUFFER_SIZE_H*INFEAT_BUFFER_SIZE_W; // Input Feature buffer size
-  if (FAULT_TOLERANCE) begin : ft_datapath_gen
-
-    logic data_gating_en;
-    assign data_gating_en  = ctrl_i.resilience_mode & ctrl_i.enable_outputcheck;
+  if (HMR) begin : ft_datapath_gen
 
     hwpe_stream_intf_stream #(
       .DATA_WIDTH ( NEUREKA_MEM_BANDWIDTH )
@@ -518,20 +516,24 @@ module neureka_engine #(
         assign local_clear  = clear_i;
         assign local_ctrl   = ctrl_i;
       end else begin
+        localparam int unsigned CTRL_SHIFT_REG_WIDTH = $bits(ctrl_engine_t) + 2;
+
         ctrl_engine_t delayed_ctrl_q;
         logic         delayed_enable_q;
         logic         delayed_clear_q;
-        always_ff @(posedge clk_i or negedge rst_ni) begin
-          if (!rst_ni) begin
-            delayed_ctrl_q   <= '0;
-            delayed_enable_q <= '0;
-            delayed_clear_q  <= '0;
-          end else begin
-            delayed_ctrl_q   <= ctrl_i;
-            delayed_enable_q <= enable_i;
-            delayed_clear_q  <= clear_i;
-          end
-        end
+
+        shift_reg_gated #(
+          .Depth (HMR_DELAY),
+          .dtype (logic [CTRL_SHIFT_REG_WIDTH-1:0])
+        ) i_ctrl_shift_reg (
+          .clk_i,
+          .rst_ni,
+          .valid_i (1'b1), // TODO: gate the register
+          .data_i  ({ctrl_i, enable_i, clear_i}),
+          .valid_o (),
+          .data_o  ({delayed_ctrl_q, delayed_enable_q, delayed_clear_q})
+        );
+
         assign local_enable = delay_enable ? delayed_enable_q : enable_i;
         assign local_clear  = delay_enable ? delayed_clear_q  : clear_i;
         assign local_ctrl   = delay_enable ? delayed_ctrl_q   : ctrl_i;
@@ -673,7 +675,39 @@ module neureka_engine #(
       end // accumulator_gen
     end // redundancy_gen
 
-    for(genvar ii=0; ii<NR_PE; ii++) begin
+    localparam int unsigned FLAGS_SHIFT_REG_WIDTH = $bits(flags_double_infeat_buffer_t) +
+                                                    $bits(flags_aq_t) * NR_PE;
+
+    flags_double_infeat_buffer_t flags_double_infeat_buffer_q;
+    flags_aq_t   [NR_PE-1:0]     flags_accumulator_q;
+    // flags_binconv_array_t        flags_binconv_array_q;
+
+    shift_reg_gated #(
+      .Depth (HMR_DELAY),
+      .dtype (logic [FLAGS_SHIFT_REG_WIDTH-1:0])
+    ) i_flags_shift_reg (
+      .clk_i,
+      .rst_ni,
+      .valid_i (ctrl_i.resilience_mode & ctrl_i.enable_outputcheck),
+      .data_i  ({flags[0].flags_double_infeat_buffer, flags[0].flags_accumulator[NR_PE-1:0]}),
+      .valid_o (),
+      .data_o  ({flags_double_infeat_buffer_q, flags_accumulator_q})
+    );
+
+    logic [NR_PE-1:0][NEUREKA_MEM_BANDWIDTH-1:0] outdata_0_q, outdata_0_d;
+    shift_reg_gated #(
+      .Depth (HMR_DELAY),
+      .dtype (logic [NR_PE-1:0][NEUREKA_MEM_BANDWIDTH-1:0])
+    ) i_outdata_shift_reg (
+      .clk_i,
+      .rst_ni,
+      .valid_i (ctrl_i.resilience_mode & ctrl_i.enable_outputcheck),
+      .data_i  (outdata_0_d),
+      .valid_o (data_gating_q),
+      .data_o  (outdata_0_q)
+    );
+
+    for(genvar ii=0; ii<NR_PE; ii++) begin : gen_out_cols_mux_and_check
 
       for(genvar jj=0; jj<N_COPIES; jj++) begin
         always_comb
@@ -718,33 +752,40 @@ module neureka_engine #(
 
       // Output Checker
       // It checks for mismatches at PE level
-      logic [NEUREKA_MEM_BANDWIDTH-1:0] gated_outdata_0, gated_outdata_1, outdata_0_q;
+      logic [NEUREKA_MEM_BANDWIDTH-1:0] gated_outdata_0, gated_outdata_1;
 
-      always_ff @(posedge clk_i or negedge rst_ni) begin
-        if (!rst_ni) outdata_0_q <= '0;
-        else         outdata_0_q <= out_cols[ii].data;
-      end
+      assign outdata_0_d[ii] = out_cols[ii].data;
 
       always_comb begin : checker_gen
-        gated_outdata_0 = data_gating_en ? outdata_0_q             : '0;
-        gated_outdata_1 = data_gating_en ? out_cols[NR_PE+ii].data : '0;
-        data_fault_d[ii] = data_gating_en ? (gated_outdata_0 != gated_outdata_1) : '0;
+        gated_outdata_0  = data_gating_q ? outdata_0_q[ii]         : '0;
+        gated_outdata_1  = data_gating_q ? out_cols[NR_PE+ii].data : '0;
+        data_fault_d[ii] = data_gating_q ? (gated_outdata_0 != gated_outdata_1) : '0;
       end
     end
+
+    logic flags_fault_d, flags_fault_q;
+
+    assign flags_fault_d = |{
+      // flags[1].flags_binconv_array != flags_binconv_array_q,
+      flags[1].flags_double_infeat_buffer != flags_double_infeat_buffer_q,
+      flags[1].flags_accumulator[NR_PE-1:0] != flags_accumulator_q
+    };
 
     always_ff @(posedge clk_i or negedge rst_ni) begin
         if (~rst_ni) begin
             data_fault_q <= '0;
             flags_o.outputcheck_valid <= 1'b0;
-        end else if (data_gating_en) begin
+            flags_fault_q <= 1'b0;
+        end else if (data_gating_q) begin
             data_fault_q <= data_fault_d;
             flags_o.outputcheck_valid <= 1'b1;
+            flags_fault_q <= flags_fault_d;
         end else begin
             flags_o.outputcheck_valid <= 1'b0;
         end
     end
 
-    assign flags_o.mismatch_detected = |(data_fault_q);
+    assign flags_o.mismatch_detected = |{data_fault_q, flags_fault_q};
     always_comb
     begin
     if (flags_o.mismatch_detected)

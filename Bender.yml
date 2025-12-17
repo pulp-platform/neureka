@@ -10,6 +10,7 @@ dependencies:
   hwpe-ctrl:    { git: "https://github.com/LuigiGhionda/hwpe-ctrl.git", rev: "5498496" }
   register_interface: { git: "https://github.com/pulp-platform/register_interface.git", version: 0.3.1 }
   zeroriscy:    { git: "https://github.com/yvantor/ibex.git", rev: "bender", target: "neureka_standalone" } # for verification only
+  common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.39.0 }
 
 sources:
   - rtl/neureka_package.sv

@@ -213,7 +213,7 @@ module neureka_ctrl_fsm
         end
         else if(~config_i.norm_option_bias & accumulators_state == AQ_NORMQUANT_DONE) begin
           if (config_i.resilience_mode) begin
-            state_d = DMR_DELAY_WAIT;
+            state_d = OUTCHECK;
             state_change_d = 1'b1;
           end else
             state_d = STREAMOUT;
@@ -224,17 +224,12 @@ module neureka_ctrl_fsm
       NORMQUANT_BIAS: begin
         if(accumulators_state == AQ_NORMQUANT_DONE) begin
           if (config_i.resilience_mode) begin
-            state_d = DMR_DELAY_WAIT;
+            state_d = OUTCHECK;
             state_change_d = 1'b1;
           end else
             state_d = STREAMOUT;
             state_change_d = 1'b1;
         end
-      end
-
-      DMR_DELAY_WAIT: begin
-        state_d = OUTCHECK;
-        state_change_d = 1'b1;
       end
 
       OUTCHECK: begin
@@ -295,12 +290,12 @@ module neureka_ctrl_fsm
               state_d = WEIGHTOFFS;
             end else begin
               state_d = LOAD;
-            end 
+            end
             state_change_d = 1'b1;
           end
           else if(~config_i.streamout_quant) begin
             if (config_i.resilience_mode) begin
-              state_d = DMR_DELAY_WAIT;
+              state_d = OUTCHECK;
               state_change_d = 1'b1;
             end else
               state_d = STREAMOUT;
