@@ -11,6 +11,7 @@ dependencies:
   register_interface: { git: "https://github.com/pulp-platform/register_interface.git", version: 0.3.1 }
   zeroriscy:    { git: "https://github.com/yvantor/ibex.git", rev: "bender", target: "neureka_standalone" } # for verification only
   common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.39.0 }
+  redundancy_cells: { git: "https://github.com/pulp-platform/redundancy_cells.git", rev: "3c7c57e" }
 
 sources:
   - rtl/neureka_package.sv

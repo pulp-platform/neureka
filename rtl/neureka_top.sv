@@ -56,6 +56,9 @@ module neureka_top
   hwpe_ctrl_intf_periph.slave                   periph
 );
 
+  localparam bit ENGINE_HMR = 1'b1;
+  localparam bit CTRL_TMR   = 1'b1;
+
   // signals
   logic enable;
   logic clear;
@@ -112,8 +115,9 @@ module neureka_top
   ) conv   (.clk(clk_i));
 
   neureka_engine #(
-    .PE_H ( PE_H ),
-    .PE_W ( PE_W )
+    .PE_H       ( PE_H ),
+    .PE_W       ( PE_W ),
+    .HMR        ( ENGINE_HMR  )
   ) i_engine (
     .clk_i         ( clk_i        ),
     .rst_ni        ( rst_ni       ),
@@ -149,26 +153,113 @@ module neureka_top
     .flags_o     ( streamer_flags )
   );
 
+  localparam int unsigned N_COPIES = CTRL_TMR ? 3 : 1;
+
+  typedef struct packed {
+    logic                                  busy;
+    logic [N_CORES-1:0][REGFILE_N_EVT-1:0] evt;
+    logic                                  clear;
+    ctrl_streamer_t                        streamer_ctrl;
+    ctrl_engine_t                          engine_ctrl;
+    logic                                  periph_gnt;
+    logic [31:0]                           periph_r_data;
+    logic                                  periph_r_valid;
+    logic [ID-1:0]                         periph_r_id;
+  } ctrl_out_t;
+
+  ctrl_out_t [N_COPIES-1:0] ctrl_out;
+  ctrl_out_t                ctrl_voted;
+
+  hwpe_ctrl_intf_periph #(.ID_WIDTH(ID)) ctrl_periph [N_COPIES-1:0] ( .clk (clk_i));
+
   neureka_ctrl #(
     .ID      ( ID      ),
     .N_CORES ( N_CORES ),
     .PE_H    ( PE_H    ),
     .PE_W    ( PE_W    )
   ) i_ctrl (
-    .clk_i            ( clk_i          ),
-    .rst_ni           ( rst_ni         ),
-    .test_mode_i      ( test_mode_i    ),
-    .busy_o           ( busy_o         ),
-    .evt_o            ( evt_o          ),
-    .clear_o          ( clear          ),
-    .ctrl_streamer_o  ( streamer_ctrl  ),
-    .flags_streamer_i ( streamer_flags ),
-    .ctrl_engine_o    ( engine_ctrl    ),
-    .flags_engine_i   ( engine_flags   ),
-    .errs_streamer_i  ( streamer_ecc_errs ),
-    .periph           ( periph         )
+    .clk_i            ( clk_i                      ),
+    .rst_ni           ( rst_ni                     ),
+    .test_mode_i      ( test_mode_i                ),
+    .busy_o           ( ctrl_out[0].busy          ),
+    .evt_o            ( ctrl_out[0].evt           ),
+    .clear_o          ( ctrl_out[0].clear         ),
+    .ctrl_streamer_o  ( ctrl_out[0].streamer_ctrl ),
+    .flags_streamer_i ( streamer_flags             ),
+    .ctrl_engine_o    ( ctrl_out[0].engine_ctrl   ),
+    .flags_engine_i   ( engine_flags               ),
+    .errs_streamer_i  ( streamer_ecc_errs          ),
+    .periph           ( ctrl_periph[0]             )
   );
 
-  assign enable = busy_o;
+  always_comb begin
+    // Ctrl signals
+    busy_o         = ctrl_voted.busy;
+    enable         = ctrl_voted.busy;
+    evt_o          = ctrl_voted.evt;
+    clear          = ctrl_voted.clear;
+    streamer_ctrl  = ctrl_voted.streamer_ctrl;
+    engine_ctrl    = ctrl_voted.engine_ctrl;
+    // Periph response
+    periph.gnt     = ctrl_voted.periph_gnt;
+    periph.r_data  = ctrl_voted.periph_r_data;
+    periph.r_valid = ctrl_voted.periph_r_valid;
+    periph.r_id    = ctrl_voted.periph_r_id;
+  end
+
+  if (CTRL_TMR) begin : gen_ctrl_tmr
+
+    bitwise_TMR_voter #(
+      .DataWidth ($bits(ctrl_out_t))
+    ) tmr_ctrl_voter (
+      .a_i         (ctrl_out[0]),
+      .b_i         (ctrl_out[1]),
+      .c_i         (ctrl_out[2]),
+      .majority_o  (ctrl_voted),
+      .error_o     (),
+      .error_cba_o ()
+    );
+
+    for (genvar ii=1; ii<3; ii++) begin : gen_ctrl_copies
+
+      always_comb begin
+        // Request
+        ctrl_periph[ii].req  = periph.req;
+        ctrl_periph[ii].add  = periph.add;
+        ctrl_periph[ii].wen  = periph.wen;
+        ctrl_periph[ii].be   = periph.be;
+        ctrl_periph[ii].data = periph.data;
+        ctrl_periph[ii].id   = periph.id;
+
+        // Response
+        ctrl_out[ii].periph_gnt     = ctrl_periph[ii].gnt;
+        ctrl_out[ii].periph_r_data  = ctrl_periph[ii].r_data;
+        ctrl_out[ii].periph_r_valid = ctrl_periph[ii].r_valid;
+        ctrl_out[ii].periph_r_id    = ctrl_periph[ii].r_id;
+      end
+
+      neureka_ctrl #(
+        .ID      ( ID      ),
+        .N_CORES ( N_CORES ),
+        .PE_H    ( PE_H    ),
+        .PE_W    ( PE_W    )
+      ) i_ctrl (
+        .clk_i            ( clk_i                      ),
+        .rst_ni           ( rst_ni                     ),
+        .test_mode_i      ( test_mode_i                ),
+        .busy_o           ( ctrl_out[ii].busy          ),
+        .evt_o            ( ctrl_out[ii].evt           ),
+        .clear_o          ( ctrl_out[ii].clear         ),
+        .ctrl_streamer_o  ( ctrl_out[ii].streamer_ctrl ),
+        .flags_streamer_i ( streamer_flags             ),
+        .ctrl_engine_o    ( ctrl_out[ii].engine_ctrl   ),
+        .flags_engine_i   ( engine_flags               ),
+        .errs_streamer_i  ( streamer_ecc_errs          ),
+        .periph           ( ctrl_periph[ii]            )
+      );
+    end
+  end else begin : gen_ctrl_no_tmr
+    assign ctrl_voted = ctrl_out[0];
+  end
 
 endmodule // neureka_top
