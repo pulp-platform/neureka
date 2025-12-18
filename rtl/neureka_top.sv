@@ -193,6 +193,22 @@ module neureka_top
   );
 
   always_comb begin
+    // Request
+    ctrl_periph[0].req  = periph.req;
+    ctrl_periph[0].add  = periph.add;
+    ctrl_periph[0].wen  = periph.wen;
+    ctrl_periph[0].be   = periph.be;
+    ctrl_periph[0].data = periph.data;
+    ctrl_periph[0].id   = periph.id;
+
+    // Response
+    ctrl_out[0].periph_gnt     = ctrl_periph[0].gnt;
+    ctrl_out[0].periph_r_data  = ctrl_periph[0].r_data;
+    ctrl_out[0].periph_r_valid = ctrl_periph[0].r_valid;
+    ctrl_out[0].periph_r_id    = ctrl_periph[0].r_id;
+  end
+
+  always_comb begin
     // Ctrl signals
     busy_o         = ctrl_voted.busy;
     enable         = ctrl_voted.busy;
@@ -209,16 +225,34 @@ module neureka_top
 
   if (CTRL_TMR) begin : gen_ctrl_tmr
 
+    ctrl_out_t [N_COPIES-1:0] ctrl_out_mask;
+
     bitwise_TMR_voter #(
       .DataWidth ($bits(ctrl_out_t))
     ) tmr_ctrl_voter (
-      .a_i         (ctrl_out[0]),
-      .b_i         (ctrl_out[1]),
-      .c_i         (ctrl_out[2]),
+      .a_i         (ctrl_out[0] & ~ctrl_out_mask[0]),
+      .b_i         (ctrl_out[1] & ~ctrl_out_mask[1]),
+      .c_i         (ctrl_out[2] & ~ctrl_out_mask[2]),
       .majority_o  (ctrl_voted),
       .error_o     (),
       .error_cba_o ()
     );
+
+    for (genvar ii=0; ii<3; ii++) begin : gen_ctrl_out_masks
+      // We need to mask signals which are not driven, otherwise the voter cannot
+      // generate proper error signals
+      always_comb begin
+        ctrl_out_mask[ii] = '0;
+
+        ctrl_out_mask[ii].engine_ctrl.ctrl_binconv_array.ctrl_pe.ctrl_col.scale_shift      = '1;
+        ctrl_out_mask[ii].engine_ctrl.ctrl_binconv_array.ctrl_pe.ctrl_col.dw_weight_offset = '1;
+        ctrl_out_mask[ii].engine_ctrl.ctrl_binconv_array.ctrl_pe.ctrl_col.block_cnt        = '1;
+        ctrl_out_mask[ii].engine_ctrl.ctrl_binconv_array.ctrl_pe.ctrl_col.invalidate       = '1;
+
+        if (!ctrl_out[ii].periph_r_valid)
+          ctrl_out_mask[ii].periph_r_data = '1;
+      end
+    end
 
     for (genvar ii=1; ii<3; ii++) begin : gen_ctrl_copies
 
