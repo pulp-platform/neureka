@@ -436,7 +436,7 @@ module neureka_ctrl #(
   logic [15:0] subtile_nb_ki_neg;
   assign subtile_nb_ko_neg = (config_.subtile_nb_ko-1);
   assign subtile_nb_ho_neg = (config_.subtile_nb_ho-1);
-  assign subtile_nb_wo_neg = (config_.subtile_nb_wo-1);
+  assign subtile_nb_wo_neg = (config_.resilience_mode || config_.subtile_nb_wo==1) ? (config_.subtile_nb_wo-1) : (config_.subtile_nb_wo-2);
   assign subtile_nb_ki_neg = (config_.subtile_nb_ki-1);
 
   logic [47:0] weights_kom_reset_prod;

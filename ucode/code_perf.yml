@@ -59,8 +59,6 @@ code:
     - { op : add,  a: base_addr_y, b: outfeat_wom_reset_iter } # outfeat_wom_reset_iter = - subtile_nb_wo * outfeat_wom_iter
     - { op : add,  a: base_addr_W, b: weights_kim_reset_iter } # weights_kim_reset_iter = - subtile_nb_ki * weights_kim_iter
     - { op : add,  a: base_addr_x, b: infeat_kim_reset_iter  } # infeat_kim_reset_iter  = - subtile_nb_ki * infeat_kim_iter
-    - { op : add,  a: base_addr_x, b: infeat_wom_iter   } # this is added to restore the correct x (it's always one less. To avoid modifying the reset value)
-    - { op : add,  a: base_addr_y, b: outfeat_wom_iter  } # this is added to restore the correct y (it's always one less. To avoid modifying the reset value)
     - { op : add,  a: base_addr_x, b: infeat_hom_iter   }
     - { op : add,  a: base_addr_y, b: outfeat_hom_iter  }
   k_out_major:
@@ -70,8 +68,6 @@ code:
     - { op : add,  a: base_addr_y, b: outfeat_wom_reset_iter } # outfeat_wom_reset_iter = - subtile_nb_wo * outfeat_wom_iter
     - { op : add,  a: base_addr_W, b: weights_kim_reset_iter } # weights_kim_reset_iter = - subtile_nb_ki * weights_kim_iter
     - { op : add,  a: base_addr_x, b: infeat_kim_reset_iter  } # infeat_kim_reset_iter  = - subtile_nb_ki * infeat_kim_iter
-    - { op : add,  a: base_addr_x, b: infeat_wom_iter   } # this is added to restore the correct x (it's always one less. To avoid modifying the reset value)
-    - { op : add,  a: base_addr_y, b: outfeat_wom_iter  } # this is added to restore the correct y (it's always one less. To avoid modifying the reset value)
     - { op : add,  a: base_addr_W, b: weights_kom_iter  }
     - { op : add,  a: base_addr_y, b: outfeat_kom_iter  }
     - { op : add,  a: base_addr_s, b: scale_kom_iter    }
