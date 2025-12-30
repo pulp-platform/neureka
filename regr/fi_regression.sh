@@ -25,7 +25,7 @@ TIMEOUT=300
 export PE_H=4
 export PE_W=2
 
-MODES=1
+export MODE=1
 
 # Declare a string array with type
 declare -a test_list=(
@@ -41,20 +41,14 @@ else
     echo "No YML file provided, using default list: ${test_list[@]}"
 fi
 
-i=0
-while [[ $i -lt ${#MODES[@]} ]]; do
-    export MODE=${MODES[$i]}
-    i=$((i + 1))
+echo "Running with config (H, W)=($PE_H, $PE_W), MODE=$MODE"
 
-    echo "Running with config (H, W)=($PE_H, $PE_W), MODE=$MODE"
-
-    # Read the list values with space
-    for val in "${test_list[@]}"; do
-        nice -n10 regr/bwruntests.py --report_junit -t ${TIMEOUT} --yaml -o regr/neureka_tests.xml -p${N_PROC} --perf regr/perf.json $val
-        if test $? -ne 0; then
-            echo "Error in test $val with config (H, W)=($PE_H, $PE_W), MODE=$MODE"
-        fi
-    done
+# Read the list values with space
+for val in "${test_list[@]}"; do
+    nice -n10 regr/bwruntests.py --report_junit -t ${TIMEOUT} --yaml -o regr/neureka_tests.xml -p${N_PROC} --perf regr/perf.json $val
+    if test $? -ne 0; then
+        echo "Error in test $val with config (H, W)=($PE_H, $PE_W), MODE=$MODE"
+    fi
 done
 
 unset P_STALL
