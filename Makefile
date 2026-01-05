@@ -347,7 +347,7 @@ ifeq ($(fault_inject),0)
 ifeq ($(vulnerability),0)
 	cd $(BUILD_DIR); \
 	$(QUESTA) vsim $(vsim_flags) -c vopt_tb -do "run -a" \
-	$(VSIM_PARAMS);                        \
+	$(VSIM_PARAMS); \
 	if grep -q 'errors happened' transcript; then exit 1; fi
 else
 	cd $(BUILD_DIR); \
@@ -357,10 +357,12 @@ else
 	$(VSIM_PARAMS)
 endif
 else
-	cd $(BUILD_DIR); $(QUESTA) vsim  $(vsim_flags) -c vopt_tb \
+	cd $(BUILD_DIR); \
+	$(QUESTA) vsim  $(vsim_flags) -c vopt_tb \
 	-do "set ROOT $(ROOT); source $(FAULT_INJECTION_SCRIPT)"  \
 	-do "run -a" \
-	$(VSIM_PARAMS)
+	$(VSIM_PARAMS); \
+	if grep -q 'errors happened' transcript; then exit 1; fi
 endif
 else
 ifeq ($(fault_inject), 1)

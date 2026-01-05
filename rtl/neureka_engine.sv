@@ -910,8 +910,7 @@ module neureka_engine #(
       neureka_accumulator_normquant #(
         .TP               ( TP_IN   ),
         .AP               ( TP_OUT  ),
-        .ACC              ( 32      ),
-        .OUTREG_NORMQUANT ( 1       )
+        .ACC              ( 32      )
       ) i_accumulator (
         .clk_i       ( clk_i                                              ),
         .rst_ni      ( rst_ni                                             ),
