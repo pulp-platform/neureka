@@ -503,7 +503,8 @@ module neureka_engine #(
         .clk ( clk_i )
       );
 
-      localparam bit MAIN_DATAPATH = jj == 0;
+      localparam bit          MAIN_DATAPATH = jj == 0;
+      localparam int unsigned LOCAL_DELAY   = MAIN_DATAPATH ? 0 : HMR_DELAY;
 
       ctrl_double_infeat_buffer_t local_ctrl_double_infeat_buffer;
       flags_engine_t              local_flags;
@@ -544,12 +545,12 @@ module neureka_engine #(
                                                local_ctrl.ctrl_double_infeat_buffer : '0;
 
       for (genvar ii=0; ii<BLOCK_SIZE; ii++) begin : gen_local_load_in_blocks_assign
-        hwpe_stream_delay_assign #(.DATA_WIDTH (NEUREKA_QA_IN), .DELAY_REQ (!MAIN_DATAPATH), .DELAY_RESP (1'b0)) i_local_load_in_block_assign
+        hwpe_stream_delay_assign #(.DATA_WIDTH (NEUREKA_QA_IN), .DELAY_REQ (LOCAL_DELAY), .DELAY_RESP (0)) i_local_load_in_block_assign
           (.clk_i, .rst_ni, .delay_i(delay_enable), .push_i(load_in_blocks_copy[N_COPIES*ii+jj]), .pop_o(local_load_in_blocks[ii]));
       end
 
       for(genvar ii=0; ii<COLUMN_SIZE; ii++) begin : gen_local_load_weight_rows_conv_assign
-        hwpe_stream_delay_assign #(.DATA_WIDTH (TP_IN), .DELAY_REQ (!MAIN_DATAPATH), .DELAY_RESP (1'b0)) i_local_load_weight_rows_conv_assign
+        hwpe_stream_delay_assign #(.DATA_WIDTH (TP_IN), .DELAY_REQ (LOCAL_DELAY), .DELAY_RESP (0)) i_local_load_weight_rows_conv_assign
           (.clk_i, .rst_ni, .delay_i(delay_enable), .push_i(load_weight_rows_conv_copy[N_COPIES*ii+jj]), .pop_o(local_load_weight_rows_conv[ii]));
       end
 
@@ -610,10 +611,10 @@ module neureka_engine #(
       /* Accumulators + Normalization/Quantization */
       for (genvar ii=0; ii<NR_PE; ii++) begin : accumulator_gen
 
-        hwpe_stream_delay_assign #(.DATA_WIDTH (NEUREKA_MEM_BANDWIDTH), .DELAY_REQ (!MAIN_DATAPATH), .DELAY_RESP (1'b0)) i_local_norm_assign
+        hwpe_stream_delay_assign #(.DATA_WIDTH (NEUREKA_MEM_BANDWIDTH), .DELAY_REQ (LOCAL_DELAY), .DELAY_RESP (0)) i_local_norm_assign
           (.clk_i, .rst_ni, .delay_i(delay_enable), .push_i(norm_copy[N_COPIES*ii+jj]), .pop_o(local_norm[ii]));
 
-        hwpe_stream_delay_assign #(.DATA_WIDTH (NEUREKA_MEM_BANDWIDTH), .DELAY_REQ (!MAIN_DATAPATH), .DELAY_RESP (1'b0)) i_local_load_streamin_cols_assign
+        hwpe_stream_delay_assign #(.DATA_WIDTH (NEUREKA_MEM_BANDWIDTH), .DELAY_REQ (LOCAL_DELAY), .DELAY_RESP (0)) i_local_load_streamin_cols_assign
           (.clk_i, .rst_ni, .delay_i(delay_enable), .push_i(load_streamin_cols_copy[N_COPIES*ii+jj]), .pop_o(local_load_streamin_cols[ii]));
 
         ctrl_aq_t ctrl_accumulator;
@@ -670,7 +671,7 @@ module neureka_engine #(
           .flags_o     ( local_flags.flags_accumulator [ii]                 )
         );
 
-        hwpe_stream_delay_assign #(.DATA_WIDTH (NEUREKA_MEM_BANDWIDTH), .DELAY_REQ (1'b0), .DELAY_RESP (!MAIN_DATAPATH)) i_local_store_out_cols_assign
+        hwpe_stream_delay_assign #(.DATA_WIDTH (NEUREKA_MEM_BANDWIDTH), .DELAY_REQ (0), .DELAY_RESP (LOCAL_DELAY)) i_local_store_out_cols_assign
           (.clk_i, .rst_ni, .delay_i(delay_enable), .push_i(local_store_out_cols[ii]), .pop_o(out_cols_copy[NR_PE*jj+ii]));
       end // accumulator_gen
     end // redundancy_gen
