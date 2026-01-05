@@ -5,7 +5,7 @@ package:
     - "Francesco Conti <f.conti@unibo.it>"
 
 dependencies:
-  hwpe-stream:  { git: "https://github.com/LuigiGhionda/hwpe-stream.git", rev: "b80c872" } # branch: rt/hmr-neureka
+  hwpe-stream:  { git: "https://github.com/LuigiGhionda/hwpe-stream.git", rev: "4b774dd" } # branch: rt/jetc
   hci:          { git: "https://github.com/pulp-platform/hci.git", rev: "38fc2a7"  } # branch: lg/ecc_rebase_v2.1.1
   hwpe-ctrl:    { git: "https://github.com/LuigiGhionda/hwpe-ctrl.git", rev: "5498496" }
   register_interface: { git: "https://github.com/pulp-platform/register_interface.git", version: 0.3.1 }
