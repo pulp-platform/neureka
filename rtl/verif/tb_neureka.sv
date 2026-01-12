@@ -479,29 +479,29 @@ module tb_neureka;
   always_ff @(negedge clk_i or negedge rst_ni)
   begin : trace_outputs
     if(tb_neureka.i_dut.i_neureka_top.norm.valid & tb_neureka.i_dut.i_neureka_top.norm.ready) begin
-      $sformat( str, ",\n  { \"instance\": \"norm\", \"type\": \"data\", \"value\": \"0x%072x\", \"job\": \"%1d\", \"time\": \"%t\" }", tb_neureka.i_dut.i_neureka_top.norm.data, tb_neureka.i_dut.i_neureka_top.i_ctrl.i_slave.i_regfile.running_job_id, $time); $fwrite(f_log, str);
+      $sformat( str, ",\n  { \"instance\": \"norm\", \"type\": \"data\", \"value\": \"0x%072x\", \"job\": \"%1d\", \"time\": \"%t\" }", tb_neureka.i_dut.i_neureka_top.norm.data, tb_neureka.i_dut.i_neureka_top.i_ctrl.i_target.job_id_q, $time); $fwrite(f_log, str);
     end
     if(tb_neureka.i_dut.i_neureka_top.weight.valid & tb_neureka.i_dut.i_neureka_top.weight.ready) begin
-      $sformat( str, ",\n  { \"instance\": \"weight\", \"type\": \"data\", \"value\": \"0x%072x\", \"job\": \"%1d\", \"time\": \"%t\" }", tb_neureka.i_dut.i_neureka_top.weight.data, tb_neureka.i_dut.i_neureka_top.i_ctrl.i_slave.i_regfile.running_job_id, $time); $fwrite(f_log, str);
+      $sformat( str, ",\n  { \"instance\": \"weight\", \"type\": \"data\", \"value\": \"0x%072x\", \"job\": \"%1d\", \"time\": \"%t\" }", tb_neureka.i_dut.i_neureka_top.weight.data, tb_neureka.i_dut.i_neureka_top.i_ctrl.i_target.job_id_q, $time); $fwrite(f_log, str);
     end
     if(tb_neureka.i_dut.i_neureka_top.feat.valid & tb_neureka.i_dut.i_neureka_top.feat.ready) begin
-      $sformat( str, ",\n  { \"instance\": \"feat\", \"type\": \"data\", \"value\": \"0x%072x\", \"job\": \"%1d\", \"time\": \"%t\" }", tb_neureka.i_dut.i_neureka_top.feat.data, tb_neureka.i_dut.i_neureka_top.i_ctrl.i_slave.i_regfile.running_job_id, $time); $fwrite(f_log, str);
+      $sformat( str, ",\n  { \"instance\": \"feat\", \"type\": \"data\", \"value\": \"0x%072x\", \"job\": \"%1d\", \"time\": \"%t\" }", tb_neureka.i_dut.i_neureka_top.feat.data, tb_neureka.i_dut.i_neureka_top.i_ctrl.i_target.job_id_q, $time); $fwrite(f_log, str);
     end
     if(tb_neureka.i_dut.i_neureka_top.conv.valid & tb_neureka.i_dut.i_neureka_top.conv.ready) begin
-      $sformat( str, ",\n  { \"instance\": \"conv\", \"type\": \"data\", \"value\": \"0x%072x\", \"job\": \"%1d\", \"time\": \"%t\" }", tb_neureka.i_dut.i_neureka_top.conv.data, tb_neureka.i_dut.i_neureka_top.i_ctrl.i_slave.i_regfile.running_job_id, $time); $fwrite(f_log, str);
+      $sformat( str, ",\n  { \"instance\": \"conv\", \"type\": \"data\", \"value\": \"0x%072x\", \"job\": \"%1d\", \"time\": \"%t\" }", tb_neureka.i_dut.i_neureka_top.conv.data, tb_neureka.i_dut.i_neureka_top.i_ctrl.i_target.job_id_q, $time); $fwrite(f_log, str);
     end
     if(tb_neureka.i_dut.i_neureka_top.tcdm.req & tb_neureka.i_dut.i_neureka_top.tcdm.gnt) begin
       if(tb_neureka.i_dut.i_neureka_top.tcdm.wen)
         read_addr_queue.push_front(tb_neureka.i_dut.i_neureka_top.tcdm.add);
       else begin
-        $sformat( str, ",\n  { \"instance\": \"tcdm_store\", \"type\": \"addr\", \"value\": \"0x%08x\", \"job\": \"%1d\", \"time\": \"%t\" }", tb_neureka.i_dut.i_neureka_top.tcdm.add, tb_neureka.i_dut.i_neureka_top.i_ctrl.i_slave.i_regfile.running_job_id, $time); $fwrite(f_log, str);
-        $sformat( str, ",\n  { \"instance\": \"tcdm_store\", \"type\": \"data\", \"value\": \"0x%072x\", \"job\": \"%1d\", \"time\": \"%t\" }", tb_neureka.i_dut.i_neureka_top.tcdm.data, tb_neureka.i_dut.i_neureka_top.i_ctrl.i_slave.i_regfile.running_job_id, $time); $fwrite(f_log, str);
-        $sformat( str, ",\n  { \"instance\": \"tcdm_store\", \"type\": \"be\", \"value\": \"0x%09x\", \"job\": \"%1d\", \"time\": \"%t\" }", tb_neureka.i_dut.i_neureka_top.tcdm.be, tb_neureka.i_dut.i_neureka_top.i_ctrl.i_slave.i_regfile.running_job_id, $time); $fwrite(f_log, str);
+        $sformat( str, ",\n  { \"instance\": \"tcdm_store\", \"type\": \"addr\", \"value\": \"0x%08x\", \"job\": \"%1d\", \"time\": \"%t\" }", tb_neureka.i_dut.i_neureka_top.tcdm.add, tb_neureka.i_dut.i_neureka_top.i_ctrl.i_target.job_id_q, $time); $fwrite(f_log, str);
+        $sformat( str, ",\n  { \"instance\": \"tcdm_store\", \"type\": \"data\", \"value\": \"0x%072x\", \"job\": \"%1d\", \"time\": \"%t\" }", tb_neureka.i_dut.i_neureka_top.tcdm.data, tb_neureka.i_dut.i_neureka_top.i_ctrl.i_target.job_id_q, $time); $fwrite(f_log, str);
+        $sformat( str, ",\n  { \"instance\": \"tcdm_store\", \"type\": \"be\", \"value\": \"0x%09x\", \"job\": \"%1d\", \"time\": \"%t\" }", tb_neureka.i_dut.i_neureka_top.tcdm.be, tb_neureka.i_dut.i_neureka_top.i_ctrl.i_target.job_id_q, $time); $fwrite(f_log, str);
       end
     end
     if(tb_neureka.i_dut.i_neureka_top.tcdm.r_valid & tb_neureka.i_dut.i_neureka_top.tcdm.r_ready) begin
-      $sformat( str, ",\n  { \"instance\": \"tcdm_load\", \"type\": \"addr\", \"value\": \"0x%08x\", \"job\": \"%1d\", \"time\": \"%t\" }", read_addr_queue.pop_back(), tb_neureka.i_dut.i_neureka_top.i_ctrl.i_slave.i_regfile.running_job_id, $time); $fwrite(f_log, str);
-      $sformat( str, ",\n  { \"instance\": \"tcdm_load\", \"type\": \"r_data\", \"value\": \"0x%072x\", \"job\": \"%1d\", \"time\": \"%t\" }", tb_neureka.i_dut.i_neureka_top.tcdm.r_data, tb_neureka.i_dut.i_neureka_top.i_ctrl.i_slave.i_regfile.running_job_id, $time); $fwrite(f_log, str);
+      $sformat( str, ",\n  { \"instance\": \"tcdm_load\", \"type\": \"addr\", \"value\": \"0x%08x\", \"job\": \"%1d\", \"time\": \"%t\" }", read_addr_queue.pop_back(), tb_neureka.i_dut.i_neureka_top.i_ctrl.i_target.job_id_q, $time); $fwrite(f_log, str);
+      $sformat( str, ",\n  { \"instance\": \"tcdm_load\", \"type\": \"r_data\", \"value\": \"0x%072x\", \"job\": \"%1d\", \"time\": \"%t\" }", tb_neureka.i_dut.i_neureka_top.tcdm.r_data, tb_neureka.i_dut.i_neureka_top.i_ctrl.i_target.job_id_q, $time); $fwrite(f_log, str);
     end
   end
 

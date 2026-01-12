@@ -1,0 +1,539 @@
+/*
+ * neureka_regif.rdl
+ * Francesco Conti <f.conti@unibo.it>
+ *
+ * Copyright (C) 2025 ETH Zurich, University of Bologna
+ * Copyright and related rights are licensed under the Solderpad Hardware
+ * License, Version 0.51 (the "License"); you may not use this file except in
+ * compliance with the License.  You may obtain a copy of the License at
+ * http://solderpad.org/licenses/SHL-0.51. Unless required by applicable law
+ * or agreed to in writing, software, hardware and materials distributed under
+ * this License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+ /*
+  * This file contains the address map for NEureka, expressed in SystemRDL.
+  */
+
+addrmap neureka_regif {
+    name = "NEureka register interface";
+    desc = "";
+
+    // Mandatory COMMIT_TRIGGER register. Not to be updated inside HWPEs.
+    reg hwpe_commit_trigger {
+        field {
+            name = "reserved";
+            desc = "Reserved.";
+            hw = r;
+            sw = r;
+        } r0[31:2] = 0;
+        field {
+            name = "commit_trigger";
+            desc = "Write 0 to commit job & start execution, unlock controller; write `0x1` value to commit job & unlock controller without starting execution, which will be started when the next job is committed and triggered; write `0x2` value to trigger the current job queue without committing any new job.";
+            hw = r;
+            sw = w;
+            swacc = true;
+        } commit_trigger[1:0] = 0;
+    };
+    // Mandatory ACQUIRE register. Not to be updated inside HWPEs.
+    reg hwpe_acquire {
+        field {
+            name = "acquire";
+            desc = "On read starts a job offload, locks controller. Returns job ID.";
+            hw = w;
+            sw = r;
+            swacc = true;
+        } acquire[31:0] = 0;
+    };
+    // Mandatory RESERVED register. Not to be updated inside HWPEs.
+    reg hwpe_reserved {
+        field {
+            name = "reserved";
+            desc = "Reserved.";
+            hw = r;
+            sw = r;
+        } reserved[31:0] = 0;
+    };
+    // Mandatory STATUS register. Not to be updated inside HWPEs.
+    reg hwpe_status {
+        field {
+            name = "status";
+            desc = "Status of currently running job.";
+            hw = w;
+            sw = r;
+        } status0[31:0] = 0;
+    };
+    // Mandatory RUNNING_JOB register. Not to be updated inside HWPEs.
+    reg hwpe_running_job {
+        field {
+            name = "reserved";
+            desc = "Reserved.";
+            hw = r;
+            sw = r;
+        } r0[31:8] = 0;
+        field {
+            name = "running_job";
+            desc = "Returns ID of currently running job if any job is running; otherwise, of the last job that has been run.";
+            hw = w;
+            sw = r;
+        } running_job[7:0] = 0;
+    };
+    // Mandatory SOFT_CLEAR register. Not to be updated inside HWPEs.
+    reg hwpe_soft_clear {
+        field {
+            name = "reserved";
+            desc = "Reserved.";
+            hw = r;
+            sw = r;
+        } r0[31:2] = 0;
+        field {
+            name = "soft_clear";
+            desc = "Write `0x0` to clear the full status of the accelerator IP, including the register file; write `0x1` to clear the status of the accelerator IP, except for the register file; write `0x2` to clear only the register file.";
+            hw = r;
+            sw = w;
+            swacc = true;
+        } soft_clear[1:0] = 0;
+    };
+
+    // "mandatory" set of HWPE registers (CONTROL regs). Not to be updated inside HWPEs.
+    regfile hwpe_ctrl_mandatory {
+        hwpe_commit_trigger commit_trigger @ 0x00;
+        hwpe_acquire        acquire        @ 0x04;
+        hwpe_reserved       reserved0      @ 0x08;
+        hwpe_status         status         @ 0x0c;
+        hwpe_running_job    running_job    @ 0x10;
+        hwpe_soft_clear     soft_clear     @ 0x14;
+        hwpe_reserved       reserved1      @ 0x18;
+        hwpe_reserved       reserved2      @ 0x1c;
+    };
+
+    // NEureka job-dependent registers
+    reg weights_ptr {
+        field {
+            name = "Weights pointer";
+            desc = "Pointer to Weights tensor in memory (d3=Ko, d2=Fy, d1=Fx, d0=Ki).";
+            hw = r;
+            sw = rw;
+        } value[31:0] = 0;
+    };
+    reg infeat_ptr {
+        field {
+            name = "InFeat pointer";
+            desc = "Pointer to InFeat tensor in memory (d2=Hi, d1=Wi, d0=Ki).";
+            hw = r;
+            sw = rw;
+        } value[31:0] = 0;
+    };
+    reg outfeat_ptr {
+        field {
+            name = "OutFeat pointer";
+            desc = "Pointer to OutFeat tensor in memory (d2=Ho, d1=Wo, d0=Ko).";
+            hw = r;
+            sw = rw;
+        } value[31:0] = 0;
+    };
+    reg scale_ptr {
+        field {
+            name = "Scale pointer";
+            desc = "Pointer to Scale parameters in memory (d0=Ko).";
+            hw = r;
+            sw = rw;
+        } value[31:0] = 0;
+    };
+    reg scale_shift_ptr {
+        field {
+            name = "ScaleShift pointer";
+            desc = "Pointer to ScaleShift parameters in memory (d0=Ko).";
+            hw = r;
+            sw = rw;
+        } value[31:0] = 0;
+    };
+    reg scale_bias_ptr {
+        field {
+            name = "ScaleBias pointer";
+            desc = "Pointer to ScaleBias parameters in memory (d0=Ko).";
+            hw = r;
+            sw = rw;
+        } value[31:0] = 0;
+    };
+    reg streamin_ptr {
+        field {
+            name = "StreamIn pointer";
+            desc = "Pointer to StreamIn parameters in memory (d2=Ho, d1=Wo, d0=Ko).";
+            hw = r;
+            sw = rw;
+        } value[31:0] = 0;
+    };
+    reg infeat_d0_stride {
+        field {
+            name = "InFeat d0 stride";
+            desc = "InFeat d0 stride.";
+            hw = r;
+            sw = rw;
+        } value[31:0] = 0;
+    };
+    reg infeat_d1_stride {
+        field {
+            name = "InFeat d1 stride";
+            desc = "InFeat d1 stride.";
+            hw = r;
+            sw = rw;
+        } value[31:0] = 0;
+    };
+    reg infeat_d2_stride {
+        field {
+            name = "InFeat d2 stride";
+            desc = "InFeat d2 stride.";
+            hw = r;
+            sw = rw;
+        } value[31:0] = 0;
+    };
+    reg outfeat_d0_stride {
+        field {
+            name = "OutFeat d0 stride";
+            desc = "OutFeat d0 stride.";
+            hw = r;
+            sw = rw;
+        } value[31:0] = 0;
+    };
+    reg outfeat_d1_stride {
+        field {
+            name = "OutFeat d1 stride";
+            desc = "OutFeat d1 stride.";
+            hw = r;
+            sw = rw;
+        } value[31:0] = 0;
+    };
+    reg outfeat_d2_stride {
+        field {
+            name = "OutFeat d2 stride";
+            desc = "OutFeat d2 stride.";
+            hw = r;
+            sw = rw;
+        } value[31:0] = 0;
+    };
+    reg weights_d0_stride {
+        field {
+            name = "Weights d0 stride";
+            desc = "Weights d0 stride.";
+            hw = r;
+            sw = rw;
+        } value[31:0] = 0;
+    };
+    reg weights_d1_stride {
+        field {
+            name = "Weights d1 stride";
+            desc = "Weights d1 stride.";
+            hw = r;
+            sw = rw;
+        } value[31:0] = 0;
+    };
+    reg weights_d2_stride {
+        field {
+            name = "Weights d2 stride";
+            desc = "Weights d2 stride.";
+            hw = r;
+            sw = rw;
+        } value[31:0] = 0;
+    };
+    reg subtile_rem0 {
+        name = "Subtile Remainder 0";
+        field {
+            name = "Ko";
+            desc = "Ko subtile remainder.";
+            hw = r;
+            sw = rw;
+        } ko[31:16] = 0;
+        field {
+            name = "Ki";
+            desc = "Ki subtile remainder.";
+            hw = r;
+            sw = rw;
+        } ki[15:0] = 0;
+    };
+    reg subtile_rem1 {
+        name = "Subtile Remainder 1";
+        field {
+            name = "Ho";
+            desc = "Ho subtile remainder.";
+            hw = r;
+            sw = rw;
+        } ho[31:16] = 0;
+        field {
+            name = "Wo";
+            desc = "Wo subtile remainder.";
+            hw = r;
+            sw = rw;
+        } wo[15:0] = 0;
+    };
+    reg subtile_rem2 {
+        name = "Subtile Remainder 2";
+        field {
+            name = "Hi";
+            desc = "Hi subtile remainder.";
+            hw = r;
+            sw = rw;
+        } hi[31:16] = 0;
+        field {
+            name = "Wi";
+            desc = "Wi subtile remainder.";
+            hw = r;
+            sw = rw;
+        } wi[15:0] = 0;
+    };
+    reg subtile_nb0 {
+        name = "Subtile Number 0";
+        field {
+            name = "Ko";
+            desc = "Ko subtile number.";
+            hw = r;
+            sw = rw;
+        } ko[31:16] = 0;
+        field {
+            name = "Ki";
+            desc = "Ki subtile number.";
+            hw = r;
+            sw = rw;
+        } ki[15:0] = 0;
+    };
+    reg subtile_nb1 {
+        name = "Subtile Number 0";
+        field {
+            name = "Ho";
+            desc = "Ho subtile number.";
+            hw = r;
+            sw = rw;
+        } ho[31:16] = 0;
+        field {
+            name = "Wo";
+            desc = "Wo subtile number.";
+            hw = r;
+            sw = rw;
+        } wo[15:0] = 0;
+    };
+    reg padding {
+        name = "Padding";
+        field {
+            name = "Padding Top";
+            desc = "Padding on top side.";
+            hw = r;
+            sw = rw;
+        } top[31:28] = 0;
+        field {
+            name = "Padding Right";
+            desc = "Padding on right side.";
+            hw = r;
+            sw = rw;
+        } right[27:24] = 0;
+        field {
+            name = "Padding Bottom";
+            desc = "Padding on bottom side.";
+            hw = r;
+            sw = rw;
+        } bottom[23:20] = 0;
+        field {
+            name = "Padding Left";
+            desc = "Padding on left side.";
+            hw = r;
+            sw = rw;
+        } left[19:16] = 0;
+        field {
+            name = "Padding Value";
+            desc = "Value to be used for padding.";
+            hw = r;
+            sw = rw;
+        } value[15:0] = 0;
+    };
+    reg weight_offset {
+        field {
+            name = "Weight Offset.";
+            desc = "Weights offset to be considered for asymmetric weight support.";
+            hw = r;
+            sw = rw;
+        } value[31:0] = 0;
+    };
+    reg filter_mask {
+        name = "Filter mask";
+        field {
+            name = "Filter Mask Top";
+            desc = "Filter Mask on top side.";
+            hw = r;
+            sw = rw;
+        } top[31:24] = 0;
+        field {
+            name = "Filter Mask Right";
+            desc = "Filter Mask on right side.";
+            hw = r;
+            sw = rw;
+        } right[23:16] = 0;
+        field {
+            name = "Filter Mask Bottom";
+            desc = "Filter Mask on bottom side.";
+            hw = r;
+            sw = rw;
+        } bottom[15:8] = 0;
+        field {
+            name = "Filter Mask Left";
+            desc = "Filter Mask on left side.";
+            hw = r;
+            sw = rw;
+        } left[7:0] = 0;
+    };
+    reg config0 {
+        name = "Config 0";
+        field {
+            name = "Reserved";
+            desc = "Reserved.";
+            hw = r;
+            sw = rw;
+        } reserved[31:27] = 0;
+        field {
+            name = "Feature broadcast";
+            desc = "Feature broadcast.";
+            hw = r;
+            sw = rw;
+        } feat_broadcast[26:26] = 0;
+        field {
+            name = "Use bias in scaling";
+            desc = "Use bias in scaling.";
+            hw = r;
+            sw = rw;
+        } norm_option_bias[25:25] = 0;
+        field {
+            name = "Use shift in scaling";
+            desc = "Use shift in scaling.";
+            hw = r;
+            sw = rw;
+        } norm_option_shift[24:24] = 0;
+        field {
+            name = "Deactivate relu";
+            desc = "Deactivate relu.";
+            hw = r;
+            sw = rw;
+        } relu[23:23] = 0;
+        field {
+            name = "Quantization mode";
+            desc = "Quantization mode.";
+            hw = r;
+            sw = rw;
+        } quant_mode[22:21] = 0;
+        field {
+            name = "Shift requant";
+            desc = "Shift requant.";
+            hw = r;
+            sw = rw;
+        } shift_reqnt[20:16] = 0;
+        field {
+            name = "Streamin mode";
+            desc = "Streamin mode.";
+            hw = r;
+            sw = rw;
+        } streamin_mode[15:15] = 0;
+        field {
+            name = "Streamin";
+            desc = "Streamin.";
+            hw = r;
+            sw = rw;
+        } streamin[14:14] = 0;
+        field {
+            name = "Normalization bits";
+            desc = "Normalization bits (00=8, 01=16, 10=32).";
+            hw = r;
+            sw = rw;
+        } norm_mode[13:12] = 0;
+        field {
+            name = "Rounding";
+            desc = "Rounding (0=round, 1=do not round).";
+            hw = r;
+            sw = rw;
+        } rounding[11:11] = 0;
+        field {
+            name = "Prefetch";
+            desc = "Prefetch next inputs to minimize idle time (only with 1x1).";
+            hw = r;
+            sw = rw;
+        } prefetch[10:10] = 0;
+        field {
+            name = "Weight memory";
+            desc = "Use dedicated weight memory port for weights.";
+            hw = r;
+            sw = rw;
+        } wmem[9:9] = 0;
+        field {
+            name = "Mode strided";
+            hw = r;
+            sw = rw;
+        } mode_strided[8:8] = 0;
+        field {
+            name = "Mode linear";
+            hw = r;
+            sw = rw;
+        } mode_linear[7:7] = 0;
+        field {
+            name = "Filter Mode";
+            desc = "Filter Mode (11=linear, 10=1x1, 01=3x3 depthwise, 00=3x3).";
+            hw = r;
+            sw = rw;
+        } filter_mode[6:5] = 0;
+        field {
+            name = "Streamout/Quantization";
+            desc = "Streamout/Quantization.";
+            hw = r;
+            sw = rw;
+        } streamout_quant[4:4] = 0;
+        field {
+            name = "Reserved";
+            desc = "Reserved.";
+            hw = r;
+            sw = rw;
+        } reserved2[3:3] = 0;
+        field {
+            name = "Weight bits";
+            desc = "Weight bits (minus 1).";
+            hw = r;
+            sw = rw;
+        } wbits[2:0] = 0;
+    };
+
+    // no "job-independent" registers in NEUREKA
+    regfile hwpe_ctrl_job_indep {
+        hwpe_reserved reserved;
+    };
+
+    // "job-dependent" set of HWPE registers. Update inside HWPEs.
+    regfile hwpe_ctrl_job_dep {
+        weights_ptr       weights_ptr       @ 0x00;
+        infeat_ptr        infeat_ptr        @ 0x04;
+        outfeat_ptr       outfeat_ptr       @ 0x08;
+        scale_ptr         scale_ptr         @ 0x0c;
+        scale_shift_ptr   scale_shift_ptr   @ 0x10;
+        scale_bias_ptr    scale_bias_ptr    @ 0x14;
+        infeat_d0_stride  infeat_d0_str     @ 0x18;
+        infeat_d1_stride  infeat_d1_str     @ 0x1c;
+        infeat_d2_stride  infeat_d2_str     @ 0x20;
+        outfeat_d0_stride outfeat_d0_st     @ 0x24;
+        outfeat_d1_stride outfeat_d1_st     @ 0x28;
+        outfeat_d2_stride outfeat_d2_st     @ 0x2c;
+        weights_d0_stride weights_d0_st     @ 0x30;
+        weights_d1_stride weights_d1_st     @ 0x34;
+        weights_d2_stride weights_d2_st     @ 0x38;
+        subtile_rem0      subtile_rem0      @ 0x3c;
+        subtile_rem1      subtile_rem1      @ 0x40;
+        subtile_rem2      subtile_rem2      @ 0x44;
+        subtile_nb0       subtile_nb0       @ 0x48;
+        subtile_nb1       subtile_nb1       @ 0x4c;
+        padding           padding           @ 0x50;
+        weight_offset     weight_offset     @ 0x54;
+        filter_mask       filter_mask       @ 0x58;
+        config0           config0           @ 0x5c;
+        streamin_ptr      streamin_ptr      @ 0x60;
+    };
+
+    // HWPE control address map. Update inside HWPEs
+    hwpe_ctrl_mandatory hwpe_ctrl    @ 0x00;
+    hwpe_ctrl_job_dep   hwpe_job_dep @ 0x20;
+    hwpe_ctrl_job_indep hwpe_job_indep;
+
+};

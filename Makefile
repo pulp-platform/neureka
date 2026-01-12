@@ -42,8 +42,9 @@ gui      ?= 0
 P_STALL  ?= 0.0
 
 # Setup build object dirs
-VSIM_INI=$(HW_BUILD_DIR)/modelsim.ini
+VSIM_INI=$(HW_BUILD_DIR)/../modelsim.ini
 VSIM_LIBS=$(HW_BUILD_DIR)/work
+VSIM_DESIGNBIN=$(HW_BUILD_DIR)/design.bin
 
 # Build implicit rules
 $(HW_BUILD_DIR):
@@ -90,10 +91,10 @@ hw-clean-all:
 	rm -rf .cached_ipdb.json
 
 hw-opt:
-	cd sim; $(QUESTA) vopt +acc=npr -o vopt_tb $(TESTBENCH) -floatparameters+$(TESTBENCH) -work $(HW_BUILD_DIR)/work
+	cd sim; $(QUESTA) qopt -designfile $(HW_BUILD_DIR)/design.bin -debug,livesim -o qopt_tb $(TESTBENCH) -floatparameters+$(TESTBENCH) -work $(HW_BUILD_DIR)/work
 
 hw-compile:
-	cd sim; $(QUESTA) vsim -c +incdir+$(UVM_HOME) -do 'quit -code [source $(compile_script)]'
+	cd sim; $(QUESTA) qsim -c +incdir+$(UVM_HOME) -do 'quit -code [source $(compile_script)]'
 
 hw-lib:
 	@touch sim/modelsim.ini
@@ -165,6 +166,7 @@ $(BUILD_DIR):
 	mkdir -p $@
 	ln -sfn $(VSIM_INI) $(BUILD_DIR)/
 	ln -sfn $(VSIM_LIBS) $(BUILD_DIR)/
+	ln -sfn $(VSIM_DESIGNBIN) $(BUILD_DIR)/
 	ln -sfn $(mkfile_path)/waves $(BUILD_DIR)
 
 STIMULI=$(BUILD_DIR)/app/gen
@@ -275,17 +277,16 @@ VSIM_DEPS=$(CRT)
 VSIM_PARAMS=-gPROB_STALL=$(P_STALL)   \
 	-gSTIM_INSTR=stim_instr.txt \
 	-gSTIM_DATA=stim_data.txt \
-        -suppress vsim-3009
+        -suppress qsim-3009
 
 # Run the simulation
 run:
 ifeq ($(gui), 0)
 	cd $(BUILD_DIR);                       \
-	$(QUESTA) vsim -c vopt_tb -do "run -a" \
+	$(QUESTA) qsim +designfile+design.bin -c qopt_tb -do "run -a" \
 	$(VSIM_PARAMS);                        \
 	if grep -q 'errors happened' transcript; then exit 1; fi
 else
-	cd $(BUILD_DIR); $(QUESTA) vsim vopt_tb \
-	-do "add log -r sim:/$(TESTBENCH)/*"    \
+	cd $(BUILD_DIR); $(QUESTA) qsim +designfile+design.bin qopt_tb \
 	$(VSIM_PARAMS)
 endif
