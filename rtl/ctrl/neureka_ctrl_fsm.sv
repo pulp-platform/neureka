@@ -39,6 +39,7 @@ module neureka_ctrl_fsm
   input  flags_engine_t    flags_engine_i,
   input  flags_streamer_t  flags_streamer_i,
   input  config_neureka_t     config_i,
+  input  logic             ctrl_tmr_error_i,
   output state_neureka_t      state_o,
   output logic             state_change_o,
   output logic             active_datapath_o,
@@ -317,11 +318,20 @@ module neureka_ctrl_fsm
         state_change_d = 1'b1;
       end
 
+      TMR_ERROR: begin
+        state_d = IDLE;
+        state_change_d = 1'b1;
+      end
+
     endcase
     if(clear_i) begin
-      state_d = IDLE; 
-      state_change_d = '0; 
-    end 
+      state_d = IDLE;
+      state_change_d = '0;
+    end
+    else if (ctrl_tmr_error_i) begin
+      state_d = TMR_ERROR;
+      state_change_d = 1'b1;
+    end
   end
 
   logic init_set, init_set_d, init_set_q;

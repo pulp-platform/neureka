@@ -41,6 +41,10 @@ module neureka_top
   parameter int unsigned PE_H      = NEUREKA_PE_H_DEFAULT,
   parameter int unsigned PE_W      = NEUREKA_PE_W_DEFAULT,
 
+  parameter int unsigned HMR_DELAY  = 1,
+  parameter bit          ENGINE_HMR = 1'b1,
+  parameter bit          CTRL_TMR   = 1'b1,
+
   parameter hci_size_parameter_t `HCI_SIZE_PARAM(tcdm) = '0
 ) (
   // global signals
@@ -56,12 +60,10 @@ module neureka_top
   hwpe_ctrl_intf_periph.slave                   periph
 );
 
-  localparam bit ENGINE_HMR = 1'b1;
-  localparam bit CTRL_TMR   = 1'b1;
-
   // signals
   logic enable;
   logic clear;
+  logic ctrl_tmr_error_d, ctrl_tmr_error_q;
 
   ctrl_streamer_t  streamer_ctrl;
   flags_streamer_t streamer_flags;
@@ -117,7 +119,8 @@ module neureka_top
   neureka_engine #(
     .PE_H       ( PE_H ),
     .PE_W       ( PE_W ),
-    .HMR        ( ENGINE_HMR  )
+    .HMR        ( ENGINE_HMR ),
+    .HMR_DELAY  ( HMR_DELAY  )
   ) i_engine (
     .clk_i         ( clk_i        ),
     .rst_ni        ( rst_ni       ),
@@ -189,7 +192,8 @@ module neureka_top
     .ctrl_engine_o    ( ctrl_out[0].engine_ctrl   ),
     .flags_engine_i   ( engine_flags               ),
     .errs_streamer_i  ( streamer_ecc_errs          ),
-    .periph           ( ctrl_periph[0]             )
+    .periph           ( ctrl_periph[0]             ),
+    .ctrl_tmr_error_i ( ctrl_tmr_error_q           )
   );
 
   always_comb begin
@@ -234,9 +238,14 @@ module neureka_top
       .b_i         (ctrl_out[1] & ~ctrl_out_mask[1]),
       .c_i         (ctrl_out[2] & ~ctrl_out_mask[2]),
       .majority_o  (ctrl_voted),
-      .error_o     (),
+      .error_o     (ctrl_tmr_error_d),
       .error_cba_o ()
     );
+
+    always_ff @(posedge clk_i or negedge rst_ni) begin
+      if (!rst_ni) ctrl_tmr_error_q <= 1'b0;
+      else         ctrl_tmr_error_q <= ctrl_tmr_error_d;
+    end
 
     for (genvar ii=0; ii<3; ii++) begin : gen_ctrl_out_masks
       // We need to mask signals which are not driven, otherwise the voter cannot
@@ -289,11 +298,14 @@ module neureka_top
         .ctrl_engine_o    ( ctrl_out[ii].engine_ctrl   ),
         .flags_engine_i   ( engine_flags               ),
         .errs_streamer_i  ( streamer_ecc_errs          ),
-        .periph           ( ctrl_periph[ii]            )
+        .periph           ( ctrl_periph[ii]            ),
+        .ctrl_tmr_error_i ( ctrl_tmr_error_q           )
       );
     end
   end else begin : gen_ctrl_no_tmr
     assign ctrl_voted = ctrl_out[0];
+    assign ctrl_tmr_error_d = 1'b0;
+    assign ctrl_tmr_error_q = 1'b0;
   end
 
 endmodule // neureka_top

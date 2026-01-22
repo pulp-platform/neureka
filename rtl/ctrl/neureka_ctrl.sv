@@ -48,7 +48,9 @@ module neureka_ctrl #(
   // ECC error signals
   input errs_streamer_t                         errs_streamer_i,
   // periph slave port
-  hwpe_ctrl_intf_periph.slave                   periph
+  hwpe_ctrl_intf_periph.slave                   periph,
+  // controller tmr error
+  input logic                                   ctrl_tmr_error_i
 );
 
   localparam int unsigned NUM_PE = PE_H*PE_W;
@@ -133,8 +135,11 @@ module neureka_ctrl #(
   begin
     slave_ctrl = '0;
     slave_ctrl.done = (state==DONE) & state_change;
-    // slave_ctrl.evt  = (state==ERROR) & state_change;
-    slave_ctrl.int_error  = (state==ERROR) & state_change;
+    // Raise an interrupt to the core only if all TMR voter inputs disagree
+    slave_ctrl.evt  = (state==TMR_ERROR) & state_change;
+    // Internal error occurs during datapath fault detection or when all TMR voter inputs disagree.
+    // If the error is resolved with a rollback and retry, the destination register is cleared by the done signal.
+    slave_ctrl.int_error  = ((state==TMR_ERROR) || (state==ERROR)) & state_change;
   end
   assign busy_o = slave_flags.is_working;
 
@@ -206,7 +211,8 @@ module neureka_ctrl #(
     .prefetch_pulse_o ( uloop_prefetch_pulse),
     .base_addr_o      ( base_addr        ),
     .next_index_o     ( next_index       ),
-    .next_base_addr_o ( next_base_addr   )
+    .next_base_addr_o ( next_base_addr   ),
+    .ctrl_tmr_error_i ( ctrl_tmr_error_i )
   );
 
   /* Binding register file <-> configuration */
