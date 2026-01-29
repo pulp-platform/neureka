@@ -36,7 +36,8 @@ stages:
 build:
   stage: build
   script:
-    - make update-ips
+    - make checkout
+    - make generate-scripts
     - make hw-all
   artifacts:
     when: always

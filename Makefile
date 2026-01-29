@@ -81,6 +81,9 @@ $(BENDER): sim
 	--tlsv1.2 https://pulp-platform.github.io/bender/init -sSf | sh -s -- 0.24.0
 	mv bender $(BENDER)
 
+checkout: $(BENDER)
+	 $(BENDER) checkout
+
 .PHONY: update-ips
 update-ips: $(BENDER)
 	git submodule update --init
