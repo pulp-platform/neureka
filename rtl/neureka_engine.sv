@@ -735,22 +735,6 @@ module neureka_engine #(
         .pop_o    ( store_out_cols[ii]     )
       );
 
-      // Maurus's solution
-      // TODO At the moment this solution isn't viable; there is a problem with the ready signal
-      // Another problem of this module is that it's always on. I could at least add a clock-gating cell
-      // hwpe_stream_copy_sink
-      // #(
-      //   .COPY_TYPE("COPY"),
-      //   .DATA_WIDTH(NEUREKA_MEM_BANDWIDTH)
-      // ) i_output_check
-      // (
-      //   .clk_i      ( clk_i            ),
-      //   .rst_ni     ( rst_ni           ),
-      //   .original_i ( out_cols[ii]       ),
-      //   .copy_i     ( out_cols[NR_PE+ii] ),
-      //   .fault_o    ( mismatch[ii]     )
-      // );
-
       // Output Checker
       // It checks for mismatches at PE level
       logic [NEUREKA_MEM_BANDWIDTH-1:0] gated_outdata_0, gated_outdata_1;

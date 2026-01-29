@@ -114,7 +114,7 @@ module neureka_ctrl_fsm
   assign prefetch_done            = ((flags_engine_i.flags_double_infeat_buffer.flags_odd_infeat_buffer.state == IB_EXTRACT)&(~flags_engine_i.flags_double_infeat_buffer.read)) || ((flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT) & (flags_engine_i.flags_double_infeat_buffer.read));
   assign prefetch_matrixvec_done  = (prefetch_done_d & accum_done_d)|(prefetch_done_d & accum_done_q)|(prefetch_done_q & accum_done_d)|(prefetch_done_q & accum_done_q);
   assign streamout_done           = flags_engine_i.flags_accumulator[config_i.last_pe].state == AQ_STREAMOUT_DONE && (config_i.resilience_mode == 1 || active_datapath_q == 1 || ( ~active_datapath_change_sticky));
-  assign done                     = (config_i.resilience_mode == 0 && odd_wo_not1_and_ho_odd && config_i.subtile_nb_ko == 2) ? (flags_uloop.done && flags_uloop_1.done) : flags_uloop.done; // TODO Check this for nb_ko > 2
+  assign done                     = (config_i.resilience_mode == 0 && odd_wo_not1_and_ho_odd && config_i.subtile_nb_ko == 2) ? (flags_uloop.done && flags_uloop_1.done) : flags_uloop.done;
 
   state_aq_t accumulators_state;
   assign accumulators_state = flags_engine_i.flags_accumulator[config_i.last_pe].state;
@@ -594,9 +594,9 @@ module neureka_ctrl_fsm
                                                                              & state_change_d) ||
                                                                              (state_d == LOAD && active_datapath_change);
 
-  assign next_index_sample_en = config_i.prefetch ? flags_uloop.next_valid : index_sample_en; // TODO this will crash everything when prefetch is enabled
+  assign next_index_sample_en = config_i.prefetch ? flags_uloop.next_valid : index_sample_en;
 
-  assign next_base_addr_sample_en = config_i.prefetch ? flags_uloop.next_valid : base_addr_sample_en; // TODO this will crash everything when prefetch is enabled
+  assign next_base_addr_sample_en = config_i.prefetch ? flags_uloop.next_valid : base_addr_sample_en;
 
   // I need to divide the assingments of base_addr and index
   // In resilience mode they have to be sampled in different situations
@@ -655,16 +655,15 @@ module neureka_ctrl_fsm
 
   assign active_datapath_change = (config_i.resilience_mode) || degenerate_case ? '0 :
                                 (state_d==STREAMOUT && accumulators_state == AQ_STREAMOUT_DONE && active_datapath_change_sticky) ||
-                                (state_d==LOAD && flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT && next_valid_sticky && ~single_load); // TODO not valid with prefetch
-                             // (state_d==LOAD && flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT && ~single_load && (next_valid_sticky || flags_uloop_1.next_done)); // TODO not valid with prefetch
+                                (state_d==LOAD && flags_engine_i.flags_double_infeat_buffer.flags_even_infeat_buffer.state == IB_EXTRACT && next_valid_sticky && ~single_load);
 
   always_comb begin
     active_datapath_d = active_datapath_q;
     if(clear_i) begin
       active_datapath_d = 0;
-    end else if (config_i.resilience_mode || degenerate_case) begin // TODO Check this because it could be redundant since active_datapath_change is inhibited
+    end else if (config_i.resilience_mode || degenerate_case) begin
       active_datapath_d = 0;
-    end else if ((state_d==MATRIXVEC || state_d==STREAMOUT_DONE || state_d==DONE) && state_change_d==1'b1) begin // TODO check this, maybe can be replaced simply by active_datapath_change
+    end else if ((state_d==MATRIXVEC || state_d==STREAMOUT_DONE || state_d==DONE) && state_change_d==1'b1) begin
       active_datapath_d = 0;
     end else if(active_datapath_change) begin
       active_datapath_d  = (~active_datapath_q);
@@ -684,7 +683,7 @@ module neureka_ctrl_fsm
   begin
     if(~rst_ni)
       active_datapath_change_sticky  <= 1'b0;
-    else if(state_d==STREAMOUT_DONE && state_change_d==1'b1) // TODO check this, maybe can be replaced simply by active_datapath_change
+    else if(state_d==STREAMOUT_DONE && state_change_d==1'b1)
       active_datapath_change_sticky  <= 1'b0;
     else if(active_datapath_change)
       active_datapath_change_sticky <= 1'b1;
