@@ -1,12 +1,12 @@
-# HMR-NEureka - Hybrid Modular Redundant extension of NEureka accelerator
+# Safe-NEureka - Hybrid Modular Redundant extension of NEureka accelerator
 
 NEureka is a Deep Neural Network accelerator which exploits the Hardware Processing Engine (HWPE) paradigm [1]  (https://hwpe-doc.rtfd.io) and is designed to be integrated in an open-source PULP cluster configuration in combination with the Heterogeneous Cluster Interconnect (HCI). It makes use of the open-source IPs 'hci', 'hwpe-ctrl', and 'hwpe-stream'.
 
-HMR-NEureka features two operational modes: a redundancy mode leveraging dual modular redundancy (DMR) with low-overhead hardware-based recovery, and a performance mode that repurposes redundant datapaths to improve throughput for non-critical operations.
+Safe-NEureka features two operational modes: a redundancy mode leveraging dual modular redundancy (DMR) with low-overhead hardware-based recovery, and a performance mode that repurposes redundant datapaths to improve throughput for non-critical operations. To ensure complementary coverage, Error Correction Codes (ECCs) protect the memory interface, while the accelerator controller—compact yet critical for fault tolerance—is hardened via Triple Modular Redundancy (TMR).
 
-In general HMR-NEureka has built-in HW supports the following features for both operating modes:
+In general Safe-NEureka has built-in HW supports the following features for both operating modes:
 
-- Filters: 1x1, 3x3
+- Filters: 1x1, 3x3, depthwise
 - Batch normalization
 - ReLU
 - Activation input bits: 8
@@ -14,7 +14,7 @@ In general HMR-NEureka has built-in HW supports the following features for both 
 - Activation output bits: 8,32
 - Nr of input channels: arbitrary
 - Nr of output channels: arbitrary
- 
+
 NEureka is a direct derivative of the NE16 design https://github.com/pulp-platform/ne16 .
 
 ## Simulating
@@ -44,7 +44,7 @@ You also need a RISC-V GCC toolchain, i.e., `riscv32-unknown-elf-gcc` must be in
 ### Generating stimuli and running the simulation
 You can generate stimuli with
 ```
-make stimuli 
+make stimuli
 ```
 To build the software generated test,
 ```
@@ -70,7 +70,8 @@ make sw-all run H_IN=7 W_IN=3 K_OUT=32 K_IN=32 PE_H=4 PE_W=2 gui=0
 ## Contributors
 - Arpan Suravi Prasad, ETH Zurich (*prasadar@iis.ee.ethz.ch*)
 - Francesco Conti, University of Bologna (*f.conti@unibo.it*)
-- Luigi Ghionda, University of Bologna (luigi.ghionda2@unibo.it)
+- Luigi Ghionda, University of Bologna (*luigi.ghionda2@unibo.it*)
+- Riccardo Tedeschi, University of Bologna (*riccardo.tedeschi6@unibo.it*)
 
 # Performance regressions
 See https://pulp-platform.github.io/neureka/dev/bench/
