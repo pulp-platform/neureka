@@ -5,8 +5,8 @@ package:
     - "Francesco Conti <f.conti@unibo.it>"
 
 dependencies:
-  hwpe-stream:  { git: "https://github.com/pulp-platform/hwpe-stream.git", version: 1.8 }
-  hci:          { git: "https://github.com/pulp-platform/hci.git", rev: 7c11cc0e3f18329daabba38b5588e05e53b0497e } # branch: remove-automatic-parameter-prop
+  hwpe-stream:  { git: "https://github.com/pulp-platform/hwpe-stream.git", version: 1.9.2 } # branch: master
+  hci:          { git: "https://github.com/pulp-platform/hci.git", rev: 73e6f772881991313c93d232f1daddbac74731c0 } # branch: fc/job-queues
   hwpe-ctrl:    { git: "https://github.com/pulp-platform/hwpe-ctrl.git", rev: "a596620" }
   zeroriscy:    { git: "https://github.com/yvantor/ibex.git", rev: "bender", target: "neureka_standalone" } # for verification only
  

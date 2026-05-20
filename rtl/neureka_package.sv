@@ -365,19 +365,19 @@ package neureka_package;
     logic                            clear_source;
     logic                            clear_sink;
     logic                            wmem_sel;
-    hci_package::hci_streamer_ctrl_t infeat_source_ctrl;
-    hci_package::hci_streamer_ctrl_t weight_source_ctrl;
-    hci_package::hci_streamer_ctrl_t wmem_source_ctrl;
-    hci_package::hci_streamer_ctrl_t norm_source_ctrl;
-    hci_package::hci_streamer_ctrl_t outfeat_sink_ctrl;
-    hci_package::hci_streamer_ctrl_t streamin_source_ctrl;
+    hci_package::hci_streamer_v2_ctrl_t infeat_source_ctrl;
+    hci_package::hci_streamer_v2_ctrl_t weight_source_ctrl;
+    hci_package::hci_streamer_v2_ctrl_t wmem_source_ctrl;
+    hci_package::hci_streamer_v2_ctrl_t norm_source_ctrl;
+    hci_package::hci_streamer_v2_ctrl_t outfeat_sink_ctrl;
+    hci_package::hci_streamer_v2_ctrl_t streamin_source_ctrl;
   } ctrl_streamer_t;
 
   typedef struct packed {
-    hci_package::hci_streamer_flags_t feat_source_flags;
-    hci_package::hci_streamer_flags_t weight_source_flags;
-    hci_package::hci_streamer_flags_t norm_source_flags;
-    hci_package::hci_streamer_flags_t conv_sink_flags;
+    hci_package::hci_streamer_v2_flags_t feat_source_flags;
+    hci_package::hci_streamer_v2_flags_t weight_source_flags;
+    hci_package::hci_streamer_v2_flags_t norm_source_flags;
+    hci_package::hci_streamer_v2_flags_t conv_sink_flags;
     logic tcdm_fifo_empty;
   } flags_streamer_t;
 

@@ -60,8 +60,8 @@ module neureka_streamer
   localparam int unsigned EW  = `HCI_SIZE_GET_EW(tcdm);
   localparam int unsigned EHW = `HCI_SIZE_GET_EHW(tcdm);
 
-  hci_streamer_ctrl_t  all_source_ctrl, wmem_source_ctrl;
-  hci_streamer_flags_t all_source_flags, wmem_source_flags;
+  hci_streamer_v2_ctrl_t  all_source_ctrl, wmem_source_ctrl;
+  hci_streamer_v2_flags_t all_source_flags, wmem_source_flags;
   flags_fifo_t tcdm_fifo_flags;
   flags_fifo_t tcdm_weight_fifo_flags;
 
@@ -203,7 +203,7 @@ module neureka_streamer
   assign wmem_enable = (~ctrl_i.ld_st_mux_sel & ctrl_i.wmem_sel & (ctrl_i.ld_which_mux_sel == LD_WEIGHT_SEL)) | (ctrl_i.ld_which_mux_sel == LD_FEAT_WEIGHT_SEL);
   assign all_source_enable = (~ctrl_i.ld_st_mux_sel & (~wmem_enable)) | (ctrl_i.ld_which_mux_sel == LD_FEAT_WEIGHT_SEL);
 
-  hci_core_source #(
+  hci_core_source_v2 #(
     .PASSTHROUGH_FIFO      ( 1                     ),
     .`HCI_SIZE_PARAM(tcdm) ( `HCI_SIZE_PARAM(tcdm) )
   ) i_all_source (
@@ -218,7 +218,7 @@ module neureka_streamer
     .flags_o     ( all_source_flags              )
   );
 
-  hci_core_source #(
+  hci_core_source_v2 #(
     .PASSTHROUGH_FIFO      ( 1                     ),
     .`HCI_SIZE_PARAM(tcdm) ( `HCI_SIZE_PARAM(tcdm) )
   ) i_weight_source (
@@ -233,7 +233,7 @@ module neureka_streamer
     .flags_o     ( wmem_source_flags             )
   );
 
-  hci_core_sink #(
+  hci_core_sink_v2 #(
     .`HCI_SIZE_PARAM(tcdm) ( `HCI_SIZE_PARAM(tcdm) )
   ) i_sink (
     .clk_i       ( clk_i                       ),

@@ -512,6 +512,8 @@ module neureka_ctrl #(
   assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.d1_stride     = config_.infeat_d1_stride;
   assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.d1_len        = config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? PE_H : INFEAT_BUFFER_SIZE_H;
   assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.d2_stride     = config_.infeat_d2_stride; // currently unused
+  assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.d2_len        = '0;
+  assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.d3_stride     = '0;
   assign ctrl_streamer.infeat_source_ctrl.addressgen_ctrl.dim_enable_1h =  '1;
 
   /*
@@ -539,6 +541,8 @@ module neureka_ctrl #(
   assign ctrl_streamer.weight_source_ctrl.addressgen_ctrl.d1_stride     = config_.weights_d1_stride;
   assign ctrl_streamer.weight_source_ctrl.addressgen_ctrl.d1_len        = config_.filter_mode == NEUREKA_FILTER_MODE_1X1 ? 1 : '1;
   assign ctrl_streamer.weight_source_ctrl.addressgen_ctrl.d2_stride     = config_.weights_d2_stride;
+  assign ctrl_streamer.weight_source_ctrl.addressgen_ctrl.d2_len        = '0;
+  assign ctrl_streamer.weight_source_ctrl.addressgen_ctrl.d3_stride     = '0;
   assign ctrl_streamer.weight_source_ctrl.addressgen_ctrl.dim_enable_1h = dim_enable_1h_weights;
 
   /*
@@ -605,6 +609,8 @@ module neureka_ctrl #(
   assign ctrl_streamer.outfeat_sink_ctrl.addressgen_ctrl.d1_stride     = config_.outfeat_d1_stride;
   assign ctrl_streamer.outfeat_sink_ctrl.addressgen_ctrl.d1_len        = PE_W;
   assign ctrl_streamer.outfeat_sink_ctrl.addressgen_ctrl.d2_stride     = config_.outfeat_d2_stride;
+  assign ctrl_streamer.outfeat_sink_ctrl.addressgen_ctrl.d2_len        = '0;
+  assign ctrl_streamer.outfeat_sink_ctrl.addressgen_ctrl.d3_stride     = '0;
   assign ctrl_streamer.outfeat_sink_ctrl.addressgen_ctrl.dim_enable_1h = '1;
 
   /*
@@ -680,6 +686,8 @@ module neureka_ctrl #(
   assign ctrl_streamer.norm_source_ctrl.addressgen_ctrl.d1_stride     = '0;
   assign ctrl_streamer.norm_source_ctrl.addressgen_ctrl.d1_len        = '0;
   assign ctrl_streamer.norm_source_ctrl.addressgen_ctrl.d2_stride     = '0;
+  assign ctrl_streamer.norm_source_ctrl.addressgen_ctrl.d2_len        = '0;
+  assign ctrl_streamer.norm_source_ctrl.addressgen_ctrl.d3_stride     = '0;
   assign ctrl_streamer.norm_source_ctrl.addressgen_ctrl.dim_enable_1h =  2;
 
 
@@ -704,12 +712,12 @@ module neureka_ctrl #(
     a state transition (like in a Mealy FSM).
   */
 
-  assign ctrl_streamer.infeat_source_ctrl.req_start   = config_.prefetch ? prefetch_pulse | ((state==LOAD) & state_change) 
-                                                          :(state==LOAD) & state_change;
-  assign ctrl_streamer.weight_source_ctrl.req_start   = config_.streamin ? (state==MATRIXVEC & state_change) : (state==WEIGHTOFFS & state_change);
-  assign ctrl_streamer.norm_source_ctrl.req_start     = (state==NORMQUANT || state==NORMQUANT_BIAS || state==NORMQUANT_SHIFT)  & state_change;
-  assign ctrl_streamer.outfeat_sink_ctrl.req_start    = (state==STREAMOUT) & state_change;
-  assign ctrl_streamer.streamin_source_ctrl.req_start = (state==STREAMIN)  & state_change;
+  assign ctrl_streamer.infeat_source_ctrl.valid   = config_.prefetch ? prefetch_pulse | ((state==LOAD) & state_change) 
+                                                                     :                   (state==LOAD) & state_change;
+  assign ctrl_streamer.weight_source_ctrl.valid   = config_.streamin ? (state==MATRIXVEC & state_change) : (state==WEIGHTOFFS & state_change);
+  assign ctrl_streamer.norm_source_ctrl.valid     = (state==NORMQUANT || state==NORMQUANT_BIAS || state==NORMQUANT_SHIFT)  & state_change;
+  assign ctrl_streamer.outfeat_sink_ctrl.valid    = (state==STREAMOUT) & state_change;
+  assign ctrl_streamer.streamin_source_ctrl.valid = (state==STREAMIN)  & state_change;
 
   /*
     Set the streamer muxes / demuxes according to the current operating state.
