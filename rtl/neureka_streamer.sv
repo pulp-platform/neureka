@@ -22,7 +22,7 @@
 
 `include "hci_helpers.svh"
 
-module neureka_streamer 
+module neureka_streamer
   import neureka_package::*;
   import hwpe_stream_package::*;
   import hci_package::*;
@@ -61,6 +61,7 @@ module neureka_streamer
   localparam int unsigned IW  = `HCI_SIZE_GET_IW(tcdm);
   localparam int unsigned EW  = `HCI_SIZE_GET_EW(tcdm);
   localparam int unsigned EHW = `HCI_SIZE_GET_EHW(tcdm);
+  localparam int unsigned FD  = `HCI_SIZE_GET_FD(tcdm);
 
   hci_streamer_ctrl_t  all_source_ctrl, wmem_source_ctrl;
   hci_streamer_flags_t all_source_flags, wmem_source_flags;
@@ -121,7 +122,8 @@ module neureka_streamer
     .UW  ( UW                        ),
     .IW  ( IW                        ),
     .EW  ( EW                        ),
-    .EHW ( EHW                       )
+    .EHW ( EHW                       ),
+    .FD  ( FD                        )
   ) virt_tcdm [0:2] (
     .clk ( clk_i )
   );
@@ -131,7 +133,8 @@ module neureka_streamer
     .UW  ( UW                        ),
     .IW  ( IW                        ),
     .EW  ( EW                        ),
-    .EHW ( EHW                       )
+    .EHW ( EHW                       ),
+    .FD  ( FD                        )
 `ifndef SYNTHESIS
     ,
     .WAIVE_RSP3_ASSERT ( 1'b1 ), // waive RSP-3 on memory-side of HCI FIFO
@@ -146,7 +149,8 @@ module neureka_streamer
     .UW  ( UW                        ),
     .IW  ( IW                        ),
     .EW  ( EW                        ),
-    .EHW ( EHW                       )
+    .EHW ( EHW                       ),
+    .FD  ( FD                        )
   ) tcdm_prefifo (
     .clk ( clk_i )
   );
@@ -156,7 +160,8 @@ module neureka_streamer
     .UW  ( UW                        ),
     .IW  ( IW                        ),
     .EW  ( EW                        ),
-    .EHW ( EHW                       )
+    .EHW ( EHW                       ),
+    .FD  ( FD                        )
 `ifndef SYNTHESIS
     ,
     .WAIVE_RSP3_ASSERT ( 1'b1 ), // waive RSP-3 on memory-side of HCI FIFO
@@ -173,14 +178,16 @@ module neureka_streamer
     UW:  UW,
     IW:  1,
     EW:  EW,
-    EHW: EHW
+    EHW: EHW,
+    FD:  FD
   };
   hci_core_intf #(
     .DW  ( NEUREKA_MEM_BANDWIDTH_EXT ),
     .UW  ( UW                        ),
     .IW  ( 1                         ),
     .EW  ( EW                        ),
-    .EHW ( EHW                       )
+    .EHW ( EHW                       ),
+    .FD  ( FD                        )
 `ifndef SYNTHESIS
     ,
     .WAIVE_RSP3_ASSERT ( 1'b1 ), // waive RSP-3 on memory-side of HCI FIFO
@@ -195,7 +202,8 @@ module neureka_streamer
     .UW  ( UW                        ),
     .IW  ( IW                        ),
     .EW  ( EW                        ),
-    .EHW ( EHW                       )
+    .EHW ( EHW                       ),
+    .FD  ( FD                        )
 `ifndef SYNTHESIS
     ,
     .WAIVE_RSP3_ASSERT ( 1'b1 ), // waive RSP-3 on memory-side of HCI FIFO
@@ -205,7 +213,7 @@ module neureka_streamer
     .clk ( clk_i )
   );
 
-  logic wmem_enable, all_source_enable; 
+  logic wmem_enable, all_source_enable;
 
   assign wmem_enable = (~ctrl_i.ld_st_mux_sel & ctrl_i.wmem_sel & (ctrl_i.ld_which_mux_sel == LD_WEIGHT_SEL)) | (ctrl_i.ld_which_mux_sel == LD_FEAT_WEIGHT_SEL);
   assign all_source_enable = (~ctrl_i.ld_st_mux_sel & (~wmem_enable)) | (ctrl_i.ld_which_mux_sel == LD_FEAT_WEIGHT_SEL);
@@ -435,10 +443,10 @@ module neureka_streamer
   end
 
   always_comb begin : weight_source_ctrl_mux
-    wmem_source_ctrl = '0; 
+    wmem_source_ctrl = '0;
     if(((ctrl_i.ld_which_mux_sel == LD_WEIGHT_SEL) & ctrl_i.wmem_sel) | (ctrl_i.ld_which_mux_sel == LD_FEAT_WEIGHT_SEL) )
       wmem_source_ctrl = ctrl_i.wmem_source_ctrl;
-  end 
+  end
 
   assign flags_o.feat_source_flags = all_source_flags;
   assign flags_o.norm_source_flags = all_source_flags;
