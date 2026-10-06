@@ -280,9 +280,9 @@ VSIM_PARAMS=-gPROB_STALL=$(P_STALL)   \
 # Run the simulation
 run:
 ifeq ($(gui), 0)
-	cd $(BUILD_DIR);                       \
+	cd $(BUILD_DIR) &&                     \
 	$(QUESTA) vsim -c vopt_tb -do "run -a" \
-	$(VSIM_PARAMS);                        \
+	$(VSIM_PARAMS) &&                      \
 	if grep -q 'errors happened' transcript; then exit 1; fi
 else
 	cd $(BUILD_DIR); $(QUESTA) vsim vopt_tb \
