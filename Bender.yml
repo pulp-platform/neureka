@@ -37,3 +37,4 @@ sources:
     files:
       - rtl/verif/tb_dummy_memory.sv
       - rtl/verif/tb_neureka.sv
+      - rtl/verif/tb_neureka_streamin.sv

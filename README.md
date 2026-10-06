@@ -61,6 +61,18 @@ make stimuli H_IN=7 W_IN=3 K_OUT=32 K_IN=32
 make sw-all run H_IN=7 W_IN=3 K_OUT=32 K_IN=32 gui=0
 ```
 
+### Accumulator STREAMIN unit test
+`rtl/verif/tb_neureka_streamin.sv` is a standalone testbench for the STREAMIN/STREAMOUT path of `neureka_accumulator_normquant`.
+It covers 8-bit (sign-extended) and 32-bit stream-in, 8-bit and 32-bit stream-out, 1 to 32 output channels, back-pressure and clear/reset between jobs.
+It needs no stimuli or RISC-V toolchain and is compiled by `make hw-all` (re-run `make generate-scripts` first if `sim/compile.tcl` predates it).
+Run it on the already built library with:
+```
+cd sim
+vsim -c -onfinish stop -suppress vsim-3009 tb_neureka_streamin \
+  -do 'run -all; quit -code [expr {[string match {*$finish*} [runStatus -full]] ? 0 : 1}]'
+```
+The command exits with 0 only when the testbench reaches its final `PASS` line; any failed check stops it with `$fatal` and a nonzero exit code.
+
 ## Contributors
 - Arpan Suravi Prasad, ETH Zurich (*prasadar@iis.ee.ethz.ch*)
 - Francesco Conti, University of Bologna (*f.conti@unibo.it*)
